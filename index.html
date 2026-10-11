@@ -103,7 +103,7 @@
     </section>
 
     <section class="group-card">
-      <div><div class="group-label">Твоя учебная группа</div><div class="group-name" id="groupName">ЮФ · 3 курс · ОФО</div></div>
+      <div><div class="group-label">Твоя учебная группа</div><div class="group-name" id="groupName">Ю603/О-2503 · 2 курс · ОФО</div></div>
       <button class="change-group" id="changeGroup">Изменить ↗</button>
     </section>
 
@@ -130,28 +130,38 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    // Демо-данные для макета. Позже заменим их настоящими данными из PDF.
-    const demo = {
+    // Данные по PDF «ЮФ 2 к офо с 05.10.pdf», группа Ю603/О-2503.
+    // Указываются только занятия, которые удалось уверенно прочитать в колонке группы.
+    // Даты из PDF сохранены; при отсутствии подтверждённой пары день не считается свободным.
+    const schedule = {
       0: [
-        {start:"09:00",end:"10:30",title:"Теория государства и права",type:"Лекция",room:"301",teacher:"Иванова Е. В.",color:"blue"},
-        {start:"10:40",end:"12:10",title:"Гражданское право",type:"Семинар",room:"204",teacher:"Петров А. С.",color:"green"},
-        {start:"12:40",end:"14:10",title:"История государства и права",type:"Практика",room:"118",teacher:"Смирнова О. Н.",color:"orange"}
+        {start:"10:10",end:"11:40",title:"Основы военной подготовки",type:"П/з. д./в.",room:"105",teacher:"Доц. В.В. Палей",dates:"11.12*",color:"green",note:"Дата указана в PDF"},
+        {start:"14:00",end:"15:30",title:"Уголовное право",type:"П/з.",room:"не указана",teacher:"М.А. Вершкова",dates:"21.09",color:"blue",note:"Проверь актуальность даты в исходном PDF"},
+        {start:"14:00",end:"15:30",title:"Земельное право",type:"П/з.",room:"214В",teacher:"Е.В. Ушакова",dates:"кроме 21.09",color:"blue",note:"В PDF указано исключение по дате"},
+        {start:"14:00",end:"15:30",title:"Основы военной подготовки",type:"П/з. д./в.",room:"105",teacher:"Доц. В.В. Палей",dates:"по н.н. 05",color:"green",note:"Сокращение сохранено как в PDF"},
+        {start:"14:00",end:"15:30",title:"Административное право",type:"П/з.",room:"214В",teacher:"П.Е. Калинина",dates:"",color:"blue",note:"Требует уточнения даты по оригиналу"}
       ],
       1: [
-        {start:"10:10",end:"11:40",title:"Конституционное право",type:"Лекция",room:"412",teacher:"Кузнецов И. П.",color:"blue"},
-        {start:"11:50",end:"13:20",title:"Уголовное право",type:"Семинар",room:"207",teacher:"Орлова М. А.",color:"green"}
+        {start:"14:00",end:"15:30",title:"Основы таможенного дела",type:"П/з.",room:"403В",teacher:"Д.В. Харченко",dates:"по н.н. 01.12",color:"blue",note:"Дата указана в PDF"},
+        {start:"14:00",end:"15:30",title:"Судебная система Российской Федерации",type:"Лекция",room:"214В",teacher:"Е.Ю. Евланова",dates:"по н.н. 01.12",color:"blue",note:"Дата указана в PDF"}
       ],
       2: [
-        {start:"09:00",end:"10:30",title:"Римское право",type:"Семинар",room:"215",teacher:"Васильев Д. И.",color:"green"},
-        {start:"10:40",end:"12:10",title:"Гражданский процесс",type:"Лекция",room:"301",teacher:"Николаева Т. С.",color:"blue"},
-        {start:"12:40",end:"14:10",title:"Иностранный язык",type:"Практика",room:"106",teacher:"—",color:"orange"}
+        {start:"14:00",end:"15:30",title:"Конституционное право",type:"П/з.",room:"214В",teacher:"Г.А. Артемов",dates:"",color:"blue",note:"Дата неразборчива/не указана в извлечённом фрагменте"},
+        {start:"14:00",end:"15:30",title:"Социология",type:"П/з.",room:"214В",teacher:"М.М. Савченко",dates:"",color:"blue",note:"Дата неразборчива/не указана в извлечённом фрагменте"}
       ],
       3: [],
       4: [
-        {start:"09:00",end:"10:30",title:"Административное право",type:"Лекция",room:"410",teacher:"Морозов П. В.",color:"blue"}
+        {start:"10:10",end:"11:40",title:"Уголовное право",type:"П/з.",room:"218В",teacher:"М.А. Вершкова",dates:"",color:"blue",note:"Требует сверки дат по оригиналу"},
+        {start:"12:20",end:"13:50",title:"Экологическое право",type:"П/з.",room:"218В",teacher:"А.А. Шорохова",dates:"",color:"blue",note:"Требует сверки дат по оригиналу"},
+        {start:"14:00",end:"15:30",title:"Иностранный язык в сфере юриспруденции",type:"П/з.",room:"312, 312а",teacher:"А.В. Ткаченко; Е.Б. Гайко",dates:"",color:"green",note:"Аудитории/преподаватели указаны в PDF"}
       ],
-      5: [], 6: []
+      5: [
+        {start:"10:10",end:"11:40",title:"Гражданское право",type:"П/з.",room:"214В",teacher:"А.Е. Кирпичев",dates:"17.10*",color:"blue",note:"Дата указана в PDF"},
+        {start:"12:20",end:"13:50",title:"Судебная система Российской Федерации",type:"П/з.",room:"503В",teacher:"Е.Л. Иванина",dates:"",color:"blue",note:"Требует сверки дат по оригиналу"},
+        {start:"14:00",end:"15:30",title:"Судебная система Российской Федерации",type:"П/з.",room:"503В",teacher:"Е.Л. Иванина",dates:"",color:"blue",note:"Требует сверки дат по оригиналу"}
+      ], 6: []
     };
+    const scheduleNotes = "Источник: ЮФ 2 к офо с 05.10.pdf, группа Ю603/О-2503. Часть дат и ячеек требует ручной сверки; не считайте пустой день подтверждённым выходным.";
     const daysShort = ["ПН","ВТ","СР","ЧТ","ПТ","СБ","ВС"];
     const daysFull = ["Понедельник","Вторник","Среда","Четверг","Пятница","Суббота","Воскресенье"];
     const now = new Date();
@@ -169,25 +179,26 @@
       for (let i=0;i<7;i++) {
         const d = dateForDay(i);
         const b = document.createElement("button");
-        b.className = "day" + (i===selectedDay ? " active" : "") + ((demo[i]||[]).length ? " has-class" : "");
+        b.className = "day" + (i===selectedDay ? " active" : "") + ((schedule[i]||[]).length ? " has-class" : "");
         b.innerHTML = `<span class="dow">${daysShort[i]}</span><span class="num">${d.getDate()}</span>`;
         b.onclick = () => { selectedDay=i; render(); };
         el.appendChild(b);
       }
     }
     function renderLessons() {
-      const lessons = demo[selectedDay] || [];
+      const lessons = schedule[selectedDay] || [];
       document.getElementById("dayHeading").textContent = daysFull[selectedDay];
       document.getElementById("dateLabel").textContent = dateForDay(selectedDay).toLocaleDateString("ru-RU",{day:"numeric",month:"long"});
       document.getElementById("lessonCount").textContent = lessons.length ? `${lessons.length} ${lessons.length===1?"пара":lessons.length<5?"пары":"пар"}` : "Нет пар";
       const list = document.getElementById("lessonList"); list.innerHTML = "";
       if (!lessons.length) {
-        list.innerHTML = `<div class="empty"><div class="emoji">☕</div><strong>На этот день пар нет</strong><span>Можно спокойно заняться своими делами.</span></div>`;
+        const message = selectedDay === 3 ? "В PDF четверг указан как «по плану факультета»" : "В этой версии нет подтверждённых занятий на выбранный день";
+        list.innerHTML = `<div class="empty"><div class="emoji">📄</div><strong>Нет подтверждённых пар</strong><span>${message}. Это не означает, что занятий точно нет.</span></div>`;
         return;
       }
       lessons.forEach((l,index) => {
         const card = document.createElement("article"); card.className="lesson";
-        card.innerHTML = `<div class="time">${l.start}<small>до ${l.end}</small></div><div class="stripe ${l.color}"></div><div class="lesson-main"><div class="lesson-title">${l.title}</div><div class="lesson-meta"><span class="tag">▣ Ауд. ${l.room}</span><span class="tag">${l.type}</span><span class="tag">♙ ${l.teacher}</span></div></div>`;
+        card.innerHTML = `<div class="time">${l.start}<small>до ${l.end}</small></div><div class="stripe ${l.color}"></div><div class="lesson-main"><div class="lesson-title">${l.title}</div><div class="lesson-meta"><span class="tag">▣ Ауд. ${l.room}</span><span class="tag">${l.type}</span><span class="tag">♙ ${l.teacher}</span>${l.dates ? `<span class="tag">📅 ${l.dates}</span>` : ``}</div>${l.note ? `<div style="margin-top:8px;color:#8995a8;font-size:11px;line-height:1.4">${l.note}</div>` : ``}</div>`;
         list.appendChild(card);
       });
     }
@@ -196,11 +207,11 @@
       const today = mondayOffset;
       if (selectedDay === today) {
         const currentMins = now.getHours()*60+now.getMinutes();
-        next = (demo[selectedDay]||[]).find(l => {
+        next = (schedule[selectedDay]||[]).find(l => {
           const [h,m]=l.start.split(":").map(Number); return h*60+m >= currentMins;
         });
       } else {
-        next = (demo[selectedDay]||[])[0];
+        next = (schedule[selectedDay]||[])[0];
       }
       document.getElementById("nextTitle").textContent = next ? next.title : "Пары не запланированы";
       document.getElementById("nextMeta").textContent = next ? `${next.start} · ауд. ${next.room}` : "Можно немного выдохнуть";
@@ -211,7 +222,7 @@
       const el=document.getElementById("toast"); el.textContent=text; el.classList.add("show");
       setTimeout(()=>el.classList.remove("show"),2200);
     }
-    document.getElementById("changeGroup").onclick = () => toast("Выбор курса и группы подключим следующим этапом.");
+    document.getElementById("changeGroup").onclick = () => toast("Пока подключена только группа Ю603/О-2503.");
     document.getElementById("profileBtn").onclick = () => toast("Профиль подключим следующим этапом.");
     document.querySelectorAll(".nav-item").forEach(btn => btn.onclick=()=>{
       selectedTab=btn.dataset.tab;
@@ -225,6 +236,11 @@
       document.getElementById("greeting").textContent = `Привет, ${tg.initDataUnsafe.user.first_name}! 👋`;
     }
     render();
+    // Подсказка о точности источника: данные ещё требуют окончательной сверки с таблицей PDF.
+    const warning = document.createElement("div");
+    warning.style.cssText = "margin-top:18px;padding:12px 14px;border:1px solid #8a6a2d66;background:#ffb86b0c;border-radius:14px;color:#c5b28e;font-size:11px;line-height:1.45";
+    warning.textContent = "Важно: расписание перенесено из PDF частично. Некоторые даты и строки требуют сверки. Перед посещением пары проверь официальный файл факультета.";
+    document.querySelector(".lesson-list").after(warning);
   </script>
 </body>
 </html>
