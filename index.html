@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#11151d">
+  <title>Расписание — RTASchedule</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0d1118;
+      --panel: #151b26;
+      --panel-2: #1b2432;
+      --line: rgba(255,255,255,.075);
+      --text: #f2f5fb;
+      --muted: #8995a8;
+      --blue: #4f8cff;
+      --blue-2: #2463e8;
+      --green: #4fd1a1;
+      --orange: #ffb86b;
+      --radius: 20px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; background:
+      radial-gradient(ellipse at 85% -10%, rgba(48,105,225,.20), transparent 42%),
+      var(--bg); color: var(--text);
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    button { font: inherit; cursor: pointer; }
+    .app { max-width: 520px; margin: 0 auto; padding: 18px 16px calc(100px + env(safe-area-inset-bottom)); }
+    .top { display:flex; align-items:center; justify-content:space-between; gap:12px; margin: 5px 0 24px; }
+    .brand { display:flex; align-items:center; gap:11px; }
+    .logo { width:44px; height:44px; display:grid; place-items:center; border-radius:15px; background:linear-gradient(145deg,#5d9bff,#2863df); box-shadow:0 8px 26px #2863df40; font-weight:900; font-size:20px; }
+    .eyebrow { color:var(--muted); font-size:11px; letter-spacing:.12em; text-transform:uppercase; margin-bottom:4px; }
+    h1 { font-size:20px; margin:0; letter-spacing:-.03em; }
+    .avatar { width:40px; height:40px; border:1px solid var(--line); border-radius:14px; display:grid; place-items:center; background:var(--panel); color:#a9c8ff; }
+    .welcome { margin-bottom:19px; }
+    .welcome h2 { margin:0 0 6px; font-size:27px; letter-spacing:-.045em; }
+    .welcome p { margin:0; color:var(--muted); font-size:14px; }
+    .group-card { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:15px 16px; border:1px solid #294a7d80; background:linear-gradient(110deg,#1a2c48,#172132 75%); border-radius:18px; margin-bottom:23px; }
+    .group-label { color:#9bb9ed; font-size:12px; margin-bottom:5px; }
+    .group-name { font-weight:750; font-size:15px; }
+    .change-group { border:1px solid #ffffff20; border-radius:12px; background:#ffffff09; color:#e5edff; padding:9px 11px; font-size:12px; white-space:nowrap; }
+    .section-head { display:flex; justify-content:space-between; align-items:center; margin:0 2px 13px; }
+    .section-head h3 { font-size:17px; margin:0; letter-spacing:-.02em; }
+    .section-head span { font-size:12px; color:var(--muted); }
+    .days { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:6px; margin-bottom:21px; }
+    .day { min-width:0; border:1px solid transparent; background:transparent; color:var(--muted); border-radius:15px; padding:10px 0 9px; display:flex; flex-direction:column; align-items:center; gap:7px; }
+    .day .dow { font-size:10px; text-transform:uppercase; }
+    .day .num { width:31px; height:31px; display:grid; place-items:center; font-size:13px; font-weight:700; border-radius:11px; }
+    .day.active { color:white; background:#1c2d49; border-color:#31558c; }
+    .day.active .num { background:var(--blue); box-shadow:0 4px 14px #4f8cff55; }
+    .day.has-class .num::after { content:""; display:block; width:4px; height:4px; border-radius:50%; background:var(--green); position:relative; top:-3px; }
+    .day.active.has-class .num::after { background:white; }
+    .next-card { display:flex; gap:13px; align-items:center; padding:15px; border:1px solid var(--line); background:linear-gradient(120deg,#19263a,#151b26); border-radius:18px; margin-bottom:23px; }
+    .next-icon { width:43px; height:43px; flex:0 0 43px; display:grid; place-items:center; border-radius:14px; background:#2c5caa35; color:#8bb7ff; font-size:19px; }
+    .next-copy { flex:1; min-width:0; }
+    .next-copy .label { color:#8eb8ff; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; margin-bottom:5px; }
+    .next-copy strong { display:block; font-size:14px; margin-bottom:4px; }
+    .next-copy small { color:var(--muted); font-size:12px; }
+    .countdown { color:#b7c9e8; font-size:12px; text-align:right; white-space:nowrap; }
+    .lesson-list { display:flex; flex-direction:column; gap:10px; }
+    .lesson { display:grid; grid-template-columns:53px 3px minmax(0,1fr); gap:12px; align-items:stretch; padding:15px 13px; border:1px solid var(--line); background:var(--panel); border-radius:17px; }
+    .time { padding-top:2px; font-size:13px; line-height:1.5; font-weight:750; font-variant-numeric:tabular-nums; }
+    .time small { display:block; color:var(--muted); font-weight:500; font-size:10px; }
+    .stripe { border-radius:4px; background:var(--blue); }
+    .stripe.green { background:var(--green); }
+    .stripe.orange { background:var(--orange); }
+    .lesson-main { min-width:0; }
+    .lesson-title { font-weight:750; font-size:14px; line-height:1.35; margin-bottom:7px; }
+    .lesson-meta { display:flex; flex-wrap:wrap; gap:6px; }
+    .tag { display:inline-flex; align-items:center; gap:5px; padding:5px 7px; border-radius:8px; background:#ffffff08; color:#a7b3c5; font-size:10px; }
+    .tag svg { width:12px; height:12px; }
+    .empty { text-align:center; padding:30px 18px; background:var(--panel); border:1px solid var(--line); border-radius:18px; color:var(--muted); }
+    .empty .emoji { font-size:28px; margin-bottom:10px; }
+    .empty strong { display:block; color:var(--text); margin-bottom:6px; }
+    .bottom-nav { position:fixed; bottom:0; left:0; right:0; padding:10px 16px calc(10px + env(safe-area-inset-bottom)); background:rgba(13,17,24,.90); backdrop-filter:blur(20px); border-top:1px solid var(--line); z-index:10; }
+    .nav-inner { max-width:488px; margin:auto; display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+    .nav-item { border:0; background:transparent; color:var(--muted); padding:8px 4px 5px; display:flex; flex-direction:column; align-items:center; gap:5px; font-size:10px; border-radius:12px; }
+    .nav-item .nav-icon { font-size:19px; line-height:1; }
+    .nav-item.active { color:#8bb7ff; background:#4f8cff12; }
+    .toast { position:fixed; left:50%; transform:translateX(-50%); bottom:90px; max-width:calc(100% - 32px); padding:11px 15px; border:1px solid #ffffff1c; border-radius:12px; background:#222d3e; color:#f2f5fb; font-size:13px; box-shadow:0 10px 30px #0005; opacity:0; pointer-events:none; transition:opacity .2s; z-index:30; text-align:center; }
+    .toast.show { opacity:1; }
+    @media (min-width: 600px) { .app { padding-top:26px; } }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="top">
+      <div class="brand">
+        <div class="logo">R</div>
+        <div><div class="eyebrow">Университет · расписание</div><h1>RTA Schedule</h1></div>
+      </div>
+      <button class="avatar" id="profileBtn" aria-label="Профиль">●</button>
+    </header>
+
+    <section class="welcome">
+      <h2 id="greeting">Привет! 👋</h2>
+      <p>Твой учебный день — в одном месте.</p>
+    </section>
+
+    <section class="group-card">
+      <div><div class="group-label">Твоя учебная группа</div><div class="group-name" id="groupName">ЮФ · 3 курс · ОФО</div></div>
+      <button class="change-group" id="changeGroup">Изменить ↗</button>
+    </section>
+
+    <div class="section-head"><h3>Расписание</h3><span id="dateLabel">На сегодня</span></div>
+    <div class="days" id="days" aria-label="Дни недели"></div>
+
+    <section class="next-card" id="nextCard">
+      <div class="next-icon">◷</div>
+      <div class="next-copy"><div class="label">Ближайшая пара</div><strong id="nextTitle">Гражданское право</strong><small id="nextMeta">10:10 · ауд. 204</small></div>
+      <div class="countdown" id="nextStatus">Скоро</div>
+    </section>
+
+    <div class="section-head"><h3 id="dayHeading">Понедельник</h3><span id="lessonCount">3 пары</span></div>
+    <section class="lesson-list" id="lessonList"></section>
+  </main>
+
+  <nav class="bottom-nav" aria-label="Основная навигация">
+    <div class="nav-inner">
+      <button class="nav-item active" data-tab="schedule"><span class="nav-icon">▦</span><span>Расписание</span></button>
+      <button class="nav-item" data-tab="week"><span class="nav-icon">▤</span><span>Неделя</span></button>
+      <button class="nav-item" data-tab="profile"><span class="nav-icon">◉</span><span>Профиль</span></button>
+    </div>
+  </nav>
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // Демо-данные для макета. Позже заменим их настоящими данными из PDF.
+    const demo = {
+      0: [
+        {start:"09:00",end:"10:30",title:"Теория государства и права",type:"Лекция",room:"301",teacher:"Иванова Е. В.",color:"blue"},
+        {start:"10:40",end:"12:10",title:"Гражданское право",type:"Семинар",room:"204",teacher:"Петров А. С.",color:"green"},
+        {start:"12:40",end:"14:10",title:"История государства и права",type:"Практика",room:"118",teacher:"Смирнова О. Н.",color:"orange"}
+      ],
+      1: [
+        {start:"10:10",end:"11:40",title:"Конституционное право",type:"Лекция",room:"412",teacher:"Кузнецов И. П.",color:"blue"},
+        {start:"11:50",end:"13:20",title:"Уголовное право",type:"Семинар",room:"207",teacher:"Орлова М. А.",color:"green"}
+      ],
+      2: [
+        {start:"09:00",end:"10:30",title:"Римское право",type:"Семинар",room:"215",teacher:"Васильев Д. И.",color:"green"},
+        {start:"10:40",end:"12:10",title:"Гражданский процесс",type:"Лекция",room:"301",teacher:"Николаева Т. С.",color:"blue"},
+        {start:"12:40",end:"14:10",title:"Иностранный язык",type:"Практика",room:"106",teacher:"—",color:"orange"}
+      ],
+      3: [],
+      4: [
+        {start:"09:00",end:"10:30",title:"Административное право",type:"Лекция",room:"410",teacher:"Морозов П. В.",color:"blue"}
+      ],
+      5: [], 6: []
+    };
+    const daysShort = ["ПН","ВТ","СР","ЧТ","ПТ","СБ","ВС"];
+    const daysFull = ["Понедельник","Вторник","Среда","Четверг","Пятница","Суббота","Воскресенье"];
+    const now = new Date();
+    const mondayOffset = (now.getDay() + 6) % 7;
+    let selectedDay = mondayOffset;
+    let selectedTab = "schedule";
+    const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+    if (tg) { tg.ready(); tg.expand(); try { tg.setHeaderColor("#0d1118"); tg.setBackgroundColor("#0d1118"); } catch(e) {} }
+
+    function dateForDay(i) {
+      const d = new Date(now); d.setHours(0,0,0,0); d.setDate(d.getDate() - mondayOffset + i); return d;
+    }
+    function renderDays() {
+      const el = document.getElementById("days"); el.innerHTML = "";
+      for (let i=0;i<7;i++) {
+        const d = dateForDay(i);
+        const b = document.createElement("button");
+        b.className = "day" + (i===selectedDay ? " active" : "") + ((demo[i]||[]).length ? " has-class" : "");
+        b.innerHTML = `<span class="dow">${daysShort[i]}</span><span class="num">${d.getDate()}</span>`;
+        b.onclick = () => { selectedDay=i; render(); };
+        el.appendChild(b);
+      }
+    }
+    function renderLessons() {
+      const lessons = demo[selectedDay] || [];
+      document.getElementById("dayHeading").textContent = daysFull[selectedDay];
+      document.getElementById("dateLabel").textContent = dateForDay(selectedDay).toLocaleDateString("ru-RU",{day:"numeric",month:"long"});
+      document.getElementById("lessonCount").textContent = lessons.length ? `${lessons.length} ${lessons.length===1?"пара":lessons.length<5?"пары":"пар"}` : "Нет пар";
+      const list = document.getElementById("lessonList"); list.innerHTML = "";
+      if (!lessons.length) {
+        list.innerHTML = `<div class="empty"><div class="emoji">☕</div><strong>На этот день пар нет</strong><span>Можно спокойно заняться своими делами.</span></div>`;
+        return;
+      }
+      lessons.forEach((l,index) => {
+        const card = document.createElement("article"); card.className="lesson";
+        card.innerHTML = `<div class="time">${l.start}<small>до ${l.end}</small></div><div class="stripe ${l.color}"></div><div class="lesson-main"><div class="lesson-title">${l.title}</div><div class="lesson-meta"><span class="tag">▣ Ауд. ${l.room}</span><span class="tag">${l.type}</span><span class="tag">♙ ${l.teacher}</span></div></div>`;
+        list.appendChild(card);
+      });
+    }
+    function renderNext() {
+      let next = null;
+      const today = mondayOffset;
+      if (selectedDay === today) {
+        const currentMins = now.getHours()*60+now.getMinutes();
+        next = (demo[selectedDay]||[]).find(l => {
+          const [h,m]=l.start.split(":").map(Number); return h*60+m >= currentMins;
+        });
+      } else {
+        next = (demo[selectedDay]||[])[0];
+      }
+      document.getElementById("nextTitle").textContent = next ? next.title : "Пары не запланированы";
+      document.getElementById("nextMeta").textContent = next ? `${next.start} · ауд. ${next.room}` : "Можно немного выдохнуть";
+      document.getElementById("nextStatus").textContent = next ? (selectedDay===today ? "Сегодня" : "В этот день") : "Свободно";
+    }
+    function render() { renderDays(); renderLessons(); renderNext(); }
+    function toast(text) {
+      const el=document.getElementById("toast"); el.textContent=text; el.classList.add("show");
+      setTimeout(()=>el.classList.remove("show"),2200);
+    }
+    document.getElementById("changeGroup").onclick = () => toast("Выбор курса и группы подключим следующим этапом.");
+    document.getElementById("profileBtn").onclick = () => toast("Профиль подключим следующим этапом.");
+    document.querySelectorAll(".nav-item").forEach(btn => btn.onclick=()=>{
+      selectedTab=btn.dataset.tab;
+      document.querySelectorAll(".nav-item").forEach(b=>b.classList.toggle("active",b===btn));
+      if(selectedTab==="week") toast("Сейчас выбери нужный день сверху — недельный просмотр доработаем отдельно.");
+      if(selectedTab==="profile") toast("Настройки профиля добавим позже.");
+      if(selectedTab==="schedule") toast("Расписание занятий");
+    });
+    // Подставляем имя, если Telegram его передал.
+    if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.first_name) {
+      document.getElementById("greeting").textContent = `Привет, ${tg.initDataUnsafe.user.first_name}! 👋`;
+    }
+    render();
+  </script>
+</body>
+</html>
