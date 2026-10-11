@@ -116,6 +116,11 @@
       <div class="countdown" id="nextStatus">Скоро</div>
     </section>
 
+    <div style="display:flex;gap:8px;margin:0 0 16px">
+      <button id="weekA" style="flex:1;padding:11px;border-radius:12px;border:1px solid #31558c;background:#1c2d49;color:#fff;font-weight:700">Неделя А</button>
+      <button id="weekB" style="flex:1;padding:11px;border-radius:12px;border:1px solid #ffffff20;background:#151b26;color:#8995a8;font-weight:700">Неделя Б</button>
+    </div>
+    <div style="font-size:11px;color:#8995a8;margin:-7px 2px 13px">Недели по расписанию, которое ты прислал. Привязка к календарным датам пока предварительная.</div>
     <div class="section-head"><h3 id="dayHeading">Понедельник</h3><span id="lessonCount">3 пары</span></div>
     <section class="lesson-list" id="lessonList"></section>
   </main>
@@ -130,38 +135,27 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    // Данные по PDF «ЮФ 2 к офо с 05.10.pdf», группа Ю603/О-2503.
-    // Указываются только занятия, которые удалось уверенно прочитать в колонке группы.
-    // Даты из PDF сохранены; при отсутствии подтверждённой пары день не считается свободным.
-    const schedule = {
-      0: [
-        {start:"10:10",end:"11:40",title:"Основы военной подготовки",type:"П/з. д./в.",room:"105",teacher:"Доц. В.В. Палей",dates:"11.12*",color:"green",note:"Дата указана в PDF"},
-        {start:"14:00",end:"15:30",title:"Уголовное право",type:"П/з.",room:"не указана",teacher:"М.А. Вершкова",dates:"21.09",color:"blue",note:"Проверь актуальность даты в исходном PDF"},
-        {start:"14:00",end:"15:30",title:"Земельное право",type:"П/з.",room:"214В",teacher:"Е.В. Ушакова",dates:"кроме 21.09",color:"blue",note:"В PDF указано исключение по дате"},
-        {start:"14:00",end:"15:30",title:"Основы военной подготовки",type:"П/з. д./в.",room:"105",teacher:"Доц. В.В. Палей",dates:"по н.н. 05",color:"green",note:"Сокращение сохранено как в PDF"},
-        {start:"14:00",end:"15:30",title:"Административное право",type:"П/з.",room:"214В",teacher:"П.Е. Калинина",dates:"",color:"blue",note:"Требует уточнения даты по оригиналу"}
-      ],
-      1: [
-        {start:"14:00",end:"15:30",title:"Основы таможенного дела",type:"П/з.",room:"403В",teacher:"Д.В. Харченко",dates:"по н.н. 01.12",color:"blue",note:"Дата указана в PDF"},
-        {start:"14:00",end:"15:30",title:"Судебная система Российской Федерации",type:"Лекция",room:"214В",teacher:"Е.Ю. Евланова",dates:"по н.н. 01.12",color:"blue",note:"Дата указана в PDF"}
-      ],
-      2: [
-        {start:"14:00",end:"15:30",title:"Конституционное право",type:"П/з.",room:"214В",teacher:"Г.А. Артемов",dates:"",color:"blue",note:"Дата неразборчива/не указана в извлечённом фрагменте"},
-        {start:"14:00",end:"15:30",title:"Социология",type:"П/з.",room:"214В",teacher:"М.М. Савченко",dates:"",color:"blue",note:"Дата неразборчива/не указана в извлечённом фрагменте"}
-      ],
-      3: [],
-      4: [
-        {start:"10:10",end:"11:40",title:"Уголовное право",type:"П/з.",room:"218В",teacher:"М.А. Вершкова",dates:"",color:"blue",note:"Требует сверки дат по оригиналу"},
-        {start:"12:20",end:"13:50",title:"Экологическое право",type:"П/з.",room:"218В",teacher:"А.А. Шорохова",dates:"",color:"blue",note:"Требует сверки дат по оригиналу"},
-        {start:"14:00",end:"15:30",title:"Иностранный язык в сфере юриспруденции",type:"П/з.",room:"312, 312а",teacher:"А.В. Ткаченко; Е.Б. Гайко",dates:"",color:"green",note:"Аудитории/преподаватели указаны в PDF"}
-      ],
-      5: [
-        {start:"10:10",end:"11:40",title:"Гражданское право",type:"П/з.",room:"214В",teacher:"А.Е. Кирпичев",dates:"17.10*",color:"blue",note:"Дата указана в PDF"},
-        {start:"12:20",end:"13:50",title:"Судебная система Российской Федерации",type:"П/з.",room:"503В",teacher:"Е.Л. Иванина",dates:"",color:"blue",note:"Требует сверки дат по оригиналу"},
-        {start:"14:00",end:"15:30",title:"Судебная система Российской Федерации",type:"П/з.",room:"503В",teacher:"Е.Л. Иванина",dates:"",color:"blue",note:"Требует сверки дат по оригиналу"}
-      ], 6: []
+    // Основа: расписание, присланное пользователем. Неделя А — первый список, неделя Б — второй.
+    function lesson(start,end,title,type,room="не указана") { return {start,end,title,type,room,teacher:"",dates:"",color:type.includes("Физкультура")?"green":"blue",note:"По списку пользователя"}; }
+    const scheduleA = {
+      0:[lesson("10:10","11:40","Экологическое право","Лекция"),lesson("12:20","13:50","Административное право","Лекция","217В"),lesson("14:00","15:30","Земельное право","П/з."),lesson("16:00","17:30","Административное право","П/з.","214В"),lesson("17:40","19:10","Физкультура","Практическое занятие")],
+      1:[lesson("10:10","11:40","Конституционное право","Лекция","414В"),lesson("12:20","13:50","ОТД","Лекция","414В"),lesson("14:00","15:30","Судебная система","Лекция","214В")],
+      2:[lesson("12:20","13:50","Уголовное право","Лекция","414В"),lesson("14:00","15:30","Конституционное право","П/з.","214В"),lesson("16:00","17:30","Гражданское право","П/з.","214В"),lesson("17:40","19:10","Физкультура","Практическое занятие")],
+      3:[],
+      4:[lesson("08:30","10:00","Гражданское право","Лекция","217В"),lesson("10:10","11:40","Уголовное право","П/з.","218В"),lesson("12:20","13:50","Экологическое право","П/з.","218В"),lesson("14:00","15:30","Английский язык","Практическое занятие")],
+      5:[lesson("12:20","13:50","Судебная система","П/з.","503В"),lesson("14:00","15:30","Судебная система","П/з.","503В")],6:[]
     };
-    const scheduleNotes = "Источник: ЮФ 2 к офо с 05.10.pdf, группа Ю603/О-2503. Часть дат и ячеек требует ручной сверки; не считайте пустой день подтверждённым выходным.";
+    const scheduleB = {
+      0:[lesson("10:10","11:40","Курсовой час","ККЗ"),lesson("12:20","13:50","Основы военной подготовки (ОВП)","Лекция","217В"),lesson("14:00","15:30","Основы военной подготовки (ОВП)","П/з."),lesson("16:00","17:30","Административное право","П/з.","214В"),lesson("17:40","19:10","Физкультура","Практическое занятие")],
+      1:[lesson("10:10","11:40","Социология","Лекция","414В"),lesson("12:20","13:50","ОТД","П/з.","403В")],
+      2:[lesson("12:20","13:50","Уголовное право","Лекция","414В"),lesson("14:00","15:30","Социология","П/з.","214В"),lesson("16:00","17:30","Конституционное право","П/з.","214В"),lesson("17:40","19:10","Физкультура","Практическое занятие")],
+      3:[],
+      4:[lesson("08:30","10:00","Гражданское право","Лекция","217В"),lesson("10:10","11:40","Уголовное право","П/з.","218В"),lesson("12:20","13:50","Экологическое право","П/з.","218В"),lesson("14:00","15:30","Английский язык","Практическое занятие")],
+      5:[],6:[]
+    };
+    let selectedWeek = "A";
+    let schedule = scheduleA;
+    const scheduleNotes = "Расписание перенесено из списка пользователя. Неделя А/Б пока не привязана окончательно к календарной чётности; проверьте официальное расписание при изменениях.";
     const daysShort = ["ПН","ВТ","СР","ЧТ","ПТ","СБ","ВС"];
     const daysFull = ["Понедельник","Вторник","Среда","Четверг","Пятница","Суббота","Воскресенье"];
     const now = new Date();
@@ -192,13 +186,13 @@
       document.getElementById("lessonCount").textContent = lessons.length ? `${lessons.length} ${lessons.length===1?"пара":lessons.length<5?"пары":"пар"}` : "Нет пар";
       const list = document.getElementById("lessonList"); list.innerHTML = "";
       if (!lessons.length) {
-        const message = selectedDay === 3 ? "В PDF четверг указан как «по плану факультета»" : "В этой версии нет подтверждённых занятий на выбранный день";
+        const message = selectedDay === 3 ? "Четверг — по плану факультета" : (selectedDay===5 && selectedWeek==="B" ? "Суббота в присланном расписании недели Б пустая" : "В присланном списке нет занятий на этот день");
         list.innerHTML = `<div class="empty"><div class="emoji">📄</div><strong>Нет подтверждённых пар</strong><span>${message}. Это не означает, что занятий точно нет.</span></div>`;
         return;
       }
       lessons.forEach((l,index) => {
         const card = document.createElement("article"); card.className="lesson";
-        card.innerHTML = `<div class="time">${l.start}<small>до ${l.end}</small></div><div class="stripe ${l.color}"></div><div class="lesson-main"><div class="lesson-title">${l.title}</div><div class="lesson-meta"><span class="tag">▣ Ауд. ${l.room}</span><span class="tag">${l.type}</span><span class="tag">♙ ${l.teacher}</span>${l.dates ? `<span class="tag">📅 ${l.dates}</span>` : ``}</div>${l.note ? `<div style="margin-top:8px;color:#8995a8;font-size:11px;line-height:1.4">${l.note}</div>` : ``}</div>`;
+        card.innerHTML = `<div class="time">${l.start}<small>до ${l.end}</small></div><div class="stripe ${l.color}"></div><div class="lesson-main"><div class="lesson-title">${l.title}</div><div class="lesson-meta"><span class="tag">▣ Ауд. ${l.room}</span><span class="tag">${l.type}</span>${l.teacher ? `<span class="tag">♙ ${l.teacher}</span>` : ``}${l.dates ? `<span class="tag">📅 ${l.dates}</span>` : ``}</div>${l.note ? `<div style="margin-top:8px;color:#8995a8;font-size:11px;line-height:1.4">${l.note}</div>` : ``}</div>`;
         list.appendChild(card);
       });
     }
@@ -235,11 +229,21 @@
     if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.first_name) {
       document.getElementById("greeting").textContent = `Привет, ${tg.initDataUnsafe.user.first_name}! 👋`;
     }
+    function setWeek(w) {
+      selectedWeek=w; schedule=w==="A"?scheduleA:scheduleB;
+      document.getElementById("weekA").style.background=w==="A"?"#1c2d49":"#151b26";
+      document.getElementById("weekA").style.color=w==="A"?"#fff":"#8995a8";
+      document.getElementById("weekB").style.background=w==="B"?"#1c2d49":"#151b26";
+      document.getElementById("weekB").style.color=w==="B"?"#fff":"#8995a8";
+      render();
+    }
+    document.getElementById("weekA").onclick=()=>setWeek("A");
+    document.getElementById("weekB").onclick=()=>setWeek("B");
     render();
     // Подсказка о точности источника: данные ещё требуют окончательной сверки с таблицей PDF.
     const warning = document.createElement("div");
     warning.style.cssText = "margin-top:18px;padding:12px 14px;border:1px solid #8a6a2d66;background:#ffb86b0c;border-radius:14px;color:#c5b28e;font-size:11px;line-height:1.45";
-    warning.textContent = "Важно: расписание перенесено из PDF частично. Некоторые даты и строки требуют сверки. Перед посещением пары проверь официальный файл факультета.";
+    warning.textContent = "Важно: это две недели по присланному тобой списку. Привязка к календарным датам предварительная; перед посещением проверяй официальный файл факультета.";
     document.querySelector(".lesson-list").after(warning);
   </script>
 </body>
