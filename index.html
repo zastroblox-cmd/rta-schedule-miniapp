@@ -148,9 +148,9 @@
       <div class="countdown" id="nextStatus">Скоро</div>
     </section>
 
-    <div style="display:flex;gap:8px;margin:0 0 16px">
-      <button id="weekA" style="flex:1;padding:11px;border-radius:12px;border:1px solid #31558c;background:#1c2d49;color:#fff;font-weight:700">Неделя А</button>
-      <button id="weekB" style="flex:1;padding:11px;border-radius:12px;border:1px solid #ffffff20;background:#151b26;color:#8995a8;font-weight:700">Неделя Б</button>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 16px;padding:12px 14px;border:1px solid var(--line);background:var(--panel);border-radius:13px">
+      <span style="color:var(--muted);font-size:12px">Тип учебной недели</span>
+      <strong id="weekLabel" style="font-size:13px;color:#8bb7ff">Определяем…</strong>
     </div>
     <div class="section-head"><h3 id="dayHeading">Понедельник</h3><span id="lessonCount">3 пары</span></div>
     <section class="lesson-list" id="lessonList"></section>
@@ -184,9 +184,24 @@
       4:[lesson("08:30","10:00","Гражданское право","Лекция","217В"),lesson("10:10","11:40","Уголовное право","П/з.","218В"),lesson("12:20","13:50","Экологическое право","П/з.","218В"),lesson("14:00","15:30","Английский язык","Практическое занятие")],
       5:[],6:[]
     };
-    let selectedWeek = "A";
-    let schedule = scheduleA;
-    const scheduleNotes = "Расписание перенесено из списка пользователя. Неделя А/Б пока не привязана окончательно к календарной чётности; проверьте официальное расписание при изменениях.";
+    // 12 октября 2026 года пользователь обозначил как нечётную неделю.
+    // Первая неделя расписания (A) соответствует нечётной, вторая (B) — чётной.
+    const ODD_WEEK_MONDAY = "2026-10-12";
+    function mondayKey(date) {
+      const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+    }
+    function weekTypeForDate(date) {
+      const currentMonday = mondayKey(date).split("-").map(Number);
+      const anchorMonday = ODD_WEEK_MONDAY.split("-").map(Number);
+      const currentUtc = Date.UTC(currentMonday[0], currentMonday[1]-1, currentMonday[2]);
+      const anchorUtc = Date.UTC(anchorMonday[0], anchorMonday[1]-1, anchorMonday[2]);
+      const weeks = Math.round((currentUtc - anchorUtc) / (7 * 24 * 60 * 60 * 1000));
+      return ((weeks % 2) + 2) % 2 === 0 ? "A" : "B";
+    }
+    let selectedWeek = weekTypeForDate(new Date());
+    let schedule = selectedWeek === "A" ? scheduleA : scheduleB;
     const daysShort = ["ПН","ВТ","СР","ЧТ","ПТ","СБ","ВС"];
     const daysFull = ["Понедельник","Вторник","Среда","Четверг","Пятница","Суббота","Воскресенье"];
     const now = new Date();
@@ -292,16 +307,12 @@
     if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.first_name) {
       document.getElementById("greeting").textContent = `Привет, ${tg.initDataUnsafe.user.first_name}! 👋`;
     }
-    function setWeek(w) {
-      selectedWeek=w; schedule=w==="A"?scheduleA:scheduleB;
-      document.getElementById("weekA").style.background=w==="A"?"#1c2d49":"#151b26";
-      document.getElementById("weekA").style.color=w==="A"?"#fff":"#8995a8";
-      document.getElementById("weekB").style.background=w==="B"?"#1c2d49":"#151b26";
-      document.getElementById("weekB").style.color=w==="B"?"#fff":"#8995a8";
-      render();
+    function setWeekAutomatically() {
+      selectedWeek = weekTypeForDate(new Date());
+      schedule = selectedWeek === "A" ? scheduleA : scheduleB;
+      document.getElementById("weekLabel").textContent = selectedWeek === "A" ? "Нечётная" : "Чётная";
     }
-    document.getElementById("weekA").onclick=()=>setWeek("A");
-    document.getElementById("weekB").onclick=()=>setWeek("B");
+    setWeekAutomatically();
     render();
     restoreSelectedGroup();
   </script>
