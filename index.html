@@ -30,21 +30,7 @@
       -webkit-font-smoothing: antialiased;
     }
     button { font: inherit; cursor: pointer; }
-    .app { display:none; max-width: 520px; margin: 0 auto; padding: 18px 16px calc(100px + env(safe-area-inset-bottom)); }
-    body.has-group .app { display:block; }
-    body.has-group .bottom-nav { display:block; }
-    body:not(.has-group) .bottom-nav { display:none; }
-    .group-picker { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px 18px calc(24px + env(safe-area-inset-bottom)); }
-    body.has-group .group-picker { display:none; }
-    .picker-card { width:100%; max-width:460px; padding:24px 20px; border:1px solid var(--line); border-radius:24px; background:linear-gradient(145deg,#182438,#121822); box-shadow:0 18px 55px #0005; }
-    .picker-logo { width:54px;height:54px;display:grid;place-items:center;border-radius:17px;background:linear-gradient(145deg,#5d9bff,#2863df);font-size:24px;font-weight:900;margin-bottom:20px; }
-    .picker-card h1 { font-size:25px; margin:0 0 8px; }
-    .picker-card p { color:var(--muted);font-size:14px;line-height:1.5;margin:0 0 22px; }
-    .picker-field { display:block;margin:0 0 16px; }
-    .picker-field span { display:block;color:#aab6c9;font-size:12px;margin:0 0 7px; }
-    .picker-field select { width:100%;padding:13px 12px;border:1px solid #ffffff20;border-radius:12px;background:#0f1520;color:var(--text);font:inherit; }
-    .picker-save { width:100%;padding:14px;border:0;border-radius:13px;background:linear-gradient(100deg,#4f8cff,#2863df);color:white;font-weight:750;font-size:15px;margin-top:5px; }
-    .picker-note { color:var(--muted);font-size:11px;line-height:1.45;margin-top:14px; }
+    .app { max-width: 520px; margin: 0 auto; padding: 18px 16px calc(100px + env(safe-area-inset-bottom)); }
     .top { display:flex; align-items:center; justify-content:space-between; gap:12px; margin: 5px 0 24px; }
     .brand { display:flex; align-items:center; gap:11px; }
     .logo { width:44px; height:44px; display:grid; place-items:center; border-radius:15px; background:linear-gradient(145deg,#5d9bff,#2863df); box-shadow:0 8px 26px #2863df40; font-weight:900; font-size:20px; }
@@ -102,24 +88,6 @@
   </style>
 </head>
 <body>
-  <section class="group-picker" id="groupPicker" aria-label="Выбор учебной группы">
-    <div class="picker-card">
-      <div class="picker-logo">R</div>
-      <h1>Твоё расписание</h1>
-      <p>Выбери направление, курс и группу. Мы сохраним выбор, чтобы в следующий раз сразу открыть твоё расписание.</p>
-      <label class="picker-field"><span>Факультет / направление</span>
-        <select id="pickerFaculty"><option value="law">Юридический факультет</option></select>
-      </label>
-      <label class="picker-field"><span>Курс</span>
-        <select id="pickerCourse"><option value="2">2 курс</option></select>
-      </label>
-      <label class="picker-field"><span>Группа</span>
-        <select id="pickerGroup"><option value="YU603-O2503">Ю603/О-2503</option></select>
-      </label>
-      <button class="picker-save" id="saveGroup">Открыть расписание</button>
-      <div class="picker-note">Пока подключена одна группа. Остальные направления и группы добавим по мере подготовки общей базы расписаний.</div>
-    </div>
-  </section>
   <main class="app">
     <header class="top">
       <div class="brand">
@@ -148,9 +116,11 @@
       <div class="countdown" id="nextStatus">Скоро</div>
     </section>
 
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 16px;padding:12px 14px;border:1px solid var(--line);background:var(--panel);border-radius:13px">
-      <span style="color:var(--muted);font-size:12px">Тип учебной недели</span>
-      <strong id="weekLabel" style="font-size:13px;color:#8bb7ff">Определяем…</strong>
+    <div style="display:flex;align-items:center;gap:8px;margin:0 0 16px">
+      <button id="prevWeek" aria-label="Предыдущая неделя" style="padding:11px 15px;border-radius:12px;border:1px solid #ffffff20;background:#151b26;color:#fff;font-weight:700">‹</button>
+      <div id="weekRange" style="flex:1;text-align:center;font-weight:700;font-size:13px">Эта неделя</div>
+      <button id="todayWeek" style="padding:11px 12px;border-radius:12px;border:1px solid #ffffff20;background:#151b26;color:#fff;font-weight:600">Сегодня</button>
+      <button id="nextWeek" aria-label="Следующая неделя" style="padding:11px 15px;border-radius:12px;border:1px solid #ffffff20;background:#151b26;color:#fff;font-weight:700">›</button>
     </div>
     <div class="section-head"><h3 id="dayHeading">Понедельник</h3><span id="lessonCount">3 пары</span></div>
     <section class="lesson-list" id="lessonList"></section>
@@ -184,35 +154,40 @@
       4:[lesson("08:30","10:00","Гражданское право","Лекция","217В"),lesson("10:10","11:40","Уголовное право","П/з.","218В"),lesson("12:20","13:50","Экологическое право","П/з.","218В"),lesson("14:00","15:30","Английский язык","Практическое занятие")],
       5:[],6:[]
     };
-    // 12 октября 2026 года пользователь обозначил как нечётную неделю.
-    // Первая неделя расписания (A) соответствует нечётной, вторая (B) — чётной.
-    const ODD_WEEK_MONDAY = "2026-10-12";
-    function mondayKey(date) {
-      const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
-      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-    }
-    function weekTypeForDate(date) {
-      const currentMonday = mondayKey(date).split("-").map(Number);
-      const anchorMonday = ODD_WEEK_MONDAY.split("-").map(Number);
-      const currentUtc = Date.UTC(currentMonday[0], currentMonday[1]-1, currentMonday[2]);
-      const anchorUtc = Date.UTC(anchorMonday[0], anchorMonday[1]-1, anchorMonday[2]);
-      const weeks = Math.round((currentUtc - anchorUtc) / (7 * 24 * 60 * 60 * 1000));
-      return ((weeks % 2) + 2) % 2 === 0 ? "A" : "B";
-    }
-    let selectedWeek = weekTypeForDate(new Date());
-    let schedule = selectedWeek === "A" ? scheduleA : scheduleB;
+    let selectedWeek = "A";
+    let schedule = scheduleA;
+    let weekOffset = 0;
+    const scheduleNotes = "Расписание перенесено из списка пользователя. Неделя А/Б пока не привязана окончательно к календарной чётности; проверьте официальное расписание при изменениях.";
     const daysShort = ["ПН","ВТ","СР","ЧТ","ПТ","СБ","ВС"];
     const daysFull = ["Понедельник","Вторник","Среда","Четверг","Пятница","Суббота","Воскресенье"];
     const now = new Date();
+    now.setHours(0,0,0,0);
     const mondayOffset = (now.getDay() + 6) % 7;
     let selectedDay = mondayOffset;
+    function mondayForOffset() {
+      const d = new Date(now);
+      d.setDate(d.getDate() - mondayOffset + weekOffset * 7);
+      return d;
+    }
+    function updateCalendarWeek() {
+      const monday = mondayForOffset();
+      const sunday = new Date(monday); sunday.setDate(monday.getDate()+6);
+      const fmt = d => d.toLocaleDateString("ru-RU",{day:"numeric",month:"short"});
+      document.getElementById("weekRange").textContent = `${fmt(monday)} — ${fmt(sunday)}`;
+      const anchor = new Date(2026,9,12); // 12 октября 2026 — неделя А по исходным данным пользователя
+      const days = Math.round((monday-anchor)/86400000);
+      const weeks = Math.floor(days/7);
+      setWeekSilently(Math.abs(weeks)%2===0 ? "A" : "B");
+    }
+    function setWeekSilently(w) {
+      selectedWeek=w; schedule=w==="A"?scheduleA:scheduleB;
+    }
     let selectedTab = "schedule";
     const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
     if (tg) { tg.ready(); tg.expand(); try { tg.setHeaderColor("#0d1118"); tg.setBackgroundColor("#0d1118"); } catch(e) {} }
 
     function dateForDay(i) {
-      const d = new Date(now); d.setHours(0,0,0,0); d.setDate(d.getDate() - mondayOffset + i); return d;
+      const d = mondayForOffset(); d.setDate(d.getDate() + i); return d;
     }
     function renderDays() {
       const el = document.getElementById("days"); el.innerHTML = "";
@@ -257,44 +232,12 @@
       document.getElementById("nextMeta").textContent = next ? `${next.start} · ауд. ${next.room}` : "Можно немного выдохнуть";
       document.getElementById("nextStatus").textContent = next ? (selectedDay===today ? "Сегодня" : "В этот день") : "Свободно";
     }
-    function render() { renderDays(); renderLessons(); renderNext(); }
+    function render() { updateCalendarWeek(); renderDays(); renderLessons(); renderNext(); }
     function toast(text) {
       const el=document.getElementById("toast"); el.textContent=text; el.classList.add("show");
       setTimeout(()=>el.classList.remove("show"),2200);
     }
-    const GROUP_STORAGE_KEY = "rtaSchedule.selectedGroup.v1";
-    const availableGroup = { id:"YU603-O2503", faculty:"law", course:"2", name:"Ю603/О-2503", label:"Ю603/О-2503 · 2 курс · ОФО" };
-    function showGroupPicker() {
-      document.body.classList.remove("has-group");
-      document.getElementById("pickerFaculty").value = availableGroup.faculty;
-      document.getElementById("pickerCourse").value = availableGroup.course;
-      document.getElementById("pickerGroup").value = availableGroup.id;
-    }
-    function saveSelectedGroup() {
-      const selected = { ...availableGroup,
-        faculty: document.getElementById("pickerFaculty").value,
-        course: document.getElementById("pickerCourse").value,
-        id: document.getElementById("pickerGroup").value
-      };
-      try { localStorage.setItem(GROUP_STORAGE_KEY, JSON.stringify(selected)); }
-      catch (e) { toast("Не удалось сохранить группу на этом устройстве."); }
-      document.getElementById("groupName").textContent = selected.label;
-      document.body.classList.add("has-group");
-      render();
-    }
-    function restoreSelectedGroup() {
-      try {
-        const saved = JSON.parse(localStorage.getItem(GROUP_STORAGE_KEY) || "null");
-        if (saved && saved.id === availableGroup.id) {
-          document.getElementById("groupName").textContent = saved.label || availableGroup.label;
-          document.body.classList.add("has-group");
-          return;
-        }
-      } catch (e) {}
-      showGroupPicker();
-    }
-    document.getElementById("saveGroup").onclick = saveSelectedGroup;
-    document.getElementById("changeGroup").onclick = showGroupPicker;
+    document.getElementById("changeGroup").onclick = () => toast("Пока подключена только группа Ю603/О-2503.");
     document.getElementById("profileBtn").onclick = () => toast("Профиль подключим следующим этапом.");
     document.querySelectorAll(".nav-item").forEach(btn => btn.onclick=()=>{
       selectedTab=btn.dataset.tab;
@@ -307,14 +250,19 @@
     if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.first_name) {
       document.getElementById("greeting").textContent = `Привет, ${tg.initDataUnsafe.user.first_name}! 👋`;
     }
-    function setWeekAutomatically() {
-      selectedWeek = weekTypeForDate(new Date());
-      schedule = selectedWeek === "A" ? scheduleA : scheduleB;
-      document.getElementById("weekLabel").textContent = selectedWeek === "A" ? "Нечётная" : "Чётная";
-    }
-    setWeekAutomatically();
+    document.getElementById("prevWeek").onclick=()=>{weekOffset--;render();};
+    document.getElementById("nextWeek").onclick=()=>{weekOffset++;render();};
+    document.getElementById("todayWeek").onclick=()=>{weekOffset=0;selectedDay=mondayOffset;render();};
     render();
-    restoreSelectedGroup();
+    }
+    document.getElementById("weekA").onclick=()=>setWeek("A");
+    document.getElementById("weekB").onclick=()=>setWeek("B");
+    render();
+    // Предупреждение о неполном переносе официальных расписаний.
+    const warning = document.createElement("div");
+    warning.style.cssText = "margin-top:18px;padding:12px 14px;border:1px solid #8a6a2d66;background:#ffb86b0c;border-radius:14px;color:#c5b28e;font-size:11px;line-height:1.45";
+    warning.textContent = "Данные сейчас заполнены только для части расписания группы Ю603/О-2503. Расписания остальных групп нужно перенести из официальных PDF; проверяй изменения по файлу факультета.";
+    document.querySelector(".lesson-list").after(warning);
   </script>
 </body>
 </html>
