@@ -254,10 +254,6 @@
     document.getElementById("nextWeek").onclick=()=>{weekOffset++;render();};
     document.getElementById("todayWeek").onclick=()=>{weekOffset=0;selectedDay=mondayOffset;render();};
     render();
-    }
-    document.getElementById("weekA").onclick=()=>setWeek("A");
-    document.getElementById("weekB").onclick=()=>setWeek("B");
-    render();
     // Предупреждение о неполном переносе официальных расписаний.
     const warning = document.createElement("div");
     warning.style.cssText = "margin-top:18px;padding:12px 14px;border:1px solid #8a6a2d66;background:#ffb86b0c;border-radius:14px;color:#c5b28e;font-size:11px;line-height:1.45";
