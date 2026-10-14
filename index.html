@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#11151d">
   <title>Расписание — RTASchedule</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -22,6 +22,8 @@
       --radius: 20px;
     }
     * { box-sizing: border-box; }
+    html { touch-action: pan-x pan-y; }
+    body { touch-action: pan-x pan-y; }
     body {
       margin: 0; min-height: 100vh; background:
       radial-gradient(ellipse at 85% -10%, rgba(48,105,225,.20), transparent 42%),
@@ -44,6 +46,17 @@
     .group-label { color:#9bb9ed; font-size:12px; margin-bottom:5px; }
     .group-name { font-weight:750; font-size:15px; }
     .change-group { border:1px solid #ffffff20; border-radius:12px; background:#ffffff09; color:#e5edff; padding:9px 11px; font-size:12px; white-space:nowrap; }
+    .group-modal { position:fixed; inset:0; z-index:100; display:none; align-items:flex-end; justify-content:center; padding:16px; background:#0009; backdrop-filter:blur(5px); }
+    .group-modal.open { display:flex; }
+    .group-sheet { width:100%; max-width:520px; padding:20px; border:1px solid #ffffff18; border-radius:22px; background:#151b26; box-shadow:0 20px 70px #0008; }
+    .group-sheet h3 { margin:0 0 6px; font-size:18px; }
+    .group-sheet p { margin:0 0 15px; color:#8995a8; font-size:12px; line-height:1.5; }
+    .group-options { display:grid; gap:8px; }
+    .group-option { width:100%; text-align:left; padding:14px; border-radius:13px; border:1px solid #ffffff18; background:#1b2432; color:#f2f5fb; }
+    .group-option.selected { border-color:#4f8cff; background:#1b2b47; }
+    .group-option small { display:block; color:#8995a8; margin-top:4px; font-size:11px; }
+    .close-group { margin-top:12px; width:100%; padding:12px; border-radius:12px; border:1px solid #ffffff20; background:transparent; color:#e5edff; }
+
     .section-head { display:flex; justify-content:space-between; align-items:center; margin:0 2px 13px; }
     .section-head h3 { font-size:17px; margin:0; letter-spacing:-.02em; }
     .section-head span { font-size:12px; color:var(--muted); }
@@ -56,7 +69,7 @@
     .day.has-class .num::after { content:""; display:block; width:4px; height:4px; border-radius:50%; background:var(--green); position:relative; top:-3px; }
     .day.active.has-class .num::after { background:white; }
     .next-card { display:flex; gap:13px; align-items:center; padding:15px; border:1px solid var(--line); background:linear-gradient(120deg,#19263a,#151b26); border-radius:18px; margin-bottom:23px; }
-    .next-icon { width:43px; height:43px; flex:0 0 43px; display:grid; place-items:center; border-radius:14px; background:#2c5caa35; color:#8bb7ff; font-size:19px; }
+    .next-icon { opacity:.88; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); width:43px; height:43px; flex:0 0 43px; display:grid; place-items:center; border-radius:14px; background:#2c5caa35; color:#8bb7ff; font-size:19px; }
     .next-copy { flex:1; min-width:0; }
     .next-copy .label { color:#8eb8ff; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; margin-bottom:5px; }
     .next-copy strong { display:block; font-size:14px; margin-bottom:4px; }
@@ -80,7 +93,7 @@
     .bottom-nav { position:fixed; bottom:0; left:0; right:0; padding:10px 16px calc(10px + env(safe-area-inset-bottom)); background:rgba(13,17,24,.90); backdrop-filter:blur(20px); border-top:1px solid var(--line); z-index:10; }
     .nav-inner { max-width:488px; margin:auto; display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
     .nav-item { border:0; background:transparent; color:var(--muted); padding:8px 4px 5px; display:flex; flex-direction:column; align-items:center; gap:5px; font-size:10px; border-radius:12px; }
-    .nav-item .nav-icon { font-size:19px; line-height:1; }
+    .nav-item .nav-icon { font-size:19px; line-height:1; opacity:.84; text-shadow:0 1px 8px rgba(255,255,255,.12); }
     .nav-item.active { color:#8bb7ff; background:#4f8cff12; }
     .toast { position:fixed; left:50%; transform:translateX(-50%); bottom:90px; max-width:calc(100% - 32px); padding:11px 15px; border:1px solid #ffffff1c; border-radius:12px; background:#222d3e; color:#f2f5fb; font-size:13px; box-shadow:0 10px 30px #0005; opacity:0; pointer-events:none; transition:opacity .2s; z-index:30; text-align:center; }
     .toast.show { opacity:1; }
@@ -133,6 +146,14 @@
       <button class="nav-item" data-tab="profile"><span class="nav-icon">◉</span><span>Профиль</span></button>
     </div>
   </nav>
+  <div class="group-modal" id="groupModal" role="dialog" aria-modal="true" aria-labelledby="groupModalTitle">
+    <div class="group-sheet">
+      <h3 id="groupModalTitle">Выбери группу</h3>
+      <p>Выбор сохранится на этом устройстве. Для групп, данные которых ещё не перенесены, приложение честно покажет предупреждение.</p>
+      <div class="group-options" id="groupOptions"></div>
+      <button class="close-group" id="closeGroupModal">Закрыть</button>
+    </div>
+  </div>
   <div class="toast" id="toast"></div>
 
   <script>
@@ -154,11 +175,66 @@
       4:[lesson("08:30","10:00","Гражданское право","Лекция","217В"),lesson("10:10","11:40","Уголовное право","П/з.","218В"),lesson("12:20","13:50","Экологическое право","П/з.","218В"),lesson("14:00","15:30","Английский язык","Практическое занятие")],
       5:[],6:[]
     };
-    let selectedWeek = "A";
-    let schedule = scheduleA;
+
+    // Расписания второго курса по колонкам официального PDF от 05.10.2026.
+    // Для регулярных занятий указан недельный режим; занятия с конкретными датами отмечены в примечаниях.
+    const schedule601A = {
+      0:[lesson("14:00","15:30","Экологическое право","П/з.","218В"),lesson("16:00","17:30","Физкультура","Практическое занятие" )],
+      1:[lesson("08:30","10:00","Конституционное право","П/з."),lesson("12:20","13:50","Социология","П/з.","214В"),lesson("14:00","15:30","Экологическое право","П/з.","213В"),lesson("16:00","17:30","Конституционное право","П/з.","214В")],
+      2:[lesson("10:10","11:40","Уголовное право","П/з.","405В"),lesson("14:00","15:30","Экологическое право","П/з.","218В"),lesson("16:00","17:30","Физкультура","Практическое занятие")],
+      3:[],
+      4:[lesson("10:10","11:40","Гражданское право","П/з.","213В"),lesson("12:20","13:50","Иностранный язык в сфере юриспруденции","Практическое занятие","312а"),lesson("14:00","15:30","Основы государственной и муниципальной службы","Лекция / П/з.","213В")],
+      5:[lesson("12:20","13:50","Административное право","П/з.","416В"),lesson("14:00","15:30","Основы государственной и муниципальной службы","П/з.","413")],6:[]};
+    const schedule601B = {...schedule601A,0:[lesson("10:10","11:40","Основы военной подготовки","П/з.","105"),...schedule601A[0]],1:[lesson("14:00","15:30","Основы таможенного дела","П/з.","214В"),...schedule601A[1]],2:[...schedule601A[2]],5:[lesson("12:20","13:50","Административное право","П/з.","416В"),...schedule601A[5]]};
+    const schedule602A = {
+      0:[lesson("14:00","15:30","Экологическое право","П/з.","207В"),lesson("16:00","17:30","Административное право","П/з.","214В")],
+      1:[lesson("12:20","13:50","Корпоративное право","П/з.","207В"),lesson("14:00","15:30","Корпоративное право","Лекция / П/з.","207В"),lesson("16:00","17:30","Корпоративное право","П/з.","207В")],
+      2:[lesson("10:10","11:40","Экологическое право","П/з.","216В"),lesson("14:00","15:30","Уголовное право","П/з.","215В")],
+      3:[],4:[lesson("10:10","11:40","Иностранный язык в сфере юриспруденции","Практическое занятие","312/312а"),lesson("12:20","13:50","Гражданское право","П/з.","213В"),lesson("14:00","15:30","Гражданское право","П/з.","213В")],
+      5:[lesson("12:20","13:50","Основы таможенного дела","П/з."),lesson("14:00","15:30","Административное право","П/з.","416В"),lesson("16:00","17:30","Конституционное право","П/з.","416В")],6:[]};
+    const schedule602B = {...schedule602A,0:[lesson("10:10","11:40","Основы военной подготовки","П/з.","105"),...schedule602A[0]],1:[lesson("12:20","13:50","Корпоративное право","П/з.","207В"),...schedule602A[1]],2:[lesson("10:10","11:40","Экологическое право","П/з.","216В"),lesson("12:20","13:50","Уголовное право","Лекция","414В"),...schedule602A[2]],5:[lesson("10:10","11:40","Основы военной подготовки","П/з.","105"),...schedule602A[5]]};
+    const schedule604A = {
+      0:[lesson("14:00","15:30","Административное право","П/з.","120В"),lesson("16:00","17:30","Иностранный язык в сфере юриспруденции","Практическое занятие","3312/312а"),lesson("17:40","19:10","Физкультура","Практическое занятие")],
+      1:[lesson("10:10","11:40","Право международных организаций и конференций","Лекция / П/з."),lesson("12:20","13:50","Конституционное право","П/з.","215В"),lesson("14:00","15:30","Гражданское право","П/з.","215В"),lesson("16:00","17:30","Гражданское право","П/з.","215В")],
+      2:[lesson("14:00","15:30","Социология","П/з.","216В"),lesson("16:00","17:30","Право международных организаций и конференций","П/з.","216В"),lesson("17:40","19:10","Физкультура","Практическое занятие")],
+      3:[],4:[lesson("08:30","10:00","Экологическое право","П/з.","214В"),lesson("10:10","11:40","Экологическое право","П/з.","214В"),lesson("12:20","13:50","Основы таможенного дела","П/з."),lesson("14:00","15:30","Основы таможенного дела","П/з.")],
+      5:[lesson("10:10","11:40","Основы военной подготовки","П/з.","105"),lesson("12:20","13:50","Основы военной подготовки","П/з.","105"),lesson("14:00","15:30","Уголовное право","П/з.","307В"),lesson("16:00","17:30","Уголовное право","П/з.","307В")],6:[]};
+    const schedule604B = {...schedule604A,0:[lesson("10:10","11:40","Основы военной подготовки","П/з.","105"),...schedule604A[0]],1:[lesson("10:10","11:40","Право международных организаций и конференций","П/з."),...schedule604A[1]],2:[lesson("12:20","13:50","Уголовное право","Лекция","414В"),...schedule604A[2]],5:[...schedule604A[5]]};
+    const GROUP_SCHEDULES = {
+      "Ю601/О-2501": {A:schedule601A,B:schedule601B},
+      "Ю602/О-2502": {A:schedule602A,B:schedule602B},
+      "Ю603/О-2503": {A:scheduleA,B:scheduleB},
+      "Ю604/О-2504": {A:schedule604A,B:schedule604B}
+    };
+
+    const GROUPS = [
+      {id:"Ю601/О-2501", course:2, status:"available"},
+      {id:"Ю602/О-2502", course:2, status:"available"},
+      {id:"Ю603/О-2503", course:2, status:"available"},
+      {id:"Ю604/О-2504", course:2, status:"available"}
+    ];
+    const DEFAULT_GROUP = "Ю603/О-2503";
+    let currentGroup = localStorage.getItem("rta_schedule_group") || DEFAULT_GROUP;
+    if (!GROUPS.some(g=>g.id===currentGroup)) currentGroup=DEFAULT_GROUP;
+    let selectedWeek = "B";
+    let schedule = scheduleB;
     let weekOffset = 0;
-    const scheduleNotes = "Расписание перенесено из списка пользователя. Неделя А/Б пока не привязана окончательно к календарной чётности; проверьте официальное расписание при изменениях.";
     const daysShort = ["ПН","ВТ","СР","ЧТ","ПТ","СБ","ВС"];
+    function groupLabel(g){ return `${g.id} · ${g.course} курс · ОФО`; }
+    function updateGroupLabel(){ const g=GROUPS.find(x=>x.id===currentGroup)||GROUPS[2]; document.getElementById("groupName").textContent=groupLabel(g); }
+    function openGroupModal(){
+      const wrap=document.getElementById("groupOptions"); wrap.innerHTML="";
+      GROUPS.forEach(g=>{
+        const b=document.createElement("button"); b.className="group-option"+(g.id===currentGroup?" selected":"");
+        b.innerHTML=`${g.id}<small>${g.status==="available"?"Расписание 2 курса подключено":"Расписание не подключено"}</small>`;
+        b.onclick=()=>{ currentGroup=g.id; localStorage.setItem("rta_schedule_group",currentGroup); updateGroupLabel(); document.getElementById("groupModal").classList.remove("open"); render(); };
+        wrap.appendChild(b);
+      });
+      document.getElementById("groupModal").classList.add("open");
+    }
+    document.getElementById("changeGroup").onclick=openGroupModal;
+    document.getElementById("closeGroupModal").onclick=()=>document.getElementById("groupModal").classList.remove("open");
+    document.getElementById("groupModal").addEventListener("click",e=>{if(e.target.id==="groupModal")e.currentTarget.classList.remove("open")});
     const daysFull = ["Понедельник","Вторник","Среда","Четверг","Пятница","Суббота","Воскресенье"];
     const now = new Date();
     now.setHours(0,0,0,0);
@@ -174,13 +250,13 @@
       const sunday = new Date(monday); sunday.setDate(monday.getDate()+6);
       const fmt = d => d.toLocaleDateString("ru-RU",{day:"numeric",month:"short"});
       document.getElementById("weekRange").textContent = `${fmt(monday)} — ${fmt(sunday)}`;
-      const anchor = new Date(2026,9,12); // 12 октября 2026 — неделя А по исходным данным пользователя
+      const anchor = new Date(2026,9,12); // 12–18 октября 2026 — неделя Б по уточнению пользователя
       const days = Math.round((monday-anchor)/86400000);
-      const weeks = Math.floor(days/7);
-      setWeekSilently(Math.abs(weeks)%2===0 ? "A" : "B");
+      const weeks = Math.round(days/7);
+      setWeekSilently(((weeks % 2 + 2) % 2)===0 ? "B" : "A");
     }
     function setWeekSilently(w) {
-      selectedWeek=w; schedule=w==="A"?scheduleA:scheduleB;
+      selectedWeek=w; schedule=GROUP_SCHEDULES[currentGroup][w];
     }
     let selectedTab = "schedule";
     const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
@@ -207,6 +283,7 @@
       document.getElementById("lessonCount").textContent = lessons.length ? `${lessons.length} ${lessons.length===1?"пара":lessons.length<5?"пары":"пар"}` : "Нет пар";
       const list = document.getElementById("lessonList"); list.innerHTML = "";
       if (!lessons.length) {
+        
         const message = selectedDay === 3 ? "Четверг — по плану факультета" : (selectedDay===5 && selectedWeek==="B" ? "Суббота в присланном расписании недели Б пустая" : "В присланном списке нет занятий на этот день");
         list.innerHTML = `<div class="empty"><div class="emoji">📄</div><strong>Нет подтверждённых пар</strong><span>${message}. Это не означает, что занятий точно нет.</span></div>`;
         return;
@@ -237,7 +314,6 @@
       const el=document.getElementById("toast"); el.textContent=text; el.classList.add("show");
       setTimeout(()=>el.classList.remove("show"),2200);
     }
-    document.getElementById("changeGroup").onclick = () => toast("Пока подключена только группа Ю603/О-2503.");
     document.getElementById("profileBtn").onclick = () => toast("Профиль подключим следующим этапом.");
     document.querySelectorAll(".nav-item").forEach(btn => btn.onclick=()=>{
       selectedTab=btn.dataset.tab;
@@ -253,12 +329,9 @@
     document.getElementById("prevWeek").onclick=()=>{weekOffset--;render();};
     document.getElementById("nextWeek").onclick=()=>{weekOffset++;render();};
     document.getElementById("todayWeek").onclick=()=>{weekOffset=0;selectedDay=mondayOffset;render();};
+    updateGroupLabel();
     render();
-    // Предупреждение о неполном переносе официальных расписаний.
-    const warning = document.createElement("div");
-    warning.style.cssText = "margin-top:18px;padding:12px 14px;border:1px solid #8a6a2d66;background:#ffb86b0c;border-radius:14px;color:#c5b28e;font-size:11px;line-height:1.45";
-    warning.textContent = "Данные сейчас заполнены только для части расписания группы Ю603/О-2503. Расписания остальных групп нужно перенести из официальных PDF; проверяй изменения по файлу факультета.";
-    document.querySelector(".lesson-list").after(warning);
+
   </script>
 </body>
 </html>
