@@ -253,7 +253,7 @@
       });
       document.getElementById("groupModal").classList.add("open");
     }
-    document.getElementById("changeGroup").onclick=openGroupModal;
+    // Выбор группы доступен из профиля; старой кнопки в карточке группы больше нет.
     document.getElementById("closeGroupModal").onclick=()=>document.getElementById("groupModal").classList.remove("open");
     document.getElementById("groupModal").addEventListener("click",e=>{if(e.target.id==="groupModal")e.currentTarget.classList.remove("open")});
     const daysFull = ["Понедельник","Вторник","Среда","Четверг","Пятница","Суббота","Воскресенье"];
