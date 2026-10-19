@@ -42,6 +42,9 @@
     .welcome { margin-bottom:19px; }
     .welcome h2 { margin:0 0 6px; font-size:27px; letter-spacing:-.045em; }
     .welcome p { margin:0; color:var(--muted); font-size:14px; }
+    .beta-notice { display:flex; align-items:center; gap:9px; padding:10px 12px; margin:-5px 0 18px; border:1px solid rgba(79,140,255,.22); border-radius:13px; background:linear-gradient(110deg,rgba(79,140,255,.10),rgba(255,255,255,.025)); color:#b9ccec; font-size:11px; line-height:1.45; }
+    .beta-notice .beta-dot { width:7px; height:7px; flex:0 0 7px; border-radius:50%; background:#72a7ff; box-shadow:0 0 10px rgba(79,140,255,.55); }
+    .beta-notice strong { color:#e4edff; font-weight:750; }
     .group-card { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:15px 16px; border:1px solid #294a7d80; background:linear-gradient(110deg,#1a2c48,#172132 75%); border-radius:18px; margin-bottom:23px; }
     .group-label { color:#9bb9ed; font-size:12px; margin-bottom:5px; }
     .group-name { font-weight:750; font-size:15px; }
@@ -136,6 +139,8 @@
       <h2 id="greeting">Привет! 👋</h2>
       <p>Твой учебный день — в одном месте.</p>
     </section>
+
+    <div class="beta-notice" role="note"><span class="beta-dot" aria-hidden="true"></span><span><strong>Бета-версия</strong> · Пока бесплатно. В дальнейшем планируется платная подписка.</span></div>
 
     <section class="group-card" id="scheduleGroupCard">
       <div><div class="group-label">Твоя учебная группа</div><div class="group-name" id="groupName">Ю603/О-2503 · 2 курс · ОФО</div></div>
