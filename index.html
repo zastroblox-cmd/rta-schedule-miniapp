@@ -442,13 +442,10 @@
       const list = document.getElementById("lessonList"); list.innerHTML = "";
       if (!lessons.length) {
         let emptyTitle = "Сегодня можно выдохнуть ☕";
-        let emptyText = "На выбранную дату пар не запланировано. Если ожидаешь занятие, проверь объявления факультета — пары могли перенести или добавить отдельно.";
-        if (selectedDay === 3) {
-          emptyTitle = "Четверг пока свободен";
-          emptyText = "В базовом расписании на четверг пар нет. Перед поездкой проверь объявления факультета: дополнительные занятия могут назначаться отдельно.";
-        } else if (selectedDay === 5 && selectedWeek === "B") {
+        let emptyText = "На выбранную дату пар не запланировано.";
+        if (selectedDay === 5 && selectedWeek === "B") {
           emptyTitle = "Суббота без пар";
-          emptyText = "В расписании недели Б на эту субботу занятий нет. Если появится отработка или перенос, ориентируйся на объявление факультета.";
+          emptyText = "В расписании недели Б на эту субботу занятий нет. Можно спокойно отдохнуть.";
         }
         list.innerHTML = `<div class="empty"><div class="emoji">☕</div><strong>${emptyTitle}</strong><span>${emptyText}</span></div>`;
         return;
