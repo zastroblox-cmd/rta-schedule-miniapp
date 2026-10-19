@@ -84,13 +84,9 @@
     .stripe.orange { background:var(--orange); }
     .lesson-main { min-width:0; }
     .lesson-title { font-weight:750; font-size:14px; line-height:1.35; margin-bottom:7px; }
-    .lesson-head { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
-    .favorite-toggle { flex:0 0 auto; border:1px solid rgba(190,211,245,.13); background:rgba(255,255,255,.035); color:#9aa9bf; border-radius:9px; padding:4px 8px; font-size:16px; line-height:1.2; }
-    .favorite-toggle.saved { color:#8bb7ff; background:rgba(79,140,255,.12); border-color:rgba(79,140,255,.28); }
+    .lesson-head { display:flex; align-items:flex-start; gap:8px; }
     .status-badge { display:inline-flex; margin:0 0 7px; padding:4px 7px; border-radius:7px; font-size:10px; font-weight:750; color:#a8f0d8; background:rgba(79,209,161,.12); border:1px solid rgba(79,209,161,.2); }
     .status-badge.next { color:#b8d1ff; background:rgba(79,140,255,.12); border-color:rgba(79,140,255,.22); }
-    .favorites-panel { display:none; } .favorites-panel.open { display:block; }
-    .favorites-empty { text-align:center; padding:28px 18px; border:1px solid var(--line); border-radius:18px; background:var(--panel); color:var(--muted); line-height:1.5; }
     .lesson-meta { display:flex; flex-wrap:wrap; gap:6px; }
     .lesson-meta .tag { background:rgba(154,180,220,.075); border:1px solid rgba(190,211,245,.11); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); color:rgba(222,231,246,.82); }
     .lesson-meta .tag:first-child { background:rgba(115,159,225,.09); border-color:rgba(145,185,245,.14); }
@@ -175,16 +171,12 @@
     <div class="section-head"><h3 id="dayHeading">Понедельник</h3><span id="lessonCount">3 пары</span></div>
     <section class="lesson-list" id="lessonList"></section>
     </div>
-    <section class="favorites-panel" id="favoritesPanel">
-      <div class="section-head"><h3>Избранное</h3><span id="favoritesCount">0 пар</span></div>
-      <div class="lesson-list" id="favoritesList"></div>
-    </section>
   </main>
 
   <nav class="bottom-nav" aria-label="Основная навигация">
     <div class="nav-inner">
       <button class="nav-item active" data-tab="schedule"><span class="nav-icon">▦</span><span>Расписание</span></button>
-      <button class="nav-item" data-tab="favorites"><span class="nav-icon">☆</span><span>Избранное</span></button>
+      <button class="nav-item" data-tab="week"><span class="nav-icon">▤</span><span>Неделя</span></button>
       <button class="nav-item" data-tab="profile"><span class="nav-icon">◉</span><span>Профиль</span></button>
     </div>
   </nav>
@@ -249,7 +241,7 @@
       "Ю604/О-2504": {A:schedule604A,B:schedule604B}
     };
 
-    // Преподаватели добавлены только там, где они однозначно указаны в официальном PDF.
+    // Преподаватели сверены с колонками групп в актуальном официальном PDF.
     function assignTeacher(group, day, start, title, teacher) {
       const variants=GROUP_SCHEDULES[group];
       if(!variants) return;
@@ -258,15 +250,71 @@
       }
     }
     [
+      // Ю601/О-2501
+      ["Ю601/О-2501",1,"08:30","Конституционное право","А.А. Артемов"],
+      ["Ю601/О-2501",1,"12:20","Социология","М.М. Савченко"],
+      ["Ю601/О-2501",1,"14:00","Экологическое право","З.В. Андрианова"],
+      ["Ю601/О-2501",1,"16:00","Конституционное право","А.А. Артемов"],
+      ["Ю601/О-2501",2,"10:10","Уголовное право","О.Н. Седукина"],
+      ["Ю601/О-2501",2,"14:00","Экологическое право","З.В. Андрианова"],
+      ["Ю601/О-2501",4,"10:10","Гражданское право","Е.С. Недосекова"],
+      ["Ю601/О-2501",4,"12:20","Иностранный язык в сфере юриспруденции","А.В. Ткаченко, Е.Б. Гайко"],
+      ["Ю601/О-2501",4,"14:00","Основы государственной и муниципальной службы","В.В. Андрианова"],
+      ["Ю601/О-2501",5,"12:20","Административное право","А.С. Щевелева"],
+      ["Ю601/О-2501",5,"14:00","Основы государственной и муниципальной службы","В.В. Андрианова"],
+      ["Ю601/О-2501",0,"16:00","Физкультура","П.Ф. Климушин, И.В. Назарова, Е.Ю. Андреева"],
+      ["Ю601/О-2501",0,"10:10","Основы военной подготовки","В.В. Палей"],
+      // Ю602/О-2502
+      ["Ю602/О-2502",0,"14:00","Экологическое право","В.В. Андрианова"],
+      ["Ю602/О-2502",0,"16:00","Административное право","П.Е. Калинина"],
+      ["Ю602/О-2502",1,"12:20","Корпоративное право","С.А. Деханов"],
+      ["Ю602/О-2502",1,"14:00","Корпоративное право","С.А. Деханов"],
+      ["Ю602/О-2502",1,"16:00","Корпоративное право","С.А. Деханов"],
+      ["Ю602/О-2502",2,"10:10","Экологическое право","З.В. Андрианова"],
+      ["Ю602/О-2502",2,"12:20","Уголовное право","А.Г. Никольская"],
+      ["Ю602/О-2502",2,"14:00","Уголовное право","О.Н. Седукина"],
+      ["Ю602/О-2502",4,"10:10","Иностранный язык в сфере юриспруденции","А.В. Ткаченко, Е.Б. Гайко"],
+      ["Ю602/О-2502",4,"12:20","Гражданское право","Е.С. Недосекова"],
+      ["Ю602/О-2502",4,"14:00","Гражданское право","Е.С. Недосекова"],
+      ["Ю602/О-2502",5,"12:20","Основы таможенного дела","Ж.Д. Шевченко"],
+      ["Ю602/О-2502",5,"14:00","Административное право","А.С. Щевелева"],
+      ["Ю602/О-2502",5,"16:00","Конституционное право","Т.В. Захаренкова"],
+      ["Ю602/О-2502",0,"10:10","Основы военной подготовки","В.В. Палей"],
+      // Ю603/О-2503
+      ["Ю603/О-2503",0,"10:10","Экологическое право","Л.П. Калинина"],
+      ["Ю603/О-2503",0,"12:20","Административное право","Л.Е. Калинина"],
+      ["Ю603/О-2503",0,"14:00","Земельное право","Е.В. Ушакова"],
+      ["Ю603/О-2503",0,"16:00","Административное право","П.Е. Калинина"],
+      ["Ю603/О-2503",1,"10:10","Конституционное право","Г.А. Артемов"],
+      ["Ю603/О-2503",1,"12:20","ОТД","Д.В. Харченко"],
+      ["Ю603/О-2503",1,"14:00","Судебная система","Е.Ю. Евланова"],
+      ["Ю603/О-2503",2,"12:20","Уголовное право","А.Г. Никольская"],
+      ["Ю603/О-2503",2,"14:00","Конституционное право","Г.А. Артемов"],
+      ["Ю603/О-2503",2,"16:00","Гражданское право","А.Е. Кирпичев"],
+      ["Ю603/О-2503",4,"08:30","Гражданское право","Т.В. Казанина"],
+      ["Ю603/О-2503",4,"10:10","Уголовное право","М.А. Вершкова"],
+      ["Ю603/О-2503",4,"12:20","Экологическое право","А.А. Шорохова"],
+      ["Ю603/О-2503",4,"14:00","Английский язык","А.В. Ткаченко, Е.Б. Гайко"],
+      ["Ю603/О-2503",5,"12:20","Судебная система","Е.Л. Иванина"],
+      ["Ю603/О-2503",5,"14:00","Судебная система","Е.Л. Иванина"],
+      ["Ю603/О-2503",0,"12:20","Основы военной подготовки (ОВП)","В.В. Палей"],
+      ["Ю603/О-2503",0,"14:00","Основы военной подготовки (ОВП)","В.В. Палей"],
+      ["Ю603/О-2503",0,"17:40","Физкультура","П.Ф. Климушин, И.В. Назарова, Е.Ю. Андреева"],
+      ["Ю603/О-2503",2,"17:40","Физкультура","П.Ф. Климушин, И.В. Назарова, Е.Ю. Андреева"],
+      // Ю604/О-2504
       ["Ю604/О-2504",0,"14:00","Административное право","Л.Е. Калинина"],
       ["Ю604/О-2504",0,"16:00","Иностранный язык в сфере юриспруденции","А.В. Ткаченко, Е.Б. Гайко"],
       ["Ю604/О-2504",1,"12:20","Конституционное право","Г.А. Артемов"],
       ["Ю604/О-2504",1,"14:00","Гражданское право","Е.С. Недосекова"],
       ["Ю604/О-2504",2,"14:00","Социология","М.М. Савченко"],
       ["Ю604/О-2504",2,"16:00","Право международных организаций и конференций","Г.А. Артемов"],
-      ["Ю604/О-2504",5,"14:00","Уголовное право","Е.Ю. Гамолаева"]
+      ["Ю604/О-2504",4,"08:30","Экологическое право","А.А. Шорохова"],
+      ["Ю604/О-2504",4,"10:10","Экологическое право","Л.А. Шорохова"],
+      ["Ю604/О-2504",5,"14:00","Уголовное право","Е.Ю. Гамолаева"],
+      ["Ю604/О-2504",0,"17:40","Физкультура","П.Ф. Климушин, И.В. Назарова, Е.Ю. Андреева"],
+      ["Ю604/О-2504",2,"17:40","Физкультура","П.Ф. Климушин, И.В. Назарова, Е.Ю. Андреева"]
     ].forEach(args=>assignTeacher(...args));
-    const GROUPS = [
+        const GROUPS = [
       {id:"Ю601/О-2501", course:2, status:"available"},
       {id:"Ю602/О-2502", course:2, status:"available"},
       {id:"Ю603/О-2503", course:2, status:"available"},
@@ -377,25 +425,6 @@
       }
       return lessons.sort((a,b)=>a.start.localeCompare(b.start));
     }
-    const FAVORITES_KEY = "rta_schedule_favorites_v1";
-    function readFavorites(){ try { return JSON.parse(localStorage.getItem(FAVORITES_KEY)||"[]"); } catch(e) { return []; } }
-    function favoriteKey(group,day,l){ return [group,day,l.start,l.title].join("|"); }
-    function toggleFavorite(group,day,l){
-      const key=favoriteKey(group,day,l); let items=readFavorites();
-      if(items.some(x=>x.key===key)) items=items.filter(x=>x.key!==key);
-      else items.push({key,group,day,start:l.start,end:l.end,title:l.title,type:l.type,room:l.room,teacher:l.teacher||""});
-      localStorage.setItem(FAVORITES_KEY,JSON.stringify(items)); render();
-    }
-    function renderFavorites(){
-      const items=readFavorites(); const list=document.getElementById("favoritesList"); list.innerHTML="";
-      document.getElementById("favoritesCount").textContent=`${items.length} ${items.length===1?"пара":items.length<5?"пары":"пар"}`;
-      if(!items.length){ list.innerHTML=`<div class="favorites-empty">☆<br><strong style="display:block;color:var(--text);margin:8px 0 5px">Пока ничего нет</strong>Нажимай ☆ на карточке пары, чтобы сохранить её здесь.</div>`; return; }
-      items.forEach(item=>{
-        const card=document.createElement("article"); card.className="lesson";
-        card.innerHTML=`<div class="time">${item.start}<small>до ${item.end}</small></div><div class="stripe"></div><div class="lesson-main"><div class="lesson-head"><div class="lesson-title">${item.title}</div><button class="favorite-toggle saved" aria-label="Убрать из избранного">★</button></div><div class="lesson-meta"><span class="tag">${daysFull[item.day]}</span><span class="tag">${item.group}</span><span class="tag">Ауд. ${item.room}</span><span class="tag">${item.type}</span>${item.teacher?`<span class="tag">${item.teacher}</span>`:""}</div></div>`;
-        card.querySelector("button").onclick=()=>{localStorage.setItem(FAVORITES_KEY,JSON.stringify(readFavorites().filter(x=>x.key!==item.key)));render();}; list.appendChild(card);
-      });
-    }
     function renderLessons() {
       const lessons = lessonsForSelectedDate();
       document.getElementById("dayHeading").textContent = daysFull[selectedDay];
@@ -416,10 +445,8 @@
       const nextLesson= isToday ? lessons.find(l=>{const [h,m]=l.start.split(":").map(Number);return h*60+m>currentMinutes;}) : null;
       lessons.forEach((l,index) => {
         const card = document.createElement("article"); card.className="lesson";
-        const key=favoriteKey(currentGroup,selectedDay,l); const saved=readFavorites().some(x=>x.key===key);
         const badge=currentLesson===l?'<span class="status-badge">Сейчас</span>':(nextLesson===l?'<span class="status-badge next">Далее</span>':'');
-        card.innerHTML = `<div class="time">${l.start}<small>до ${l.end}</small></div><div class="stripe ${l.color}"></div><div class="lesson-main">${badge}<div class="lesson-head"><div class="lesson-title">${l.title}</div><button class="favorite-toggle ${saved?'saved':''}" aria-label="${saved?'Убрать из избранного':'Добавить в избранное'}">${saved?'★':'☆'}</button></div><div class="lesson-meta"><span class="tag">▣ Ауд. ${l.room}</span><span class="tag">${l.type}</span>${l.teacher ? `<span class="tag">♙ ${l.teacher}</span>` : ``}${l.dates ? `<span class="tag">📅 ${l.dates}</span>` : ``}</div>${l.note ? `<div style="margin-top:8px;color:#8995a8;font-size:11px;line-height:1.4">${l.note}</div>` : ``}</div>`;
-        card.querySelector("button").onclick=()=>toggleFavorite(currentGroup,selectedDay,l);
+        card.innerHTML = `<div class="time">${l.start}<small>до ${l.end}</small></div><div class="stripe ${l.color}"></div><div class="lesson-main">${badge}<div class="lesson-head"><div class="lesson-title">${l.title}</div></div><div class="lesson-meta"><span class="tag">▣ Ауд. ${l.room}</span><span class="tag">${l.type}</span>${l.teacher ? `<span class="tag">♙ ${l.teacher}</span>` : ``}${l.dates ? `<span class="tag">📅 ${l.dates}</span>` : ``}</div>${l.note ? `<div style="margin-top:8px;color:#8995a8;font-size:11px;line-height:1.4">${l.note}</div>` : ``}</div>`;
         list.appendChild(card);
       });
     }
@@ -438,20 +465,19 @@
       document.getElementById("nextMeta").textContent = next ? `${next.start} · ауд. ${next.room}` : "Можно немного выдохнуть";
       document.getElementById("nextStatus").textContent = next ? (selectedDay===today ? "Сегодня" : "В этот день") : "Свободно";
     }
-    function render() { updateCalendarWeek(); renderDays(); renderLessons(); renderNext(); renderFavorites(); }
+    function render() { updateCalendarWeek(); renderDays(); renderLessons(); renderNext(); }
     function toast(text) {
       const el=document.getElementById("toast"); el.textContent=text; el.classList.add("show");
       setTimeout(()=>el.classList.remove("show"),2200);
     }
     function showTab(tab) {
       selectedTab=tab;
-      const profile=tab==="profile"; const favorites=tab==="favorites";
+      const profile=tab==="profile";
       document.getElementById("profilePanel").classList.toggle("open",profile);
-      document.getElementById("favoritesPanel").classList.toggle("open",favorites);
-      document.getElementById("scheduleContent").style.display=(profile||favorites)?"none":"block";
-      document.getElementById("scheduleGroupCard").style.display=(profile||favorites)?"none":"flex";
+      document.getElementById("scheduleContent").style.display=profile?"none":"block";
+      document.getElementById("scheduleGroupCard").style.display=profile?"none":"flex";
       document.querySelectorAll(".nav-item").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));
-      if(favorites) renderFavorites();
+      if(tab==="week") { document.getElementById("scheduleContent").style.display="block"; toast("Выбери дату в календаре или переключай недели стрелками."); }
     }
     document.getElementById("profileBtn").onclick = () => showTab("profile");
     document.getElementById("profileChangeGroup").onclick = openGroupModal;
