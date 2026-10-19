@@ -151,7 +151,7 @@
         <div class="profile-row"><div><strong>Форма обучения</strong><small>Очная форма обучения</small></div></div>
       </div>
     
-      <div class="profile-row"><div><strong>Быстрый запуск</strong><small>Открытие Mini App из Telegram</small></div><button class="profile-action" id="openTelegramApp">Открыть ↗</button></div>
+      <div class="profile-row"><div><strong>Быстрый запуск</strong><small>Переход к боту расписания в Telegram</small></div><button class="profile-action" id="openTelegramApp">Открыть бота ↗</button></div>
 </section>
 
     <div id="scheduleContent">
@@ -392,7 +392,11 @@
       for (let i=0;i<7;i++) {
         const d = dateForDay(i);
         const b = document.createElement("button");
-        b.className = "day" + (i===selectedDay ? " active" : "") + ((schedule[i]||[]).length ? " has-class" : "");
+        const previousDay = selectedDay;
+        selectedDay = i;
+        const hasLessons = lessonsForSelectedDate().length > 0;
+        selectedDay = previousDay;
+        b.className = "day" + (i===selectedDay ? " active" : "") + (hasLessons ? " has-class" : "");
         b.innerHTML = `<span class="dow">${daysShort[i]}</span><span class="num">${d.getDate()}</span>`;
         b.onclick = () => { selectedDay=i; render(); };
         el.appendChild(b);
@@ -512,13 +516,9 @@
     document.getElementById("profileChangeGroup").onclick = openGroupModal;
     const launchButton = document.getElementById("openTelegramApp");
     if (launchButton) launchButton.onclick = () => {
-      const botUrl = document.documentElement.dataset.botUrl;
-      if (botUrl && /^https:\/\/t\.me\/[A-Za-z0-9_]+(?:\?startapp(?:=[A-Za-z0-9_-]+)?)?$/.test(botUrl)) {
-        if (tg && typeof tg.openTelegramLink === "function") tg.openTelegramLink(botUrl);
-        else window.open(botUrl, "_blank", "noopener");
-      } else {
-        toast("Нужна настоящая ссылка Mini App из BotFather. Без username бота ссылку нельзя угадать.");
-      }
+      const botUrl = "https://t.me/RTAScheduleHelperBot";
+      if (tg && typeof tg.openTelegramLink === "function") tg.openTelegramLink(botUrl);
+      else window.open(botUrl, "_blank", "noopener");
     };
     document.querySelectorAll(".nav-item").forEach(btn => btn.onclick=()=>showTab(btn.dataset.tab));
     // Подставляем имя, если Telegram его передал.
