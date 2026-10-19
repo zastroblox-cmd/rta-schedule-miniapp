@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: rta-schedule-api
+    runtime: python
+    rootDir: server
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: ALLOWED_ORIGINS
+        value: https://zastroblox-cmd.github.io
+      - key: TELEGRAM_INIT_DATA_MAX_AGE
+        value: "86400"
