@@ -185,7 +185,7 @@
   <div class="group-modal" id="groupModal" role="dialog" aria-modal="true" aria-labelledby="groupModalTitle">
     <div class="group-sheet">
       <h3 id="groupModalTitle">Выбери группу</h3>
-      <p>Выбор сохранится на этом устройстве. Для групп, данные которых ещё не перенесены, приложение честно покажет предупреждение.</p>
+      <p>Выбор сохранится на этом устройстве. При следующем запуске откроется выбранная группа.</p>
       <div class="group-options" id="groupOptions"></div>
       <button class="close-group" id="closeGroupModal">Закрыть</button>
     </div>
@@ -351,7 +351,7 @@
     document.getElementById("closeGroupModal").onclick=()=>document.getElementById("groupModal").classList.remove("open");
     document.getElementById("groupModal").addEventListener("click",e=>{if(e.target.id==="groupModal")e.currentTarget.classList.remove("open")});
     const daysFull = ["Понедельник","Вторник","Среда","Четверг","Пятница","Суббота","Воскресенье"];
-    const realNow = new Date();
+    let realNow = new Date();
     const now = new Date(realNow);
     now.setHours(0,0,0,0);
     const mondayOffset = (now.getDay() + 6) % 7;
@@ -441,7 +441,7 @@
       document.getElementById("lessonCount").textContent = lessons.length ? `${lessons.length} ${lessons.length===1?"пара":lessons.length<5?"пары":"пар"}` : "Нет пар";
       const list = document.getElementById("lessonList"); list.innerHTML = "";
       if (!lessons.length) {
-        let emptyTitle = "Сегодня можно выдохнуть ☕";
+        let emptyTitle = "Можно выдохнуть ☕";
         let emptyText = "На выбранную дату пар не запланировано.";
         if (selectedDay === 5 && selectedWeek === "B") {
           emptyTitle = "Суббота без пар";
@@ -463,19 +463,19 @@
       });
     }
     function renderNext() {
-      let next = null;
-      const today = mondayOffset;
-      if (selectedDay === today) {
-        const currentMins = now.getHours()*60+now.getMinutes();
-        next = lessonsForSelectedDate().find(l => {
-          const [h,m]=l.start.split(":").map(Number); return h*60+m >= currentMins;
-        });
-      } else {
-        next = lessonsForSelectedDate()[0];
-      }
+      const selectedDate = dateForDay(selectedDay);
+      const isToday = selectedDate.toDateString() === realNow.toDateString();
+      const currentMins = realNow.getHours()*60 + realNow.getMinutes();
+      const lessons = lessonsForSelectedDate();
+      const next = isToday
+        ? lessons.find(l => {
+            const [h,m] = l.start.split(":").map(Number);
+            return h*60+m >= currentMins;
+          })
+        : lessons[0];
       document.getElementById("nextTitle").textContent = next ? next.title : "Пары не запланированы";
       document.getElementById("nextMeta").textContent = next ? `${next.start} · ауд. ${next.room}` : "Можно немного выдохнуть";
-      document.getElementById("nextStatus").textContent = next ? (selectedDay===today ? "Сегодня" : "В этот день") : "Свободно";
+      document.getElementById("nextStatus").textContent = next ? (isToday ? "Сегодня" : "В этот день") : "Свободно";
     }
     function render() { updateCalendarWeek(); renderDays(); renderLessons(); renderNext(); }
     function toast(text) {
@@ -513,6 +513,17 @@
     document.getElementById("todayWeek").onclick=()=>{weekOffset=0;selectedDay=mondayOffset;render();};
     updateGroupLabel();
     render();
+    // Обновляем статусы пар, пока Mini App открыт; при смене даты обновляем календарную основу.
+    setInterval(() => {
+      const updated = new Date();
+      if (updated.toDateString() !== now.toDateString()) {
+        window.location.reload();
+        return;
+      }
+      realNow = updated;
+      renderLessons();
+      renderNext();
+    }, 60_000);
 
   </script>
 </body>
