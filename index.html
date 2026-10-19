@@ -84,6 +84,13 @@
     .stripe.orange { background:var(--orange); }
     .lesson-main { min-width:0; }
     .lesson-title { font-weight:750; font-size:14px; line-height:1.35; margin-bottom:7px; }
+    .lesson-head { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+    .favorite-toggle { flex:0 0 auto; border:1px solid rgba(190,211,245,.13); background:rgba(255,255,255,.035); color:#9aa9bf; border-radius:9px; padding:4px 8px; font-size:16px; line-height:1.2; }
+    .favorite-toggle.saved { color:#8bb7ff; background:rgba(79,140,255,.12); border-color:rgba(79,140,255,.28); }
+    .status-badge { display:inline-flex; margin:0 0 7px; padding:4px 7px; border-radius:7px; font-size:10px; font-weight:750; color:#a8f0d8; background:rgba(79,209,161,.12); border:1px solid rgba(79,209,161,.2); }
+    .status-badge.next { color:#b8d1ff; background:rgba(79,140,255,.12); border-color:rgba(79,140,255,.22); }
+    .favorites-panel { display:none; } .favorites-panel.open { display:block; }
+    .favorites-empty { text-align:center; padding:28px 18px; border:1px solid var(--line); border-radius:18px; background:var(--panel); color:var(--muted); line-height:1.5; }
     .lesson-meta { display:flex; flex-wrap:wrap; gap:6px; }
     .lesson-meta .tag { background:rgba(154,180,220,.075); border:1px solid rgba(190,211,245,.11); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); color:rgba(222,231,246,.82); }
     .lesson-meta .tag:first-child { background:rgba(115,159,225,.09); border-color:rgba(145,185,245,.14); }
@@ -168,12 +175,16 @@
     <div class="section-head"><h3 id="dayHeading">Понедельник</h3><span id="lessonCount">3 пары</span></div>
     <section class="lesson-list" id="lessonList"></section>
     </div>
+    <section class="favorites-panel" id="favoritesPanel">
+      <div class="section-head"><h3>Избранное</h3><span id="favoritesCount">0 пар</span></div>
+      <div class="lesson-list" id="favoritesList"></div>
+    </section>
   </main>
 
   <nav class="bottom-nav" aria-label="Основная навигация">
     <div class="nav-inner">
       <button class="nav-item active" data-tab="schedule"><span class="nav-icon">▦</span><span>Расписание</span></button>
-      <button class="nav-item" data-tab="week"><span class="nav-icon">▤</span><span>Неделя</span></button>
+      <button class="nav-item" data-tab="favorites"><span class="nav-icon">☆</span><span>Избранное</span></button>
       <button class="nav-item" data-tab="profile"><span class="nav-icon">◉</span><span>Профиль</span></button>
     </div>
   </nav>
@@ -266,7 +277,8 @@
     document.getElementById("closeGroupModal").onclick=()=>document.getElementById("groupModal").classList.remove("open");
     document.getElementById("groupModal").addEventListener("click",e=>{if(e.target.id==="groupModal")e.currentTarget.classList.remove("open")});
     const daysFull = ["Понедельник","Вторник","Среда","Четверг","Пятница","Суббота","Воскресенье"];
-    const now = new Date();
+    const realNow = new Date();
+    const now = new Date(realNow);
     now.setHours(0,0,0,0);
     const mondayOffset = (now.getDay() + 6) % 7;
     let selectedDay = mondayOffset;
@@ -321,7 +333,33 @@
           lesson("10:10","11:40","Экологическое право","П/з.","218В")
         ];
       }
-      return schedule[selectedDay] || [];
+      let lessons = [...(schedule[selectedDay] || [])];
+      if (currentGroup === "Ю604/О-2504" && date.getFullYear()===2026 && date.getMonth()===9) {
+        const day=date.getDate();
+        if (day===13) lessons=lessons.filter(l=>l.start!=="10:10" && l.start!=="16:00");
+        if (day===14) lessons=lessons.filter(l=>l.start!=="12:20");
+        if (day===24) lessons=lessons.filter(l=>l.start!=="10:10" && l.start!=="12:20" && l.start!=="16:00");
+      }
+      return lessons;
+    }
+    const FAVORITES_KEY = "rta_schedule_favorites_v1";
+    function readFavorites(){ try { return JSON.parse(localStorage.getItem(FAVORITES_KEY)||"[]"); } catch(e) { return []; } }
+    function favoriteKey(group,day,l){ return [group,day,l.start,l.title].join("|"); }
+    function toggleFavorite(group,day,l){
+      const key=favoriteKey(group,day,l); let items=readFavorites();
+      if(items.some(x=>x.key===key)) items=items.filter(x=>x.key!==key);
+      else items.push({key,group,day,start:l.start,end:l.end,title:l.title,type:l.type,room:l.room,teacher:l.teacher||""});
+      localStorage.setItem(FAVORITES_KEY,JSON.stringify(items)); render();
+    }
+    function renderFavorites(){
+      const items=readFavorites(); const list=document.getElementById("favoritesList"); list.innerHTML="";
+      document.getElementById("favoritesCount").textContent=`${items.length} ${items.length===1?"пара":items.length<5?"пары":"пар"}`;
+      if(!items.length){ list.innerHTML=`<div class="favorites-empty">☆<br><strong style="display:block;color:var(--text);margin:8px 0 5px">Пока ничего нет</strong>Нажимай ☆ на карточке пары, чтобы сохранить её здесь.</div>`; return; }
+      items.forEach(item=>{
+        const card=document.createElement("article"); card.className="lesson";
+        card.innerHTML=`<div class="time">${item.start}<small>до ${item.end}</small></div><div class="stripe"></div><div class="lesson-main"><div class="lesson-head"><div class="lesson-title">${item.title}</div><button class="favorite-toggle saved" aria-label="Убрать из избранного">★</button></div><div class="lesson-meta"><span class="tag">${daysFull[item.day]}</span><span class="tag">${item.group}</span><span class="tag">Ауд. ${item.room}</span><span class="tag">${item.type}</span>${item.teacher?`<span class="tag">${item.teacher}</span>`:""}</div></div>`;
+        card.querySelector("button").onclick=()=>{localStorage.setItem(FAVORITES_KEY,JSON.stringify(readFavorites().filter(x=>x.key!==item.key)));render();}; list.appendChild(card);
+      });
     }
     function renderLessons() {
       const lessons = lessonsForSelectedDate();
@@ -332,12 +370,21 @@
       if (!lessons.length) {
         
         const message = selectedDay === 3 ? "Четверг — по плану факультета" : (selectedDay===5 && selectedWeek==="B" ? "Суббота в присланном расписании недели Б пустая" : "В присланном списке нет занятий на этот день");
-        list.innerHTML = `<div class="empty"><div class="emoji">📄</div><strong>Нет подтверждённых пар</strong><span>${message}. Это не означает, что занятий точно нет.</span></div>`;
+        const upcoming=selectedDay===3?"Проверь объявления кафедры: расписание четверга может обновляться отдельно.":message;
+        list.innerHTML = `<div class="empty"><div class="emoji">☕</div><strong>На этот день пар нет в расписании</strong><span>${upcoming}. Если появится перенос или дополнительное занятие, расписание стоит сверить с объявлением факультета.</span></div>`;
         return;
       }
+      const selectedDate=dateForDay(selectedDay);
+      const isToday=selectedDate.toDateString()===realNow.toDateString();
+      const currentMinutes=realNow.getHours()*60+realNow.getMinutes();
+      const currentLesson= isToday ? lessons.find(l=>{const [h,m]=l.start.split(":").map(Number),[eh,em]=l.end.split(":").map(Number);return currentMinutes>=h*60+m && currentMinutes<eh*60+em;}) : null;
+      const nextLesson= isToday ? lessons.find(l=>{const [h,m]=l.start.split(":").map(Number);return h*60+m>currentMinutes;}) : null;
       lessons.forEach((l,index) => {
         const card = document.createElement("article"); card.className="lesson";
-        card.innerHTML = `<div class="time">${l.start}<small>до ${l.end}</small></div><div class="stripe ${l.color}"></div><div class="lesson-main"><div class="lesson-title">${l.title}</div><div class="lesson-meta"><span class="tag">▣ Ауд. ${l.room}</span><span class="tag">${l.type}</span>${l.teacher ? `<span class="tag">♙ ${l.teacher}</span>` : ``}${l.dates ? `<span class="tag">📅 ${l.dates}</span>` : ``}</div>${l.note ? `<div style="margin-top:8px;color:#8995a8;font-size:11px;line-height:1.4">${l.note}</div>` : ``}</div>`;
+        const key=favoriteKey(currentGroup,selectedDay,l); const saved=readFavorites().some(x=>x.key===key);
+        const badge=currentLesson===l?'<span class="status-badge">Сейчас</span>':(nextLesson===l?'<span class="status-badge next">Далее</span>':'');
+        card.innerHTML = `<div class="time">${l.start}<small>до ${l.end}</small></div><div class="stripe ${l.color}"></div><div class="lesson-main">${badge}<div class="lesson-head"><div class="lesson-title">${l.title}</div><button class="favorite-toggle ${saved?'saved':''}" aria-label="${saved?'Убрать из избранного':'Добавить в избранное'}">${saved?'★':'☆'}</button></div><div class="lesson-meta"><span class="tag">▣ Ауд. ${l.room}</span><span class="tag">${l.type}</span>${l.teacher ? `<span class="tag">♙ ${l.teacher}</span>` : ``}${l.dates ? `<span class="tag">📅 ${l.dates}</span>` : ``}</div>${l.note ? `<div style="margin-top:8px;color:#8995a8;font-size:11px;line-height:1.4">${l.note}</div>` : ``}</div>`;
+        card.querySelector("button").onclick=()=>toggleFavorite(currentGroup,selectedDay,l);
         list.appendChild(card);
       });
     }
@@ -356,19 +403,20 @@
       document.getElementById("nextMeta").textContent = next ? `${next.start} · ауд. ${next.room}` : "Можно немного выдохнуть";
       document.getElementById("nextStatus").textContent = next ? (selectedDay===today ? "Сегодня" : "В этот день") : "Свободно";
     }
-    function render() { updateCalendarWeek(); renderDays(); renderLessons(); renderNext(); }
+    function render() { updateCalendarWeek(); renderDays(); renderLessons(); renderNext(); renderFavorites(); }
     function toast(text) {
       const el=document.getElementById("toast"); el.textContent=text; el.classList.add("show");
       setTimeout(()=>el.classList.remove("show"),2200);
     }
     function showTab(tab) {
       selectedTab=tab;
-      const profile=tab==="profile";
+      const profile=tab==="profile"; const favorites=tab==="favorites";
       document.getElementById("profilePanel").classList.toggle("open",profile);
-      document.getElementById("scheduleContent").style.display=profile?"none":"block";
-      document.getElementById("scheduleGroupCard").style.display=profile?"none":"flex";
+      document.getElementById("favoritesPanel").classList.toggle("open",favorites);
+      document.getElementById("scheduleContent").style.display=(profile||favorites)?"none":"block";
+      document.getElementById("scheduleGroupCard").style.display=(profile||favorites)?"none":"flex";
       document.querySelectorAll(".nav-item").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));
-      if(tab==="week") { document.getElementById("scheduleContent").style.display="block"; toast("Выбери дату в календаре или переключай недели стрелками."); }
+      if(favorites) renderFavorites();
     }
     document.getElementById("profileBtn").onclick = () => showTab("profile");
     document.getElementById("profileChangeGroup").onclick = openGroupModal;
