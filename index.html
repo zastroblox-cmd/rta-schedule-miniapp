@@ -353,7 +353,7 @@
     const DEFAULT_GROUP = "Ю603/О-2503";
     let currentGroup = localStorage.getItem("rta_schedule_group") || DEFAULT_GROUP;
     if (!GROUPS.some(g=>g.id===currentGroup && g.status==="available")) currentGroup=DEFAULT_GROUP;
-    let selectedCourse = Number(localStorage.getItem("rta_schedule_course")) || 2;
+    let selectedCourse = (GROUPS.find(g=>g.id===currentGroup) || GROUPS[4]).course;
     let selectedWeek = "B";
     let schedule = scheduleB;
     let weekOffset = 0;
