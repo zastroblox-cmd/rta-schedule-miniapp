@@ -14,7 +14,7 @@ Last updated: 2026-10-21
 - First year: `ЮФ 1к офо с 05.10(2).pdf` (3 pages; updated schedule from 05.10.2026).
 - Second year: `ЮФ 2 к офо с 05.10(2).pdf` (2 pages; current data already in app, but needs comparison against PDF).
 - Third year: `ЮФ 3 к офо с 05.10(2).pdf` (2 pages; updated schedule from 05.10.2026).
-- Fourth-year PDF was referenced in earlier project work; re-locate its current Library ref before extracting.
+- Fourth year: `ЮФ 4 к офо с 05.10(2).pdf` (3 pages; updated schedule from 05.10.2026). Located in the project Library on 2026-10-21.
 
 ## Groups to support
 - Course 1: Ю600/О-2601, Ю600/О-2602, Ю600/О-2603, Ю600/О-2604.
@@ -32,6 +32,11 @@ Last updated: 2026-10-21
 - Regular weekly lessons, one-off dated lessons, date ranges (e.g. “по 23.11”), and exclusions (“кроме ...”) must be represented distinctly.
 - Do not treat a date annotation as merely decorative if it changes whether a lesson occurs.
 - Validate JavaScript syntax and verify that group switching/rendering still works before publishing app code.
+
+## Verification performed on 2026-10-21
+- Fetched the current default-branch `index.html` and checked the last inline JavaScript block with the JavaScript parser: syntax passes.
+- Confirmed the deployed app code currently only recognizes the four second-year groups; course 1/3/4 group IDs are not yet integrated. Do not describe the all-course migration as complete.
+- All four course PDFs (1st, 2nd, 3rd, 4th) are available in the project Library; extracted text for courses 1–3 is available as Library text files, while course 4 needs extraction/normalization.
 
 ## Next work
 1. Extract and normalize one course at a time from official PDFs.
