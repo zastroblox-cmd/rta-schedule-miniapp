@@ -123,7 +123,7 @@
     .nav-item .nav-icon { color:rgba(190,211,245,.88); -webkit-text-stroke:.25px rgba(255,255,255,.18); }
     .avatar { background:rgba(255,255,255,.035); backdrop-filter:blur(7px); border-color:rgba(255,255,255,.16); }
   </style>
-  <!-- schedule-build: 2026-10-21-course-selector-v1 -->
+  <!-- schedule-build: 2026-10-20-teachers-v2 -->
 </head>
 <body>
   <main class="app">
@@ -189,10 +189,8 @@
   </nav>
   <div class="group-modal" id="groupModal" role="dialog" aria-modal="true" aria-labelledby="groupModalTitle">
     <div class="group-sheet">
-      <h3 id="groupModalTitle">Выбери курс и группу</h3>
-      <p>Сначала выбери курс, затем учебную группу. Выбор сохранится на этом устройстве.</p>
-      <div class="group-options" id="courseOptions"></div>
-      <div style="height:1px;background:#ffffff12;margin:12px 0"></div>
+      <h3 id="groupModalTitle">Выбери группу</h3>
+      <p>Выбор сохранится на этом устройстве. При следующем запуске откроется выбранная группа.</p>
       <div class="group-options" id="groupOptions"></div>
       <button class="close-group" id="closeGroupModal">Закрыть</button>
     </div>
@@ -331,50 +329,26 @@
       ["Ю604/О-2504",2,"17:40","Физкультура","П.Ф. Климушин, И.В. Назарова, Е.Ю. Андреева"]
     ].forEach(args=>assignTeacher(...args));
         const GROUPS = [
-      {id:"Ю600/О-2601", course:1, status:"pending"},
-      {id:"Ю600/О-2602", course:1, status:"pending"},
-      {id:"Ю600/О-2603", course:1, status:"pending"},
-      {id:"Ю600/О-2604", course:1, status:"pending"},
       {id:"Ю601/О-2501", course:2, status:"available"},
       {id:"Ю602/О-2502", course:2, status:"available"},
       {id:"Ю603/О-2503", course:2, status:"available"},
-      {id:"Ю604/О-2504", course:2, status:"available"},
-      {id:"Ю601/О-2401", course:3, status:"pending"},
-      {id:"Ю602/О-2402", course:3, status:"pending"},
-      {id:"Ю603/О-2403", course:3, status:"pending"},
-      {id:"Ю604/О-2404", course:3, status:"pending"},
-      {id:"Ю601/О-2301", course:4, status:"pending"},
-      {id:"Ю602/О-2302", course:4, status:"pending"},
-      {id:"Ю603/О-2303", course:4, status:"pending"},
-      {id:"Ю604/О-2304", course:4, status:"pending"},
-      {id:"Ю603/О-2305", course:4, status:"pending"}
+      {id:"Ю604/О-2504", course:2, status:"available"}
     ];
     const DEFAULT_GROUP = "Ю603/О-2503";
     let currentGroup = localStorage.getItem("rta_schedule_group") || DEFAULT_GROUP;
-    if (!GROUPS.some(g=>g.id===currentGroup && g.status==="available")) currentGroup=DEFAULT_GROUP;
-    let selectedCourse = (GROUPS.find(g=>g.id===currentGroup) || GROUPS[4]).course;
+    if (!GROUPS.some(g=>g.id===currentGroup)) currentGroup=DEFAULT_GROUP;
     let selectedWeek = "B";
     let schedule = scheduleB;
     let weekOffset = 0;
     const daysShort = ["ПН","ВТ","СР","ЧТ","ПТ","СБ","ВС"];
-    function groupLabel(g){ return \`\${g.id} · \${g.course} курс · ОФО\`; }
-    function updateGroupLabel(){ const g=GROUPS.find(x=>x.id===currentGroup)||GROUPS.find(x=>x.course===2&&x.status==="available"); document.getElementById("groupName").textContent=groupLabel(g); document.getElementById("profileCourse").textContent=\`\${g.course} курс\`; document.getElementById("profileGroupName").textContent=g.id; }
+    function groupLabel(g){ return `${g.id} · ${g.course} курс · ОФО`; }
+    function updateGroupLabel(){ const g=GROUPS.find(x=>x.id===currentGroup)||GROUPS[2]; document.getElementById("groupName").textContent=groupLabel(g); document.getElementById("profileCourse").textContent=`${g.course} курс`; document.getElementById("profileGroupName").textContent=g.id; }
     function openGroupModal(){
       const wrap=document.getElementById("groupOptions"); wrap.innerHTML="";
-      const courseWrap=document.getElementById("courseOptions"); courseWrap.innerHTML="";
-      [1,2,3,4].forEach(course=>{
-        const b=document.createElement("button"); b.className="group-option"+(course===selectedCourse?" selected":"");
-        b.textContent=\`\${course} курс\`;
-        b.onclick=()=>{ selectedCourse=course; localStorage.setItem("rta_schedule_course",String(course)); openGroupModal(); };
-        courseWrap.appendChild(b);
-      });
-      GROUPS.filter(g=>g.course===selectedCourse).forEach(g=>{
+      GROUPS.forEach(g=>{
         const b=document.createElement("button"); b.className="group-option"+(g.id===currentGroup?" selected":"");
-        b.innerHTML=\`\${g.id}<small>\${g.status==="available"?"Расписание подключено":"Расписание из PDF ещё добавляется"}</small>\`;
-        b.onclick=()=>{
-          if(g.status!=="available"){ toast("Эта группа пока не подключена. Добавляю расписание из PDF."); return; }
-          currentGroup=g.id; selectedCourse=g.course; localStorage.setItem("rta_schedule_group",currentGroup); localStorage.setItem("rta_schedule_course",String(selectedCourse)); updateGroupLabel(); document.getElementById("groupModal").classList.remove("open"); render();
-        };
+        b.innerHTML=`${g.id}<small>${g.status==="available"?"Расписание 2 курса подключено":"Расписание не подключено"}</small>`;
+        b.onclick=()=>{ currentGroup=g.id; localStorage.setItem("rta_schedule_group",currentGroup); updateGroupLabel(); document.getElementById("groupModal").classList.remove("open"); render(); };
         wrap.appendChild(b);
       });
       document.getElementById("groupModal").classList.add("open");
