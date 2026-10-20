@@ -241,9 +241,10 @@
       3:[],4:[],
       5:[lesson("14:00","15:30","Уголовное право","П/з.","307В")],6:[]};
     const schedule604B = {...schedule604A,0:[...schedule604A[0]],1:[...schedule604A[1]],2:[...schedule604A[2]],5:[...schedule604A[5]]};
+    
+
     const emptyWeek = {0:[],1:[],2:[],3:[],4:[],5:[],6:[]};
     const emptyVariants = {A:emptyWeek,B:emptyWeek};
-
     const GROUP_SCHEDULES = {
       "Ю600/О-2601": emptyVariants,
       "Ю600/О-2602": emptyVariants,
@@ -414,7 +415,7 @@
       setWeekSilently(((weeks % 2 + 2) % 2)===0 ? "B" : "A");
     }
     function setWeekSilently(w) {
-      selectedWeek=w; schedule=GROUP_SCHEDULES[currentGroup][w];
+      selectedWeek=w; schedule=(GROUP_SCHEDULES[currentGroup] || GROUP_SCHEDULES["Ю603/О-2503"])[w];
     }
     let selectedTab = "schedule";
     const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
@@ -525,7 +526,7 @@
           emptyTitle = "Расписание в подготовке";
           emptyText = `Для ${currentGroup} пары ещё не перенесены. Это предварительный просмотр выбора группы; занятия появятся после проверки исходного PDF.`;
         }
-        if (selectedDay === 5 && selectedWeek === "B") {
+        if ((!selectedGroupInfo || selectedGroupInfo.status !== "draft") && selectedDay === 5 && selectedWeek === "B") {
           emptyTitle = "Суббота без пар";
           emptyText = "В расписании недели Б на эту субботу занятий нет. Можно спокойно отдохнуть.";
         }
