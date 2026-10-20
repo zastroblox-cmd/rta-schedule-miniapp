@@ -54,3 +54,5 @@ Last updated: 2026-10-21
 - These groups use empty schedules intentionally; the UI explains that their lessons have not yet been migrated. No classes were fabricated from unverified OCR.
 - The four second-year group IDs and their existing schedule definitions were preserved.
 - This is a selector/UI preview only, NOT a schedule-data migration. Next: extract/verify PDF rows and replace draft status only after the corresponding group schedule is populated and checked.
+
+- Follow-up fix commit: `c66e9f4281b13c0d792398db432b9ed34fb28fd2`. Reordered draft schedule declarations before the schedule map, added a fallback when resolving a group's schedule, and prevented the draft empty-state message from being overwritten by the Saturday note. JavaScript syntax check passed. Verify the deployed app manually on mobile; GitHub Pages workflow was successful for the earlier deploy but the latest fix's deployment still needs confirmation.
