@@ -1,0 +1,40 @@
+# Schedule migration status
+
+Last updated: 2026-10-21
+
+## Current deployed app
+- App: `index.html` on the default branch.
+- Current file blob SHA at start of this work: `b5d1a726626abf8979cf1ecdc5997c2a63a1ae37`.
+- Current live app architecture contains schedules for second-year law groups only.
+- Keep the current dark graphite/blue UI, date navigation, profile/group switcher, class status badges, and current second-year data intact.
+- Do not deploy placeholder schedules or let a group without data crash rendering.
+- Week anchor required by user: 12–18 Oct 2026 = week Б; 19–25 Oct = week А; alternate weekly thereafter.
+
+## Source PDFs found in project Library
+- First year: `ЮФ 1к офо с 05.10(2).pdf` (3 pages; updated schedule from 05.10.2026).
+- Second year: `ЮФ 2 к офо с 05.10(2).pdf` (2 pages; current data already in app, but needs comparison against PDF).
+- Third year: `ЮФ 3 к офо с 05.10(2).pdf` (2 pages; updated schedule from 05.10.2026).
+- Fourth-year PDF was referenced in earlier project work; re-locate its current Library ref before extracting.
+
+## Groups to support
+- Course 1: Ю600/О-2601, Ю600/О-2602, Ю600/О-2603, Ю600/О-2604.
+- Course 2: Ю601/О-2501, Ю602/О-2502, Ю603/О-2503, Ю604/О-2504.
+- Course 3: Ю601/О-2401, Ю602/О-2402, Ю603/О-2403, Ю604/О-2404.
+- Course 4: Ю601/О-2301, Ю602/О-2302, Ю603/О-2303, Ю604/О-2304, Ю603/О-2305.
+- Do not add Ю605/О-2405; it was a prior mistaken entry.
+
+## Known second-year correction to preserve
+- For Ю604/О-2504, user flagged Tuesday 13 Oct, Wednesday 14 Oct, and Saturday 24 Oct 2026 as not matching the official schedule. These need direct PDF comparison before calling the migration verified.
+
+## Data conversion requirements
+- Preserve lesson title, start/end, lesson type, teacher, room, and date restrictions/exceptions.
+- PDF text extraction contains OCR/layout noise; verify group column and day/time visually or from page-level text before coding.
+- Regular weekly lessons, one-off dated lessons, date ranges (e.g. “по 23.11”), and exclusions (“кроме ...”) must be represented distinctly.
+- Do not treat a date annotation as merely decorative if it changes whether a lesson occurs.
+- Validate JavaScript syntax and verify that group switching/rendering still works before publishing app code.
+
+## Next work
+1. Extract and normalize one course at a time from official PDFs.
+2. Build a machine-readable schedule dataset with explicit date rules.
+3. Integrate the dataset with the current renderer without changing the visual design.
+4. Test each group/date and only mark a group available when its schedule is actually populated and checked.
