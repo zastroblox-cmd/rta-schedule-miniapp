@@ -14,7 +14,7 @@ Last updated: 2026-10-21
 - First year: `ЮФ 1к офо с 05.10(2).pdf` (3 pages; updated schedule from 05.10.2026).
 - Second year: `ЮФ 2 к офо с 05.10(2).pdf` (2 pages; current data already in app, but needs comparison against PDF).
 - Third year: `ЮФ 3 к офо с 05.10(2).pdf` (2 pages; updated schedule from 05.10.2026).
-- Fourth year: `ЮФ 4 к офо с 05.10(2).pdf` (3 pages; updated schedule from 05.10.2026). Located in the project Library on 2026-10-21.
+- Fourth year: user has now uploaded newer/revised `ЮФ 4 к офо с 05.10(3).pdf` (3 pages; актуализированное расписание с 05.10.2026, 5 group columns). This upload supersedes the earlier `(2)` version and is the source of truth.
 
 ## Groups to support
 - Course 1: Ю600/О-2601, Ю600/О-2602, Ю600/О-2603, Ю600/О-2604.
@@ -36,10 +36,13 @@ Last updated: 2026-10-21
 ## Verification performed on 2026-10-21
 - Fetched the current default-branch `index.html` and checked the last inline JavaScript block with the JavaScript parser: syntax passes.
 - Confirmed the deployed app code currently only recognizes the four second-year groups; course 1/3/4 group IDs are not yet integrated. Do not describe the all-course migration as complete.
-- All four course PDFs (1st, 2nd, 3rd, 4th) are available in the project Library; extracted text for courses 1–3 is available as Library text files, while course 4 needs extraction/normalization.
+- All four course PDFs (1st, 2nd, 3rd, 4th) are available. The new fourth-year PDF was extracted to text and rendered to page images for visual checking. It contains five group columns (2301, 2302, 2303, 2304, 2305), a Monday–Thursday timetable, Friday marked `по плану факультета`, and Saturday timetable; date-specific entries and exclusions must be represented as rules, not simply repeated weekly.
 
 ## Next work
-1. Extract and normalize one course at a time from official PDFs.
+1. Normalize the new fourth-year PDF by group/day/time, retaining exact teacher, room, lesson type, explicit dates, date ranges and exclusions.
+2. Implement date-aware rendering for course 4 without changing course 2 behavior.
+3. Add the five fourth-year groups to the selector only after their data is populated and tested.
+4. Then continue with courses 1 and 3.
 2. Build a machine-readable schedule dataset with explicit date rules.
 3. Integrate the dataset with the current renderer without changing the visual design.
 4. Test each group/date and only mark a group available when its schedule is actually populated and checked.
