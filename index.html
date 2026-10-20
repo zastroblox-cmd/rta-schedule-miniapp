@@ -448,8 +448,14 @@
         datedCriminalLaw.teacher = "О.Н. Седукина";
         lessons.push(datedCriminalLaw);
       }
-      // 14.10.2026: право международных организаций и конференций относится к группе Ю604/О-2504, не к Ю603/О-2503.
-      // Для Ю603/О-2503 сохраняем гражданское право из базового расписания.
+      // 14.10.2026: для Ю603/О-2503 в 16:00 должно быть гражданское право.
+      // Право международных организаций и конференций относится к Ю604/О-2504, не к Ю603/О-2503.
+      if (currentGroup === "Ю603/О-2503" && date.getFullYear()===2026 && date.getMonth()===9 && date.getDate()===14) {
+        lessons = lessons.filter(l=>l.start!=="16:00");
+        const civilLaw = lesson("16:00","17:30","Гражданское право","П/з.","214В");
+        civilLaw.teacher = "А.Е. Кирпичев";
+        lessons.push(civilLaw);
+      }
       if (currentGroup === "Ю604/О-2504" && date.getFullYear()===2026 && date.getMonth()===9 && date.getDate()===13) {
         lessons=lessons.filter(l=>l.start!=="10:10" && l.start!=="16:00");
       }
