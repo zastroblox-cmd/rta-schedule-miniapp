@@ -241,28 +241,11 @@
       3:[],4:[],
       5:[lesson("14:00","15:30","Уголовное право","П/з.","307В")],6:[]};
     const schedule604B = {...schedule604A,0:[...schedule604A[0]],1:[...schedule604A[1]],2:[...schedule604A[2]],5:[...schedule604A[5]]};
-    
-
-    const emptyWeek = {0:[],1:[],2:[],3:[],4:[],5:[],6:[]};
-    const emptyVariants = {A:emptyWeek,B:emptyWeek};
     const GROUP_SCHEDULES = {
-      "Ю600/О-2601": emptyVariants,
-      "Ю600/О-2602": emptyVariants,
-      "Ю600/О-2603": emptyVariants,
-      "Ю600/О-2604": emptyVariants,
       "Ю601/О-2501": {A:schedule601A,B:schedule601B},
       "Ю602/О-2502": {A:schedule602A,B:schedule602B},
       "Ю603/О-2503": {A:scheduleA,B:scheduleB},
-      "Ю604/О-2504": {A:schedule604A,B:schedule604B},
-      "Ю601/О-2401": emptyVariants,
-      "Ю602/О-2402": emptyVariants,
-      "Ю603/О-2403": emptyVariants,
-      "Ю604/О-2404": emptyVariants,
-      "Ю601/О-2301": emptyVariants,
-      "Ю602/О-2302": emptyVariants,
-      "Ю603/О-2303": emptyVariants,
-      "Ю604/О-2304": emptyVariants,
-      "Ю603/О-2305": emptyVariants
+      "Ю604/О-2504": {A:schedule604A,B:schedule604B}
     };
 
     // Преподаватели сверены с колонками групп в актуальном официальном PDF.
@@ -345,26 +328,11 @@
       ["Ю604/О-2504",0,"17:40","Физкультура","П.Ф. Климушин, И.В. Назарова, Е.Ю. Андреева"],
       ["Ю604/О-2504",2,"17:40","Физкультура","П.Ф. Климушин, И.В. Назарова, Е.Ю. Андреева"]
     ].forEach(args=>assignTeacher(...args));
-        // Для курсов 1, 3 и 4 пока подключены только группы-предпросмотры.
-    // Пары не подставляем до переноса и проверки оригинальных таблиц.
-    const GROUPS = [
-      {id:"Ю600/О-2601", course:1, status:"draft"},
-      {id:"Ю600/О-2602", course:1, status:"draft"},
-      {id:"Ю600/О-2603", course:1, status:"draft"},
-      {id:"Ю600/О-2604", course:1, status:"draft"},
+        const GROUPS = [
       {id:"Ю601/О-2501", course:2, status:"available"},
       {id:"Ю602/О-2502", course:2, status:"available"},
       {id:"Ю603/О-2503", course:2, status:"available"},
-      {id:"Ю604/О-2504", course:2, status:"available"},
-      {id:"Ю601/О-2401", course:3, status:"draft"},
-      {id:"Ю602/О-2402", course:3, status:"draft"},
-      {id:"Ю603/О-2403", course:3, status:"draft"},
-      {id:"Ю604/О-2404", course:3, status:"draft"},
-      {id:"Ю601/О-2301", course:4, status:"draft"},
-      {id:"Ю602/О-2302", course:4, status:"draft"},
-      {id:"Ю603/О-2303", course:4, status:"draft"},
-      {id:"Ю604/О-2304", course:4, status:"draft"},
-      {id:"Ю603/О-2305", course:4, status:"draft"}
+      {id:"Ю604/О-2504", course:2, status:"available"}
     ];
     const DEFAULT_GROUP = "Ю603/О-2503";
     let currentGroup = localStorage.getItem("rta_schedule_group") || DEFAULT_GROUP;
@@ -379,7 +347,7 @@
       const wrap=document.getElementById("groupOptions"); wrap.innerHTML="";
       GROUPS.forEach(g=>{
         const b=document.createElement("button"); b.className="group-option"+(g.id===currentGroup?" selected":"");
-        b.innerHTML=`${g.id}<small>${g.status==="available"?"Расписание 2 курса подключено":"Черновик · пары ещё не перенесены"}</small>`;
+        b.innerHTML=`${g.id}<small>${g.status==="available"?"Расписание 2 курса подключено":"Расписание не подключено"}</small>`;
         b.onclick=()=>{ currentGroup=g.id; localStorage.setItem("rta_schedule_group",currentGroup); updateGroupLabel(); document.getElementById("groupModal").classList.remove("open"); render(); };
         wrap.appendChild(b);
       });
@@ -415,7 +383,7 @@
       setWeekSilently(((weeks % 2 + 2) % 2)===0 ? "B" : "A");
     }
     function setWeekSilently(w) {
-      selectedWeek=w; schedule=(GROUP_SCHEDULES[currentGroup] || GROUP_SCHEDULES["Ю603/О-2503"])[w];
+      selectedWeek=w; schedule=GROUP_SCHEDULES[currentGroup][w];
     }
     let selectedTab = "schedule";
     const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
@@ -521,12 +489,7 @@
       if (!lessons.length) {
         let emptyTitle = "Можно выдохнуть ☕";
         let emptyText = "На выбранную дату пар не запланировано.";
-        const selectedGroupInfo = GROUPS.find(g=>g.id===currentGroup);
-        if (selectedGroupInfo && selectedGroupInfo.status === "draft") {
-          emptyTitle = "Расписание в подготовке";
-          emptyText = `Для ${currentGroup} пары ещё не перенесены. Это предварительный просмотр выбора группы; занятия появятся после проверки исходного PDF.`;
-        }
-        if ((!selectedGroupInfo || selectedGroupInfo.status !== "draft") && selectedDay === 5 && selectedWeek === "B") {
+        if (selectedDay === 5 && selectedWeek === "B") {
           emptyTitle = "Суббота без пар";
           emptyText = "В расписании недели Б на эту субботу занятий нет. Можно спокойно отдохнуть.";
         }
