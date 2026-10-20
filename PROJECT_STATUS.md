@@ -46,3 +46,11 @@ Last updated: 2026-10-21
 2. Build a machine-readable schedule dataset with explicit date rules.
 3. Integrate the dataset with the current renderer without changing the visual design.
 4. Test each group/date and only mark a group available when its schedule is actually populated and checked.
+
+
+## Update 2026-10-21 — draft group preview deployed
+- Commit: `9ac968bed0740879d89addb3ca164617aaa7a7af`.
+- Added the 13 first-/third-/fourth-year group IDs to the group selector as clearly marked draft previews.
+- These groups use empty schedules intentionally; the UI explains that their lessons have not yet been migrated. No classes were fabricated from unverified OCR.
+- The four second-year group IDs and their existing schedule definitions were preserved.
+- This is a selector/UI preview only, NOT a schedule-data migration. Next: extract/verify PDF rows and replace draft status only after the corresponding group schedule is populated and checked.
