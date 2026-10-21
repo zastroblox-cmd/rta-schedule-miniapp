@@ -843,7 +843,7 @@
     // Загружаем данные 3-го курса отдельно, не меняя существующие расписания 2-го курса.
     window.Course3ScheduleReady = false;
     const course3Script = document.createElement("script");
-    course3Script.src = "./data/course3-adapter.js?v=20261022-api";
+    course3Script.src = "./data/course3-adapter.js?v=20261022-date-override-fix";
     course3Script.onload = async () => {
       try {
         let draft;
