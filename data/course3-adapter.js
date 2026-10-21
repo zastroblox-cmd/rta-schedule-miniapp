@@ -1,16 +1,25 @@
 /**
- * Адаптер расписания 3-го курса (предварительный, не подключён к приложению).
+ * Адаптер расписания 3-го курса.
+ * Работает в Node для тестов и в браузере для будущего подключения к Mini App.
  * Правило недели: 12–18.10.2026 = Б; 19–25.10.2026 = А; далее чередуется.
  *
- * Использование в Node:
- * const { getLessonsForDate } = require("./course3-adapter");
- * getLessonsForDate("Ю601/О-2401", new Date(2026, 9, 19));
+ * В Node данные читаются из course3-review-draft.json автоматически.
+ * В браузере: fetch("./data/course3-review-draft.json").then(r => r.json())
+ *   .then(data => window.Course3Schedule.setDraft(data));
  */
-const fs = require("fs");
-const path = require("path");
-const draft = JSON.parse(
-  fs.readFileSync(path.join(__dirname, "course3-review-draft.json"), "utf8")
-);
+const isNodeRuntime = typeof module === "object" && module.exports;
+const fs = isNodeRuntime ? require("fs") : null;
+const path = isNodeRuntime ? require("path") : null;
+let draft = isNodeRuntime
+  ? JSON.parse(fs.readFileSync(path.join(__dirname, "course3-review-draft.json"), "utf8"))
+  : null;
+
+function setDraft(data) {
+  if (!data || !Array.isArray(data.lessons)) {
+    throw new Error("Данные расписания 3-го курса должны содержать массив lessons.");
+  }
+  draft = data;
+}
 
 const ANCHOR_MONDAY = new Date(2026, 9, 12);
 const TERM_START = new Date(2026, 8, 21);
@@ -93,6 +102,9 @@ function matchesDate(lesson, date, parityMap) {
  * должен быть подтверждён по оригиналу PDF, иначе возможен показ лишних пар.
  */
 function getLessonsForDate(group, value, options = {}) {
+  if (!draft) {
+    throw new Error("Данные 3-го курса не загружены. Вызовите Course3Schedule.setDraft(data).");
+  }
   const parityMap = options.parityMap || DEFAULT_PARITY_MAP;
   if (!GROUPS.has(group)) throw new Error("Неизвестная группа третьего курса: " + group);
   const date = dayOnly(value);
@@ -140,4 +152,9 @@ function getLessonsForDate(group, value, options = {}) {
     .sort((a, b) => a.start.localeCompare(b.start));
 }
 
-module.exports = { getLessonsForDate, parityForDate, weekLabelForDate, dateStamp, GROUPS, DEFAULT_PARITY_MAP };
+const api = { setDraft, getLessonsForDate, parityForDate, weekLabelForDate, dateStamp, GROUPS, DEFAULT_PARITY_MAP };
+if (isNodeRuntime) {
+  module.exports = api;
+} else if (typeof window !== "undefined") {
+  window.Course3Schedule = api;
+}
