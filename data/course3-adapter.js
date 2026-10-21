@@ -125,23 +125,26 @@ function getLessonsForDate(group, value, options = {}) {
       .filter(lesson => lesson.group === "ALL" && lesson.all_groups === true)
       .map(lesson => lesson.start + "|" + lesson.end)
   );
-  const exactDateOverrides = new Set(
+  // A dated lesson replaces the regular lesson in the same group's time slot,
+  // even when the subject changes or the regular lesson has no week parity.
+  const exactDateOverrideSlots = new Set(
     matching
       .filter(lesson =>
         lesson.group !== "ALL" &&
-        !lesson.parity &&
         Array.isArray(lesson.dates) &&
         lesson.dates.includes(dateStamp(date))
       )
-      .map(lesson => [lesson.group, lesson.day, lesson.start, lesson.end, lesson.title].join("|"))
+      .map(lesson => [lesson.group, lesson.day, lesson.start, lesson.end].join("|"))
   );
 
   return matching
     .filter(lesson => {
       if (lesson.group === "ALL") return true;
       if (sharedSlots.has(lesson.start + "|" + lesson.end)) return false;
-      const key = [lesson.group, lesson.day, lesson.start, lesson.end, lesson.title].join("|");
-      return !(lesson.parity && exactDateOverrides.has(key));
+      const slotKey = [lesson.group, lesson.day, lesson.start, lesson.end].join("|");
+      // Keep the dated replacement; remove only the recurring lesson it replaces.
+      if (!Array.isArray(lesson.dates) && exactDateOverrideSlots.has(slotKey)) return false;
+      return true;
     })
     .map(lesson => {
       const copy = { ...lesson, group: lesson.group === "ALL" ? group : lesson.group };
