@@ -20,6 +20,7 @@ if (!Array.isArray(data.lessons)) throw new Error("Поле lessons должно
 const timePattern = /^([01]\d|2[0-3]):[0-5]\d$/;
 const datePattern = /^\d{2}\.\d{2}$/;
 const allowedParities = new Set(["чётная неделя", "нечётная неделя"]);
+const allowedRoomStatuses = new Set(["day_before_confirmation", "uncertain_ocr"]);
 const seen = new Map();
 
 function validDayMonth(value) {
@@ -60,6 +61,22 @@ data.lessons.forEach((lesson, index) => {
   if (lesson.start && lesson.end && lesson.start >= lesson.end) errors.push(`${label}: время окончания не позже начала`);
   if (lesson.parity && !allowedParities.has(lesson.parity)) {
     errors.push(`${label}: неизвестное значение parity ${lesson.parity}`);
+  }
+
+  if (lesson.room_status && !allowedRoomStatuses.has(lesson.room_status)) {
+    errors.push(`${label}: неизвестный room_status ${lesson.room_status}`);
+  }
+  if (lesson.room_status === "day_before_confirmation") {
+    warnings.push(`${label}: аудитория уточняется накануне по примечанию официального PDF`);
+  }
+  if (lesson.room_status === "uncertain_ocr") {
+    warnings.push(`${label}: аудитория требует визуальной сверки OCR`);
+  }
+  if (lesson.group === "ALL" && lesson.all_groups !== true) {
+    errors.push(`${label}: общая запись должна явно подтверждать all_groups=true`);
+  }
+  if (lesson.all_groups === true && lesson.group !== "ALL") {
+    errors.push(`${label}: all_groups=true допустим только для group=ALL`);
   }
 
   for (const field of ["dates", "excluded_dates"]) {
