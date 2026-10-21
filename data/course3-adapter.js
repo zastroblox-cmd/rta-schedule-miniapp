@@ -28,6 +28,11 @@ function dateStamp(date) {
     String(date.getMonth() + 1).padStart(2, "0");
 }
 
+function dateKey(stamp) {
+  const [day, month] = stamp.split(".").map(Number);
+  return month * 100 + day;
+}
+
 function mondayOf(date) {
   const monday = dayOnly(date);
   monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
@@ -49,9 +54,9 @@ function parityForDate(date, parityMap) {
 }
 
 function inTermRange(lesson, date) {
-  const stamp = dateStamp(date);
-  if (lesson.dates_from && stamp < lesson.dates_from) return false;
-  if (lesson.dates_until && stamp > lesson.dates_until) return false;
+  const stamp = dateKey(dateStamp(date));
+  if (lesson.dates_from && stamp < dateKey(lesson.dates_from)) return false;
+  if (lesson.dates_until && stamp > dateKey(lesson.dates_until)) return false;
   if (!lesson.dates_from && lesson.dates_until && date < TERM_START) return false;
   return true;
 }
