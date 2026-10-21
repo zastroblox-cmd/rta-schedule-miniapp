@@ -123,7 +123,7 @@
     .nav-item .nav-icon { color:rgba(190,211,245,.88); -webkit-text-stroke:.25px rgba(255,255,255,.18); }
     .avatar { background:rgba(255,255,255,.035); backdrop-filter:blur(7px); border-color:rgba(255,255,255,.16); }
   </style>
-  <!-- schedule-build: 2026-10-20-teachers-v2 -->
+  <!-- schedule-build: 2026-10-21-course3-integration-v1 -->
 </head>
 <body>
   <main class="app">
@@ -332,7 +332,11 @@
       {id:"Ю601/О-2501", course:2, status:"available"},
       {id:"Ю602/О-2502", course:2, status:"available"},
       {id:"Ю603/О-2503", course:2, status:"available"},
-      {id:"Ю604/О-2504", course:2, status:"available"}
+      {id:"Ю604/О-2504", course:2, status:"available"},
+      {id:"Ю601/О-2401", course:3, status:"available"},
+      {id:"Ю602/О-2402", course:3, status:"available"},
+      {id:"Ю603/О-2403", course:3, status:"available"},
+      {id:"Ю604/О-2404", course:3, status:"available"}
     ];
     const DEFAULT_GROUP = "Ю603/О-2503";
     let currentGroup = localStorage.getItem("rta_schedule_group") || DEFAULT_GROUP;
@@ -347,7 +351,7 @@
       const wrap=document.getElementById("groupOptions"); wrap.innerHTML="";
       GROUPS.forEach(g=>{
         const b=document.createElement("button"); b.className="group-option"+(g.id===currentGroup?" selected":"");
-        b.innerHTML=`${g.id}<small>${g.status==="available"?"Расписание 2 курса подключено":"Расписание не подключено"}</small>`;
+        b.innerHTML=`${g.id}<small>${g.status==="available"?`Расписание ${g.course} курса подключено`:"Расписание не подключено"}</small>`;
         b.onclick=()=>{ currentGroup=g.id; localStorage.setItem("rta_schedule_group",currentGroup); updateGroupLabel(); document.getElementById("groupModal").classList.remove("open"); render(); };
         wrap.appendChild(b);
       });
@@ -383,7 +387,9 @@
       setWeekSilently(((weeks % 2 + 2) % 2)===0 ? "B" : "A");
     }
     function setWeekSilently(w) {
-      selectedWeek=w; schedule=GROUP_SCHEDULES[currentGroup][w];
+      selectedWeek=w;
+      const variants=GROUP_SCHEDULES[currentGroup];
+      schedule=variants ? variants[w] : (w==="A" ? scheduleA : scheduleB);
     }
     let selectedTab = "schedule";
     const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
@@ -409,6 +415,17 @@
     }
     function lessonsForSelectedDate() {
       const date=dateForDay(selectedDay);
+      if (currentGroup.endsWith("/О-2401") || currentGroup.endsWith("/О-2402") || currentGroup.endsWith("/О-2403") || currentGroup.endsWith("/О-2404")) {
+        if (!window.Course3ScheduleReady || !window.Course3Schedule) return [];
+        const isoDate = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
+        return window.Course3Schedule.getLessonsForDate(currentGroup, isoDate).map(item => ({
+          start:item.start, end:item.end, title:item.title, type:item.type || "Занятие",
+          room:item.room || "Уточняется накануне", teacher:item.teacher || "",
+          dates:Array.isArray(item.dates) ? item.dates.join(", ") : "",
+          color:(item.type || "").includes("Физкультура") ? "green" : "blue",
+          note:item.note || ""
+        }));
+      }
       const isOct16_2026=date.getFullYear()===2026 && date.getMonth()===9 && date.getDate()===16;
       if (currentGroup==="Ю604/О-2504" && isOct16_2026) {
         return [
@@ -563,6 +580,32 @@
     document.getElementById("todayWeek").onclick=()=>{weekOffset=0;selectedDay=mondayOffset;render();};
     updateGroupLabel();
     render();
+    // Загружаем данные 3-го курса отдельно, не меняя существующие расписания 2-го курса.
+    window.Course3ScheduleReady = false;
+    const course3Script = document.createElement("script");
+    course3Script.src = "./data/course3-adapter.js";
+    course3Script.onload = async () => {
+      try {
+        const response = await fetch("./data/course3-review-draft.json", {cache:"no-store"});
+        if (!response.ok) throw new Error("HTTP " + response.status);
+        const draft = await response.json();
+        window.Course3Schedule.setDraft(draft);
+        window.Course3ScheduleReady = true;
+        if (currentGroup.startsWith("Ю") && currentGroup.includes("/О-24")) render();
+      } catch (error) {
+        console.error("Не удалось загрузить расписание 3-го курса:", error);
+        if (currentGroup.includes("/О-24")) {
+          document.getElementById("lessonList").innerHTML = '<div class="empty"><div class="emoji">⚠️</div><strong>Не удалось загрузить расписание</strong><span>Проверь подключение к интернету и открой приложение ещё раз.</span></div>';
+        }
+      }
+    };
+    course3Script.onerror = () => {
+      console.error("Не удалось загрузить адаптер 3-го курса");
+      if (currentGroup.includes("/О-24")) {
+        document.getElementById("lessonList").innerHTML = '<div class="empty"><div class="emoji">⚠️</div><strong>Расписание временно недоступно</strong><span>Попробуй открыть приложение ещё раз чуть позже.</span></div>';
+      }
+    };
+    document.head.appendChild(course3Script);
     // Обновляем статусы пар, пока Mini App открыт; при смене даты обновляем календарную основу.
     setInterval(() => {
       const updated = new Date();
