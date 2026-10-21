@@ -42,10 +42,26 @@ assert(
   "Должно возвращаться разовое занятие Ю604 на 22.10"
 );
 
-const excludedSaturday = getLessonsForDate("Ю602/О-2402", date(2026, 10, 17));
+// Synthetic mapping is used only to test mechanics; the real A/B-to-parity
+// mapping remains unconfirmed and must not be enabled in the app yet.
+const testParityMap = { А: "чётная неделя", Б: "нечётная неделя" };
+const excludedSaturday = getLessonsForDate(
+  "Ю602/О-2402",
+  date(2026, 10, 17),
+  { parityMap: testParityMap }
+);
 assert(
-  !excludedSaturday.some(x => x.title === "Гражданское право" && x.start === "14:00"),
-  "Исключённая дата 17.10 не должна показывать занятие по гражданскому праву в 14:00"
+  !excludedSaturday.some(x => x.title === "Правовое регулирование нотариата в РФ" && x.start === "12:20"),
+  "Занятие по нотариату с исключением 17.10 не должно показываться в исключённую дату"
+);
+const regularSaturday = getLessonsForDate(
+  "Ю602/О-2402",
+  date(2026, 10, 31),
+  { parityMap: testParityMap }
+);
+assert(
+  regularSaturday.some(x => x.title === "Правовое регулирование нотариата в РФ" && x.start === "12:20"),
+  "То же занятие должно показываться 31.10 при тестовом соответствии недели Б нечётной неделе"
 );
 
 const saturday = getLessonsForDate("Ю603/О-2403", date(2026, 12, 19));
