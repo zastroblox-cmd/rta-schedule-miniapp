@@ -301,9 +301,10 @@ app.post("/telegram/webhook", async (req, res) => {
       chat_id: message.chat.id,
       text: greeting,
       reply_markup: {
-        keyboard: [[{ text: "📅 Открыть расписание", web_app: { url: MINI_APP_URL } }]],
-        resize_keyboard: true,
-        is_persistent: true
+        inline_keyboard: [[{
+          text: "📅 Открыть расписание",
+          web_app: { url: MINI_APP_URL }
+        }]]
       }
     });
   } catch (error) {
