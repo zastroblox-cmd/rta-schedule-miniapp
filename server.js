@@ -108,13 +108,26 @@ app.get("/api/schedule", async (req, res) => {
     (!item.valid_to || item.valid_to >= dateString) &&
     !(item.excluded_dates || []).includes(dateString)
   );
-  let data = [...recurringForDate, ...(overrides || [])];
+  const datedOverrides = overrides || [];
+  // A date-specific lesson replaces the recurring lesson in the same time slot,
+  // even when the subject differs or the recurring lesson has no week type.
+  const overrideSlots = new Set(datedOverrides.map(item =>
+    item.starts_at + "|" + item.ends_at
+  ));
+  let data = [
+    ...recurringForDate.filter(item =>
+      !overrideSlots.has(item.starts_at + "|" + item.ends_at)
+    ),
+    ...datedOverrides
+  ];
 
-  // Match the current Mini App rule: a "Курсовой час" occupies its time slot.
+  // A "Курсовой час" occupies its time slot unless an explicit dated override
+  // exists for that slot; dated overrides are authoritative for their date.
   const courseHourSlots = new Set(data
-    .filter(item => item.subject === "Курсовой час")
+    .filter(item => item.subject === "Курсовой час" && item.entry_kind !== "date_override")
     .map(item => item.starts_at + "|" + item.ends_at));
   data = data.filter(item =>
+    item.entry_kind === "date_override" ||
     item.subject === "Курсовой час" ||
     !courseHourSlots.has(item.starts_at + "|" + item.ends_at)
   );
