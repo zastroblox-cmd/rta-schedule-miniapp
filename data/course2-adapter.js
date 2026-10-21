@@ -27,7 +27,7 @@ function getLessonsForDate(group,value){
  rows=rows.filter(x=>x.title==="Курсовой час"||!courseHourSlots.has(x.start+"|"+x.end));
  const seen=new Set();
  return rows.filter(x=>{const k=[x.start,x.end,x.title,x.type,x.teacher,x.room].join("|");if(seen.has(k))return false;seen.add(k);return true;})
- .map(x=>({start:x.start,end:x.end,title:x.title,type:x.type||"Занятие",room:x.room||"Уточняется накануне",teacher:x.teacher||"",dates:Array.isArray(x.dates)?x.dates.join(", "):"",color:(x.type||"").includes("Физкультура")?"green":"blue",note:x.note||""}))
+ .map(x=>({start:x.start,end:x.end,title:x.title,type:x.type||"Занятие",room:x.room||"Уточняется накануне",teacher:x.teacher||"",dates:Array.isArray(x.dates)?x.dates.join(", "):"",color:(x.type||"").includes("Физкультура")?"green":"blue",note:(x.note&&/логике Mini App/i.test(x.note))?"":(x.note||"")}))
  .sort((a,b)=>a.start.localeCompare(b.start));
 }
 root.Course2Schedule={groups:GROUPS.slice(),setDraft(data){if(!data||!Array.isArray(data.lessons))throw Error("Некорректные данные 2-го курса");draft=data;},getLessonsForDate,get loaded(){return !!draft&&Array.isArray(draft.lessons);}};
