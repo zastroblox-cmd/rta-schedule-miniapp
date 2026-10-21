@@ -6,6 +6,7 @@
 const assert = require("assert");
 const {
   getLessonsForDate,
+  parityForDate,
   weekLabelForDate
 } = require("./course3-adapter");
 
@@ -19,6 +20,10 @@ assert.strictEqual(weekLabelForDate(date(2026, 10, 19)), "А");
 assert.strictEqual(weekLabelForDate(date(2026, 10, 25)), "А");
 assert.strictEqual(weekLabelForDate(date(2026, 10, 26)), "Б");
 
+// Do not guess whether A/B corresponds to even/odd week.
+assert.strictEqual(parityForDate(date(2026, 10, 19)), null);
+assert.strictEqual(parityForDate(date(2026, 10, 19), { А: "чётная неделя", Б: "нечётная неделя" }), "чётная неделя");
+
 const exactDateLesson = getLessonsForDate("Ю604/О-2404", date(2026, 10, 19));
 assert(
   exactDateLesson.some(x => x.title === "Международное уголовное право"),
@@ -31,6 +36,18 @@ assert(
   "Занятие с явным списком дат не должно появляться в другие даты"
 );
 
+const thursdayException = getLessonsForDate("Ю604/О-2404", date(2026, 10, 22));
+assert(
+  thursdayException.some(x => x.title === "Международное уголовное право" && x.start === "14:00"),
+  "Должно возвращаться разовое занятие Ю604 на 22.10"
+);
+
+const excludedSaturday = getLessonsForDate("Ю602/О-2402", date(2026, 10, 17));
+assert(
+  !excludedSaturday.some(x => x.title === "Гражданское право" && x.start === "14:00"),
+  "Исключённая дата 17.10 не должна показывать занятие по гражданскому праву в 14:00"
+);
+
 const saturday = getLessonsForDate("Ю603/О-2403", date(2026, 12, 19));
 assert(
   saturday.some(x => x.title === "Гражданское право" && x.start === "16:00"),
@@ -41,6 +58,11 @@ assert.deepStrictEqual(
   getLessonsForDate("Ю603/О-2403", date(2026, 10, 25)),
   [],
   "Воскресенье должно возвращать пустой список"
+);
+
+assert(
+  !getLessonsForDate("Ю601/О-2401", date(2026, 10, 19)).some(x => x.group === "ALL"),
+  "Общие занятия ALL не должны подключаться до подтверждения состава групп"
 );
 
 assert.throws(
