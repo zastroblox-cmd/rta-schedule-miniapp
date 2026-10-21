@@ -344,7 +344,12 @@
       {id:"Ю601/О-2401", course:3, status:"available"},
       {id:"Ю602/О-2402", course:3, status:"available"},
       {id:"Ю603/О-2403", course:3, status:"available"},
-      {id:"Ю604/О-2404", course:3, status:"available"}
+      {id:"Ю604/О-2404", course:3, status:"available"},
+      {id:"Ю601/О-2301", course:4, status:"available"},
+      {id:"Ю602/О-2302", course:4, status:"available"},
+      {id:"Ю603/О-2303", course:4, status:"available"},
+      {id:"Ю604/О-2304", course:4, status:"available"},
+      {id:"Ю603/О-2305", course:4, status:"available"}
     ];
     const DEFAULT_GROUP = "Ю603/О-2503";
     const hasSavedGroup = Boolean(localStorage.getItem("rta_schedule_group"));
@@ -365,7 +370,7 @@
       const courses=document.getElementById("courseOptions"); courses.innerHTML="";
       courses.style.display=mode==="group"?"none":"grid";
       if(mode!=="group"){
-        [1,2,3].forEach(course=>{
+        [1,2,3,4].forEach(course=>{
           const b=document.createElement("button"); b.className="course-option"+(course===currentCourse?" selected":""); b.type="button"; b.textContent=course+" курс";
           b.onclick=()=>{
             if(course!==currentCourse){
@@ -463,6 +468,11 @@
           color:(item.type || "").includes("Физкультура") ? "green" : "blue",
           note:item.note || ""
         }));
+      }
+      if (currentGroup.endsWith("/О-2301") || currentGroup.endsWith("/О-2302") || currentGroup.endsWith("/О-2303") || currentGroup.endsWith("/О-2304") || currentGroup.endsWith("/О-2305")) {
+        if (!window.Course4ScheduleReady || !window.Course4Schedule) return [];
+        const isoDate = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
+        return window.Course4Schedule.getLessonsForDate(currentGroup, isoDate);
       }
       const isOct16_2026=date.getFullYear()===2026 && date.getMonth()===9 && date.getDate()===16;
       if (currentGroup==="Ю604/О-2504" && isOct16_2026) {
@@ -677,6 +687,28 @@
       }
     };
     document.head.appendChild(course3Script);
+    // Загружаем 4-й курс из отдельного JSON, не меняя расписания остальных курсов.
+    window.Course4ScheduleReady = false;
+    const course4Script = document.createElement("script");
+    course4Script.src = "./data/course4-adapter.js";
+    course4Script.onload = async () => {
+      try {
+        const response = await fetch("./data/course4-schedule.json", {cache:"no-store"});
+        if (!response.ok) throw new Error("HTTP " + response.status);
+        const draft = await response.json();
+        window.Course4Schedule.setDraft(draft);
+        window.Course4ScheduleReady = true;
+        if (currentGroup.includes("/О-23")) render();
+      } catch (error) {
+        console.error("Не удалось загрузить расписание 4-го курса:", error);
+        if (currentGroup.includes("/О-23")) document.getElementById("lessonList").innerHTML = '<div class="empty"><div class="emoji">⚠️</div><strong>Не удалось загрузить расписание</strong><span>Проверь подключение к интернету и открой приложение ещё раз.</span></div>';
+      }
+    };
+    course4Script.onerror = () => {
+      console.error("Не удалось загрузить адаптер 4-го курса");
+      if (currentGroup.includes("/О-23")) document.getElementById("lessonList").innerHTML = '<div class="empty"><div class="emoji">⚠️</div><strong>Расписание временно недоступно</strong><span>Попробуй открыть приложение ещё раз чуть позже.</span></div>';
+    };
+    document.head.appendChild(course4Script);
     // Обновляем статусы пар, пока Mini App открыт; при смене даты обновляем календарную основу.
     setInterval(() => {
       const updated = new Date();
