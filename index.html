@@ -543,7 +543,11 @@
       if (!lessons.length) {
         let emptyTitle = "Можно выдохнуть ☕";
         let emptyText = "На выбранную дату пар не запланировано.";
-        if (selectedDay === 5 && selectedWeek === "B") {
+        const isThirdCourseGroup = currentGroup.endsWith("/О-2401") || currentGroup.endsWith("/О-2402") || currentGroup.endsWith("/О-2403") || currentGroup.endsWith("/О-2404");
+        if (isThirdCourseGroup && selectedDay === 2) {
+          emptyTitle = "По плану факультета";
+          emptyText = "Среда в официальном расписании отмечена как день по плану факультета. Отдельные пары здесь не указаны.";
+        } else if (selectedDay === 5 && selectedWeek === "B") {
           emptyTitle = "Суббота без пар";
           emptyText = "В расписании недели Б на эту субботу занятий нет. Можно спокойно отдохнуть.";
         }
