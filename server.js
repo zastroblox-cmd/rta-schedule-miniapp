@@ -108,8 +108,26 @@ app.get("/api/schedule", async (req, res) => {
     (!item.valid_to || item.valid_to >= dateString) &&
     !(item.excluded_dates || []).includes(dateString)
   );
-  const data = [...recurringForDate, ...(overrides || [])]
-    .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+  let data = [...recurringForDate, ...(overrides || [])];
+
+  // Match the current Mini App rule: a "Курсовой час" occupies its time slot.
+  const courseHourSlots = new Set(data
+    .filter(item => item.subject === "Курсовой час")
+    .map(item => item.starts_at + "|" + item.ends_at));
+  data = data.filter(item =>
+    item.subject === "Курсовой час" ||
+    !courseHourSlots.has(item.starts_at + "|" + item.ends_at)
+  );
+
+  // Avoid duplicate display when source records are identical.
+  const seen = new Set();
+  data = data.filter(item => {
+    const key = [item.starts_at, item.ends_at, item.subject, item.lesson_type, item.teacher, item.room].join("|");
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+
   res.json({ date: dateString, week_type: weekType, data });
 });
 
