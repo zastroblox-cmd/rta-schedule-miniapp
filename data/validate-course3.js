@@ -19,7 +19,22 @@ if (!Array.isArray(data.lessons)) throw new Error("Поле lessons должно
 
 const timePattern = /^([01]\d|2[0-3]):[0-5]\d$/;
 const datePattern = /^\d{2}\.\d{2}$/;
+const allowedParities = new Set(["чётная неделя", "нечётная неделя"]);
 const seen = new Map();
+
+function validDayMonth(value) {
+  if (typeof value !== "string" || !datePattern.test(value)) return false;
+  const [day, month] = value.split(".").map(Number);
+  const parsed = new Date(2026, month - 1, day);
+  return parsed.getFullYear() === 2026 &&
+    parsed.getMonth() === month - 1 &&
+    parsed.getDate() === day;
+}
+
+function dayMonthKey(value) {
+  const [day, month] = value.split(".").map(Number);
+  return month * 100 + day;
+}
 
 data.lessons.forEach((lesson, index) => {
   const label = `lessons[${index}] ${lesson.group || "без группы"} ${lesson.title || "без названия"}`;
