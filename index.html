@@ -333,6 +333,10 @@
       ["Ю604/О-2504",2,"17:40","Физкультура","П.Ф. Климушин, И.В. Назарова, Е.Ю. Андреева"]
     ].forEach(args=>assignTeacher(...args));
         const GROUPS = [
+      {id:"Ю600/О-2601", course:1, status:"available"},
+      {id:"Ю600/О-2602", course:1, status:"available"},
+      {id:"Ю600/О-2603", course:1, status:"available"},
+      {id:"Ю600/О-2604", course:1, status:"available"},
       {id:"Ю601/О-2501", course:2, status:"available"},
       {id:"Ю602/О-2502", course:2, status:"available"},
       {id:"Ю603/О-2503", course:2, status:"available"},
@@ -361,7 +365,7 @@
       const courses=document.getElementById("courseOptions"); courses.innerHTML="";
       courses.style.display=mode==="group"?"none":"grid";
       if(mode!=="group"){
-        [2,3].forEach(course=>{
+        [1,2,3].forEach(course=>{
           const b=document.createElement("button"); b.className="course-option"+(course===currentCourse?" selected":""); b.type="button"; b.textContent=course+" курс";
           b.onclick=()=>{
             if(course!==currentCourse){
@@ -444,6 +448,11 @@
     }
     function lessonsForSelectedDate() {
       const date=dateForDay(selectedDay);
+      if (currentGroup.startsWith("Ю600/О-26")) {
+        if (!window.Course1ScheduleReady || !window.Course1Schedule) return [];
+        const isoDate = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
+        return window.Course1Schedule.getLessonsForDate(currentGroup, isoDate);
+      }
       if (currentGroup.endsWith("/О-2401") || currentGroup.endsWith("/О-2402") || currentGroup.endsWith("/О-2403") || currentGroup.endsWith("/О-2404")) {
         if (!window.Course3ScheduleReady || !window.Course3Schedule) return [];
         const isoDate = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
@@ -616,6 +625,32 @@
     render();
     // При первом запуске сразу предлагаем выбрать курс и группу; повторно окно не открывается после сохранения выбора.
     if (!hasSavedGroup) openGroupModal();
+    // Загружаем расписание 1-го курса отдельно; существующие данные 2-го и 3-го курсов не меняются.
+    window.Course1ScheduleReady = false;
+    const course1Script = document.createElement("script");
+    course1Script.src = "./data/course1-adapter.js";
+    course1Script.onload = async () => {
+      try {
+        const response = await fetch("./data/course1-schedule.json", {cache:"no-store"});
+        if (!response.ok) throw new Error("HTTP " + response.status);
+        const draft = await response.json();
+        window.Course1Schedule.setDraft(draft);
+        window.Course1ScheduleReady = true;
+        if (currentGroup.startsWith("Ю600/О-26")) render();
+      } catch (error) {
+        console.error("Не удалось загрузить расписание 1-го курса:", error);
+        if (currentGroup.startsWith("Ю600/О-26")) {
+          document.getElementById("lessonList").innerHTML = '<div class="empty"><div class="emoji">⚠️</div><strong>Не удалось загрузить расписание</strong><span>Проверь подключение к интернету и открой приложение ещё раз.</span></div>';
+        }
+      }
+    };
+    course1Script.onerror = () => {
+      console.error("Не удалось загрузить адаптер 1-го курса");
+      if (currentGroup.startsWith("Ю600/О-26")) {
+        document.getElementById("lessonList").innerHTML = '<div class="empty"><div class="emoji">⚠️</div><strong>Расписание временно недоступно</strong><span>Попробуй открыть приложение ещё раз чуть позже.</span></div>';
+      }
+    };
+    document.head.appendChild(course1Script);
     // Загружаем данные 3-го курса отдельно, не меняя существующие расписания 2-го курса.
     window.Course3ScheduleReady = false;
     const course3Script = document.createElement("script");
