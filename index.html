@@ -543,6 +543,12 @@
         const isoDate = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
         return window.Course4Schedule.getLessonsForDate(currentGroup, isoDate);
       }
+      if (currentGroup.endsWith("/О-2501") || currentGroup.endsWith("/О-2502") || currentGroup.endsWith("/О-2503") || currentGroup.endsWith("/О-2504")) {
+        if (window.Course2ScheduleReady && window.Course2Schedule) {
+          const isoDate = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
+          return window.Course2Schedule.getLessonsForDate(currentGroup, isoDate);
+        }
+      }
       const isOct16_2026=date.getFullYear()===2026 && date.getMonth()===9 && date.getDate()===16;
       if (currentGroup==="Ю604/О-2504" && isOct16_2026) {
         return [
@@ -768,15 +774,55 @@
     render();
     // При первом запуске сразу предлагаем выбрать курс и группу; повторно окно не открывается после сохранения выбора.
     if (!hasSavedGroup) openGroupModal();
+    // Загружаем расписание 2-го курса с сервера. При ошибке остаётся прежняя логика index.html.
+    window.Course2ScheduleReady = false;
+    window.Course2ScheduleSource = "loading";
+    const course2Script = document.createElement("script");
+    course2Script.src = "./data/course2-adapter.js?v=20261022";
+    course2Script.onload = async () => {
+      try {
+        const apiResponse = await fetch("https://rta-schedule-api.onrender.com/api/course2-schedule", {cache:"no-store"});
+        if (!apiResponse.ok) throw new Error("API HTTP " + apiResponse.status);
+        const draft = await apiResponse.json();
+        if (!draft || !Array.isArray(draft.lessons) || draft.lessons.length === 0) throw new Error("API вернул пустое расписание 2-го курса");
+        window.Course2Schedule.setDraft(draft);
+        window.Course2ScheduleReady = true;
+        window.Course2ScheduleSource = "api";
+        if (currentGroup.includes("/О-25")) render();
+      } catch (error) {
+        window.Course2ScheduleReady = false;
+        window.Course2ScheduleSource = "legacy-fallback";
+        console.warn("API 2-го курса недоступен, используется прежнее расписание внутри index.html:", error);
+        if (currentGroup.includes("/О-25")) render();
+      }
+    };
+    course2Script.onerror = () => {
+      window.Course2ScheduleReady = false;
+      window.Course2ScheduleSource = "legacy-fallback";
+      console.warn("Не удалось загрузить адаптер 2-го курса; используется прежнее расписание.");
+      if (currentGroup.includes("/О-25")) render();
+    };
+    document.head.appendChild(course2Script);
     // Загружаем расписание 1-го курса отдельно; существующие данные 2-го и 3-го курсов не меняются.
     window.Course1ScheduleReady = false;
     const course1Script = document.createElement("script");
     course1Script.src = "./data/course1-adapter.js";
     course1Script.onload = async () => {
       try {
-        const response = await fetch("./data/course1-schedule.json", {cache:"no-store"});
-        if (!response.ok) throw new Error("HTTP " + response.status);
-        const draft = await response.json();
+        let draft;
+        try {
+          const apiResponse = await fetch("https://rta-schedule-api.onrender.com/api/course1-schedule", {cache:"no-store"});
+          if (!apiResponse.ok) throw new Error("API HTTP " + apiResponse.status);
+          draft = await apiResponse.json();
+          if (!draft || !Array.isArray(draft.lessons) || draft.lessons.length === 0) throw new Error("API вернул пустое расписание 1-го курса");
+          window.Course1ScheduleSource = "api";
+        } catch (apiError) {
+          console.warn("API 1-го курса недоступен, используется локальный JSON:", apiError);
+          const response = await fetch("./data/course1-schedule.json", {cache:"no-store"});
+          if (!response.ok) throw new Error("Локальный JSON HTTP " + response.status);
+          draft = await response.json();
+          window.Course1ScheduleSource = "local-fallback";
+        }
         window.Course1Schedule.setDraft(draft);
         window.Course1ScheduleReady = true;
         if (currentGroup.startsWith("Ю600/О-26")) render();
@@ -800,9 +846,20 @@
     course3Script.src = "./data/course3-adapter.js";
     course3Script.onload = async () => {
       try {
-        const response = await fetch("./data/course3-review-draft.json", {cache:"no-store"});
-        if (!response.ok) throw new Error("HTTP " + response.status);
-        const draft = await response.json();
+        let draft;
+        try {
+          const apiResponse = await fetch("https://rta-schedule-api.onrender.com/api/course3-schedule", {cache:"no-store"});
+          if (!apiResponse.ok) throw new Error("API HTTP " + apiResponse.status);
+          draft = await apiResponse.json();
+          if (!draft || !Array.isArray(draft.lessons) || draft.lessons.length === 0) throw new Error("API вернул пустое расписание 3-го курса");
+          window.Course3ScheduleSource = "api";
+        } catch (apiError) {
+          console.warn("API 3-го курса недоступен, используется локальный JSON:", apiError);
+          const response = await fetch("./data/course3-review-draft.json", {cache:"no-store"});
+          if (!response.ok) throw new Error("Локальный JSON HTTP " + response.status);
+          draft = await response.json();
+          window.Course3ScheduleSource = "local-fallback";
+        }
         window.Course3Schedule.setDraft(draft);
         window.Course3ScheduleReady = true;
         if (currentGroup.startsWith("Ю") && currentGroup.includes("/О-24")) render();
