@@ -132,7 +132,7 @@
     .owner-crown { color:#e9c778; filter:drop-shadow(0 0 calc(6px * var(--owner-glow,1)) #e9c77844); }
     .owner-profile-card { display:none; margin:12px 0 0; padding:13px; border:1px solid #e9c77830; border-radius:15px; background:linear-gradient(110deg,rgba(233,199,120,.07),rgba(255,255,255,.02)); }
     .owner-profile-card.visible { display:block; }
-    .owner-entry { display:none; position:fixed; z-index:45; right:14px; top:calc(12px + env(safe-area-inset-top)); width:42px; height:42px; border-radius:15px; border:1px solid #e9c77855; color:#f1d99d; background:rgba(24,30,41,.92); backdrop-filter:blur(12px); box-shadow:0 8px 24px #0005; font-size:20px; }
+    .owner-entry { display:none; position:fixed; z-index:45; right:14px; bottom:calc(96px + env(safe-area-inset-bottom)); width:42px; height:42px; border-radius:15px; border:1px solid #e9c77855; color:#f1d99d; background:rgba(24,30,41,.92); backdrop-filter:blur(12px); box-shadow:0 8px 24px #0005; font-size:20px; }
     .owner-entry.visible { display:grid; place-items:center; }
     .owner-modal { display:none; position:fixed; inset:0; z-index:120; background:rgba(3,6,12,.82); backdrop-filter:blur(13px); padding:calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom)); align-items:center; justify-content:center; }
     .owner-modal.open { display:flex; }
@@ -717,7 +717,7 @@
       if (profileCard) profileCard.appendChild(profileOwner);
       let taps=0, tapReset;
       if (logo) { logo.style.cursor="pointer"; logo.addEventListener("click",()=>{taps++;clearTimeout(tapReset);tapReset=setTimeout(()=>{taps=0;},2200);if(taps>=5){taps=0;enableOwnerEntrance();toast("Owner Lounge активирован на этом устройстве.");}}); }
-      function enableOwnerEntrance(){write("enabled",true);entry.classList.add("visible");ownerMark.classList.add("visible");profileOwner.classList.add("visible");}
+      function enableOwnerEntrance(){write("enabled",true);entry.classList.add("visible");ownerMark.classList.add("visible");profileOwner.classList.add("visible");applyPrefs();}
       if(read("enabled",false))enableOwnerEntrance();
       function openOwner(){if(!read("enabled",false))return;modal.classList.add("open");document.body.style.overflow="hidden";write("opens",read("opens",0)+1);ownerQuery("#ownerOpenCount").textContent=read("opens",0);applyPrefs();refreshStatuses();}
       function closeOwner(){modal.classList.remove("open");document.body.style.overflow="";}
@@ -727,6 +727,7 @@
       document.addEventListener("click",e=>{if(e.target&&e.target.id==="ownerProfileOpen")openOwner();});
       ownerAll(".owner-tab").forEach(b=>b.addEventListener("click",()=>{ownerAll(".owner-tab").forEach(x=>x.classList.toggle("active",x===b));ownerAll(".owner-page").forEach(x=>x.classList.toggle("active",x.id==="owner-page-"+b.dataset.ownerTab));}));
       function applyPrefs(){
+        if(!read("enabled",false)) return;
         const theme=read("theme","default"),palettes={default:{bg:"#0d1118",panel:"#151b26",panel2:"#1b2432",blue:"#4f8cff"},arctic:{bg:"#0a1421",panel:"#112238",panel2:"#18304b",blue:"#73adff"},midnight:{bg:"#100d19",panel:"#1b1528",panel2:"#28203b",blue:"#a68aff"}};
         const p=palettes[theme]||palettes.default;Object.entries(p).forEach(([k,v])=>document.documentElement.style.setProperty("--"+k,v));
         ownerAll(".owner-theme").forEach(b=>b.classList.toggle("active",b.dataset.ownerTheme===theme));
