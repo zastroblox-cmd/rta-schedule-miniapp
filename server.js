@@ -131,6 +131,87 @@ app.get("/api/schedule", async (req, res) => {
   res.json({ date: dateString, week_type: weekType, data });
 });
 
+
+function dateToDM(value) {
+  if (!value) return "";
+  const parts = String(value).slice(0, 10).split("-");
+  return parts.length === 3 ? parts[2] + "." + parts[1] : "";
+}
+
+function toMiniAppLesson(row) {
+  const lesson = {
+    group: row.group_code,
+    start: String(row.starts_at || "").slice(0, 5),
+    end: String(row.ends_at || "").slice(0, 5),
+    title: row.subject || "",
+    type: row.lesson_type || "Занятие",
+    teacher: row.teacher || "",
+    room: row.room || "Уточняется накануне",
+    confidence: "high"
+  };
+
+  if (row.entry_kind === "date_override" && row.schedule_date) {
+    lesson.day = (new Date(row.schedule_date + "T12:00:00Z").getUTCDay() + 6) % 7;
+    lesson.dates = [dateToDM(row.schedule_date)];
+  } else {
+    lesson.day = Number(row.weekday) - 1;
+    if (row.week_type === "A") lesson.parity = "чётная неделя";
+    if (row.week_type === "B") lesson.parity = "нечётная неделя";
+  }
+
+  if (row.valid_to) lesson.dates_until = dateToDM(row.valid_to);
+  if (Array.isArray(row.excluded_dates) && row.excluded_dates.length) {
+    lesson.excluded_dates = row.excluded_dates.map(dateToDM).filter(Boolean);
+  }
+  if (row.notes) lesson.note = row.notes;
+  return lesson;
+}
+
+// Compatibility export for the existing course-4 adapter.
+// The Mini App can prefer the database while retaining its local JSON fallback.
+app.get("/api/course4-schedule", async (_req, res) => {
+  if (!supabase) return res.status(503).json({ error: "Database is not configured" });
+
+  const { data: groups, error: groupsError } = await supabase
+    .from("student_groups")
+    .select("id,group_code,display_name,courses!inner(course_number)")
+    .eq("courses.course_number", 4)
+    .order("group_code");
+  if (groupsError) return res.status(500).json({ error: "Unable to load course groups" });
+  if (!groups || groups.length === 0) {
+    return res.status(404).json({ error: "No course-4 groups found" });
+  }
+
+  const ids = groups.map(group => group.id);
+  const { data: entries, error: entriesError } = await supabase
+    .from("schedule_entries")
+    .select("group_id,entry_kind,weekday,week_type,schedule_date,starts_at,ends_at,subject,teacher,room,lesson_type,notes,excluded_dates,valid_to")
+    .in("group_id", ids)
+    .order("starts_at");
+  if (entriesError) return res.status(500).json({ error: "Unable to load course schedule" });
+
+  const groupById = new Map(groups.map(group => [group.id, group]));
+  const lessons = (entries || []).map(row => ({
+    ...toMiniAppLesson({
+      ...row,
+      group_code: groupById.get(row.group_id)?.group_code
+    })
+  }));
+
+  res.setHeader("Cache-Control", "no-store");
+  res.json({
+    _status: "CONNECTED_TO_SUPABASE",
+    _source: "Supabase schedule_entries",
+    _groups: groups.map(group => group.group_code),
+    _rules: {
+      weekA: "чётная неделя",
+      weekB: "нечётная неделя",
+      anchor: "12–18.10.2026 — неделя Б; 19–25.10.2026 — неделя А"
+    },
+    lessons
+  });
+});
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`RTA schedule API listening on port ${PORT}`);
 });
