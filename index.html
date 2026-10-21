@@ -125,6 +125,47 @@
     .nav-item .nav-icon, .next-icon, .avatar { text-shadow:0 1px 8px #8bb7ff35; filter:drop-shadow(0 1px 2px #8bb7ff18); }
     .nav-item .nav-icon { color:rgba(190,211,245,.88); -webkit-text-stroke:.25px rgba(255,255,255,.18); }
     .avatar { background:rgba(255,255,255,.035); backdrop-filter:blur(7px); border-color:rgba(255,255,255,.16); }
+
+    /* Owner Lounge: локальные функции владельца, не влияющие на расписание */
+    .owner-mark { display:none; align-items:center; gap:6px; width:max-content; margin-top:11px; padding:7px 10px; border:1px solid #e9c77835; border-radius:12px; color:#e9c778; background:rgba(233,199,120,.06); font-size:11px; font-weight:750; }
+    .owner-mark.visible { display:inline-flex; }
+    .owner-crown { color:#e9c778; filter:drop-shadow(0 0 calc(6px * var(--owner-glow,1)) #e9c77844); }
+    .owner-profile-card { display:none; margin:12px 0 0; padding:13px; border:1px solid #e9c77830; border-radius:15px; background:linear-gradient(110deg,rgba(233,199,120,.07),rgba(255,255,255,.02)); }
+    .owner-profile-card.visible { display:block; }
+    .owner-entry { display:none; position:fixed; z-index:45; right:14px; top:calc(12px + env(safe-area-inset-top)); width:42px; height:42px; border-radius:15px; border:1px solid #e9c77855; color:#f1d99d; background:rgba(24,30,41,.92); backdrop-filter:blur(12px); box-shadow:0 8px 24px #0005; font-size:20px; }
+    .owner-entry.visible { display:grid; place-items:center; }
+    .owner-modal { display:none; position:fixed; inset:0; z-index:120; background:rgba(3,6,12,.82); backdrop-filter:blur(13px); padding:calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom)); align-items:center; justify-content:center; }
+    .owner-modal.open { display:flex; }
+    .owner-sheet { width:100%; max-width:600px; max-height:100%; overflow:auto; border:1px solid #ffffff18; border-radius:23px; background:linear-gradient(145deg,#182236,#10151e 65%); box-shadow:0 25px 90px #0009; padding:17px; }
+    .owner-head { display:flex; align-items:center; gap:11px; margin-bottom:14px; }
+    .owner-head-icon { width:43px; height:43px; display:grid; place-items:center; border-radius:14px; background:#e9c77812; border:1px solid #e9c77830; font-size:21px; }
+    .owner-head-copy { flex:1; } .owner-head h2 { margin:0 0 4px; font-size:20px; letter-spacing:-.04em; } .owner-sub { font-size:11px; color:var(--muted); }
+    .owner-close { border:1px solid #ffffff20; background:#ffffff08; color:#dce6f7; border-radius:11px; padding:8px 11px; }
+    .owner-warning { padding:10px 11px; border-radius:12px; background:#ffb86b0c; border:1px solid #ffb86b2a; color:#ffd1a0; font-size:11px; line-height:1.5; margin-bottom:12px; }
+    .owner-tabs { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; margin-bottom:12px; }
+    .owner-tab { border:1px solid #ffffff12; border-radius:11px; background:#ffffff05; color:#aebbd0; padding:10px 5px; font-size:11px; }
+    .owner-tab.active { background:#203657; border-color:#4f8cff65; color:#fff; }
+    .owner-page { display:none; } .owner-page.active { display:block; }
+    .owner-card { padding:14px; margin-bottom:9px; border:1px solid #ffffff10; border-radius:15px; background:rgba(255,255,255,.035); }
+    .owner-card h3 { font-size:14px; margin:0 0 7px; }
+    .owner-muted { color:var(--muted); font-size:11px; line-height:1.5; margin:0; }
+    .owner-line { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:11px 0; border-top:1px solid #ffffff0d; }
+    .owner-line strong { display:block; font-size:12px; } .owner-line small { display:block; color:var(--muted); font-size:10px; margin-top:4px; }
+    .owner-action { border:1px solid #4f8cff50; background:#203657; color:#e7efff; border-radius:10px; padding:9px 10px; font-size:11px; font-weight:700; }
+    .owner-result { margin-top:10px; padding:11px; border-radius:11px; background:#4fd1a10d; border:1px solid #4fd1a126; color:#b9f2de; font-size:11px; line-height:1.6; white-space:pre-line; }
+    .owner-result.warn { color:#ffd1a0; border-color:#ffb86b35; background:#ffb86b0b; }
+    .owner-theme-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; margin-top:10px; }
+    .owner-theme { border:1px solid #ffffff16; border-radius:11px; padding:9px 5px; color:#dfe8f7; background:#10151e; font-size:10px; }
+    .owner-theme span { display:block; height:18px; border-radius:6px; margin-bottom:7px; }
+    .owner-theme.active { border-color:#4f8cff; }
+    .owner-toggle { accent-color:#4f8cff; width:17px; height:17px; }
+    .owner-map { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; margin-top:10px; }
+    .owner-node { text-align:left; padding:12px; border:1px solid #4f8cff28; background:#1b2a40; color:#f1f5fb; border-radius:12px; font-size:11px; }
+    .owner-node small { display:block; color:#aab7ca; margin-top:5px; font-size:10px; }
+    body.owner-no-motion *, body.owner-no-motion *:before, body.owner-no-motion *:after { animation:none!important; transition:none!important; }
+    body.owner-glass .profile-card, body.owner-glass .group-card, body.owner-glass .next-card, body.owner-glass .owner-card { backdrop-filter:blur(12px); background-color:rgba(21,27,38,.76); }
+    @media(min-width:520px) { .owner-tabs { grid-template-columns:repeat(5,minmax(0,1fr)); } .owner-map { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+
   </style>
   <!-- schedule-build: 2026-10-21-course3-integration-v1 -->
 </head>
@@ -200,6 +241,34 @@
     </div>
   </div>
   <div class="toast" id="toast"></div>
+
+  <button class="owner-entry" id="ownerEntry" aria-label="Панель создателя" title="Панель создателя">♛</button>
+  <div class="owner-modal" id="ownerModal" role="dialog" aria-modal="true" aria-label="Owner Lounge">
+    <section class="owner-sheet">
+      <header class="owner-head"><div class="owner-head-icon">♛</div><div class="owner-head-copy"><h2>Owner Lounge</h2><div class="owner-sub">Личная панель создателя · локальный режим</div></div><button class="owner-close" id="ownerClose">Закрыть</button></header>
+      <div class="owner-warning">Офлайн-режим: темы, эффекты и проверки интерфейса работают на устройстве. Защита владельца по Telegram ID, серверная статистика и синхронизация появятся после подключения backend. Секретный жест не является защитой доступа.</div>
+      <nav class="owner-tabs" aria-label="Разделы панели">
+        <button class="owner-tab active" data-owner-tab="scanner">⌁ Сканер</button><button class="owner-tab" data-owner-tab="studio">◈ Студия</button><button class="owner-tab" data-owner-tab="stats">✧ Статистика</button><button class="owner-tab" data-owner-tab="lab">✦ Secret Lab</button><button class="owner-tab" data-owner-tab="map">⌘ Карта</button>
+      </nav>
+      <section class="owner-page active" id="owner-page-scanner">
+        <div class="owner-card"><h3>System Scanner</h3><p class="owner-muted">Проверяет доступные сейчас данные выбранного дня и состояние загрузки адаптеров. Ничего не меняет в расписании.</p><button class="owner-action" id="ownerRunScan" style="width:100%;margin-top:12px">Проверить расписание</button><div class="owner-result" id="ownerScanResult">Диагностика ещё не запускалась.</div></div>
+        <div class="owner-card"><h3>Контроль источников</h3><div class="owner-line"><div><strong>1-й курс</strong><small>Загрузка JSON и адаптера</small></div><span id="ownerC1">…</span></div><div class="owner-line"><div><strong>3-й курс</strong><small>Загрузка черновика курса</small></div><span id="ownerC3">…</span></div><div class="owner-line"><div><strong>4-й курс</strong><small>Загрузка JSON и адаптера</small></div><span id="ownerC4">…</span></div><p class="owner-muted">Для встроенных расписаний 2-го курса диагностика проверяет данные выбранного дня. Статус загрузки не подтверждает официальную корректность источника.</p></div>
+      </section>
+      <section class="owner-page" id="owner-page-studio">
+        <div class="owner-card"><h3>Personal Studio</h3><p class="owner-muted">Личные настройки сохраняются в этом браузере. Они не меняют расписание.</p><div class="owner-theme-grid"><button class="owner-theme active" data-owner-theme="default"><span style="background:linear-gradient(120deg,#0d1118,#273142)"></span>Obsidian</button><button class="owner-theme" data-owner-theme="arctic"><span style="background:linear-gradient(120deg,#10253d,#4f8cff)"></span>Arctic Blue</button><button class="owner-theme" data-owner-theme="midnight"><span style="background:linear-gradient(120deg,#1d1237,#633fa1)"></span>Midnight</button></div><div class="owner-line"><div><strong>Стеклянные карточки</strong><small>Мягкая прозрачность</small></div><input class="owner-toggle" id="ownerGlass" type="checkbox" checked></div><div class="owner-line"><div><strong>Анимации</strong><small>Плавные переходы</small></div><input class="owner-toggle" id="ownerMotion" type="checkbox" checked></div><div class="owner-line"><div><strong>Свечение короны</strong><small>Мягкий акцент</small></div><input class="owner-toggle" id="ownerGlow" type="checkbox" checked></div><div class="owner-result" id="ownerStudioResult">Выбери оформление.</div><button class="owner-action" id="ownerReset" style="width:100%;margin-top:10px">Сбросить мои настройки</button></div>
+      </section>
+      <section class="owner-page" id="owner-page-stats">
+        <div class="owner-card"><h3>Creator Stats</h3><p class="owner-muted">Счётчики локальны этому устройству; это не общая серверная статистика.</p><div class="owner-line"><div><strong>Запуски диагностики</strong><small>На этом устройстве</small></div><b id="ownerScanCount">0</b></div><div class="owner-line"><div><strong>Открытия Owner Lounge</strong><small>На этом устройстве</small></div><b id="ownerOpenCount">0</b></div><div class="owner-line"><div><strong>Отметка создателя</strong><small>Не блокирует другие функции</small></div><b>♛</b></div><div class="owner-result">Достижения и уровни не открывают и не блокируют функции. Историю реальных изменений подключим с сервером.</div></div>
+      </section>
+      <section class="owner-page" id="owner-page-lab">
+        <div class="owner-card"><h3>Secret Lab</h3><p class="owner-muted">Все локальные эффекты доступны сразу.</p><div class="owner-line"><div><strong>Звёздный импульс</strong><small>Анимация короны</small></div><button class="owner-action" id="ownerPulse">Запустить</button></div><div class="owner-line"><div><strong>Секретное послание</strong><small>Пасхалка создателю</small></div><button class="owner-action" id="ownerSecret">Открыть</button></div><div class="owner-result" id="ownerLabResult">Выбери эффект.</div></div>
+      </section>
+      <section class="owner-page" id="owner-page-map">
+        <div class="owner-card"><h3>Activity Universe</h3><p class="owner-muted">Карта разделов проекта. Подробная история групп и обновлений появится после подключения серверного журнала.</p><div class="owner-map"><button class="owner-node" data-owner-node="app">✦ Приложение<small>Главная оболочка</small></button><button class="owner-node" data-owner-node="courses">▦ Курсы<small>Источники расписаний</small></button><button class="owner-node" data-owner-node="groups">♧ Группы<small>Выбранная группа</small></button><button class="owner-node" data-owner-node="updates">↻ Обновления<small>История версий</small></button><button class="owner-node" data-owner-node="checks">⌁ Диагностика<small>Результаты сканера</small></button><button class="owner-node" data-owner-node="effects">✧ Эффекты<small>Твои настройки</small></button></div><div class="owner-result" id="ownerMapResult">Нажми на узел карты.</div></div>
+      </section>
+    </section>
+  </div>
+
 
   <script>
     // Основа: расписание, присланное пользователем. Неделя А — первый список, неделя Б — второй.
@@ -628,6 +697,69 @@
     if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.first_name) {
       document.getElementById("greeting").textContent = `Привет, ${tg.initDataUnsafe.user.first_name}! 👋`;
     }
+
+    // Owner Lounge: доступные без сервера личные инструменты и настройки.
+    (function initLocalOwnerLounge(){
+      const $o = (selector) => document.querySelector(selector);
+      const $o = (selector) => Array.from(document.querySelectorAll(selector));
+      const read = (key, fallback) => { try { const v=localStorage.getItem("rta_owner_"+key); return v===null?fallback:JSON.parse(v); } catch(e) { return fallback; } };
+      const write = (key, value) => { try { localStorage.setItem("rta_owner_"+key, JSON.stringify(value)); } catch(e) {} };
+      const logo = document.querySelector(".logo"), entry = $o("#ownerEntry"), modal = $o("#ownerModal");
+      const ownerMark = document.createElement("div");
+      ownerMark.className = "owner-mark";
+      ownerMark.innerHTML = '<span class="owner-crown">♛</span><span>Создатель приложения</span>';
+      const welcome = document.querySelector(".welcome");
+      if (welcome) welcome.appendChild(ownerMark);
+      const profileCard = document.querySelector(".profile-card");
+      const profileOwner = document.createElement("div");
+      profileOwner.className = "owner-profile-card";
+      profileOwner.innerHTML = '<div style="display:flex;align-items:center;gap:9px;color:#e9c778;font-weight:750"><span style="font-size:19px">♛</span><span>Владелец проекта</span></div><p class="owner-muted" style="margin-top:6px">Особые инструменты создателя · Owner Lounge</p><button class="owner-action" id="ownerProfileOpen" style="width:100%;margin-top:10px">Открыть панель</button>';
+      if (profileCard) profileCard.appendChild(profileOwner);
+      let taps=0, tapReset;
+      if (logo) { logo.style.cursor="pointer"; logo.addEventListener("click",()=>{taps++;clearTimeout(tapReset);tapReset=setTimeout(()=>{taps=0;},2200);if(taps>=5){taps=0;enableOwnerEntrance();toast("Owner Lounge активирован на этом устройстве.");}}); }
+      function enableOwnerEntrance(){write("enabled",true);entry.classList.add("visible");ownerMark.classList.add("visible");profileOwner.classList.add("visible");}
+      if(read("enabled",false))enableOwnerEntrance();
+      function openOwner(){if(!read("enabled",false))return;modal.classList.add("open");document.body.style.overflow="hidden";write("opens",read("opens",0)+1);$o("#ownerOpenCount").textContent=read("opens",0);applyPrefs();refreshStatuses();}
+      function closeOwner(){modal.classList.remove("open");document.body.style.overflow="";}
+      entry.addEventListener("click",openOwner);$o("#ownerClose").addEventListener("click",closeOwner);
+      modal.addEventListener("click",e=>{if(e.target===modal)closeOwner();});
+      document.addEventListener("keydown",e=>{if(e.key==="Escape")closeOwner();});
+      document.addEventListener("click",e=>{if(e.target&&e.target.id==="ownerProfileOpen")openOwner();});
+      $o(".owner-tab").forEach(b=>b.addEventListener("click",()=>{$o(".owner-tab").forEach(x=>x.classList.toggle("active",x===b));$o(".owner-page").forEach(x=>x.classList.toggle("active",x.id==="owner-page-"+b.dataset.ownerTab));}));
+      function applyPrefs(){
+        const theme=read("theme","default"),palettes={default:{bg:"#0d1118",panel:"#151b26",panel2:"#1b2432",blue:"#4f8cff"},arctic:{bg:"#0a1421",panel:"#112238",panel2:"#18304b",blue:"#73adff"},midnight:{bg:"#100d19",panel:"#1b1528",panel2:"#28203b",blue:"#a68aff"}};
+        const p=palettes[theme]||palettes.default;Object.entries(p).forEach(([k,v])=>document.documentElement.style.setProperty("--"+k,v));
+        $o(".owner-theme").forEach(b=>b.classList.toggle("active",b.dataset.ownerTheme===theme));
+        const glass=read("glass",true),motion=read("motion",true),glow=read("glow",true);
+        document.body.classList.toggle("owner-glass",glass);document.body.classList.toggle("owner-no-motion",!motion);
+        document.documentElement.style.setProperty("--owner-glow",glow?"1":"0");
+        $o("#ownerGlass").checked=glass;$o("#ownerMotion").checked=motion;$o("#ownerGlow").checked=glow;
+        $o("#ownerStudioResult").textContent="Тема: "+({default:"Obsidian",arctic:"Arctic Blue",midnight:"Midnight"}[theme]||"Obsidian")+". Настройки сохранены на этом устройстве.";
+        $o("#ownerScanCount").textContent=read("scans",0);$o("#ownerOpenCount").textContent=read("opens",0);
+      }
+      $o(".owner-theme").forEach(b=>b.addEventListener("click",()=>{write("theme",b.dataset.ownerTheme);applyPrefs();}));
+      [["glass","ownerGlass"],["motion","ownerMotion"],["glow","ownerGlow"]].forEach(([key,id])=>$o("#"+id).addEventListener("change",e=>{write(key,e.target.checked);applyPrefs();}));
+      $o("#ownerReset").addEventListener("click",()=>{["theme","glass","motion","glow"].forEach(k=>{try{localStorage.removeItem("rta_owner_"+k);}catch(e){}});applyPrefs();toast("Личные настройки сброшены.");});
+      function refreshStatuses(){$o("#ownerC1").textContent=window.Course1ScheduleReady?"✓ Загружен":"… Загружается";$o("#ownerC3").textContent=window.Course3ScheduleReady?"✓ Загружен":"… Загружается";$o("#ownerC4").textContent=window.Course4ScheduleReady?"✓ Загружен":"… Загружается";}
+      $o("#ownerRunScan").addEventListener("click",()=>{
+        let lines=[],issues=0,lessons=[];
+        try{lessons=typeof lessonsForSelectedDate==="function"?lessonsForSelectedDate():[];}catch(e){issues++;lines.push("Не удалось прочитать выбранный день: "+e.message);}
+        if(!Array.isArray(lessons)){lessons=[];issues++;lines.push("Данные дня имеют неожиданный формат.");}
+        lines.push("Группа: "+(typeof currentGroup!=="undefined"?currentGroup:"не определена"));lines.push("Пар на выбранную дату: "+lessons.length);
+        const validTime=/^([01]\d|2[0-3]):[0-5]\d$/;
+        lessons.forEach((l,i)=>{if(!l||!validTime.test(l.start||"")||!validTime.test(l.end||"")){issues++;lines.push("Ошибка времени в записи №"+(i+1));}else if(l.end<=l.start){issues++;lines.push("Окончание раньше начала: "+(l.title||"без названия"));}if(!l||!String(l.title||"").trim()){issues++;lines.push("Пустое название пары №"+(i+1));}});
+        for(let i=0;i<lessons.length;i++)for(let j=i+1;j<lessons.length;j++){if(lessons[i]?.start&&lessons[i]?.end&&lessons[j]?.start&&lessons[j]?.end&&lessons[i].start<lessons[j].end&&lessons[j].start<lessons[i].end){issues++;lines.push("Возможное пересечение: "+lessons[i].title+" / "+lessons[j].title);}}
+        refreshStatuses();lines.push("Курсы 1/3/4: "+(window.Course1ScheduleReady?"1-й загружен":"1-й не подтверждён")+", "+(window.Course3ScheduleReady?"3-й загружен":"3-й не подтверждён")+", "+(window.Course4ScheduleReady?"4-й загружен":"4-й не подтверждён"));
+        lines.push(issues?"Найдено замечаний: "+issues:"Ошибок формата в доступном списке не найдено.");lines.push("Это техническая проверка, не сверка с официальным PDF.");
+        $o("#ownerScanResult").textContent=lines.join("\n");$o("#ownerScanResult").classList.toggle("warn",issues>0);write("scans",read("scans",0)+1);$o("#ownerScanCount").textContent=read("scans",0);
+      });
+      $o("#ownerPulse").addEventListener("click",()=>{const mark=$o(".owner-entry");if(mark.animate)mark.animate([{transform:"scale(1)"},{transform:"scale(1.18)",filter:"drop-shadow(0 0 15px #e9c778cc)"},{transform:"scale(1)"}],{duration:800});$o("#ownerLabResult").textContent="✧ Звёздный импульс активирован.";});
+      $o("#ownerSecret").addEventListener("click",()=>$o("#ownerLabResult").textContent="Ты не просто пользуешься расписанием — ты его создаёшь. ♛");
+      const nodeCopy={app:"Главная оболочка Mini App. Основной интерфейс расписания не изменяется.",courses:"Разные курсы загружаются из своих источников, когда для них настроены адаптеры.",groups:"Текущая группа: "+(typeof currentGroup!=="undefined"?currentGroup:"не определена")+".",updates:"Реальную историю изменений можно будет получить после подключения серверного журнала.",checks:"Открой раздел «Сканер», чтобы проверить формат доступных пар выбранного дня.",effects:"Темы и визуальные настройки сохраняются только на этом устройстве."};
+      $o(".owner-node").forEach(b=>b.addEventListener("click",()=>$o("#ownerMapResult").textContent=nodeCopy[b.dataset.ownerNode]||"Узел карты"));
+      applyPrefs();
+    })();
+
     document.getElementById("prevWeek").onclick=()=>{weekOffset--;render();};
     document.getElementById("nextWeek").onclick=()=>{weekOffset++;render();};
     document.getElementById("todayWeek").onclick=()=>{weekOffset=0;selectedDay=mondayOffset;render();};
