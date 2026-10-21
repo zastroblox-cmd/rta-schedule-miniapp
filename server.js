@@ -44,18 +44,15 @@ app.get("/health", (_req, res) => {
 
 app.get("/api/faculties", async (_req, res) => {
   if (!supabase) return res.status(503).json({ error: "Database is not configured" });
-  const { data, error } = await supabase
-    .from("faculties")
-    .select("id,name,slug")
-    .order("name");
+  const { data, error } = await supabase.from("faculties")
+    .select("id,name,slug").order("name");
   if (error) return res.status(500).json({ error: "Unable to load faculties" });
   res.json({ data });
 });
 
 app.get("/api/groups", async (_req, res) => {
   if (!supabase) return res.status(503).json({ error: "Database is not configured" });
-  const { data, error } = await supabase
-    .from("student_groups")
+  const { data, error } = await supabase.from("student_groups")
     .select("id,group_code,display_name,course_id,courses(course_number,faculty_id,faculties(name,slug))")
     .order("display_name");
   if (error) return res.status(500).json({ error: "Unable to load groups" });
@@ -63,7 +60,7 @@ app.get("/api/groups", async (_req, res) => {
 });
 
 function getWeekType(dateString) {
-  // Schedule rule: 12–18 Oct 2026 is week B; 19–25 Oct 2026 is week A.
+  // 12–18 Oct 2026 is week B (odd); 19–25 Oct is week A (even).
   const date = new Date(dateString + "T12:00:00Z");
   const monday = new Date(date);
   const day = monday.getUTCDay() || 7;
@@ -73,50 +70,47 @@ function getWeekType(dateString) {
   return ((weeks % 2) + 2) % 2 === 0 ? "A" : "B";
 }
 
+function validDateString(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const d = new Date(value + "T00:00:00Z");
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === value;
+}
+
 app.get("/api/schedule", async (req, res) => {
   if (!supabase) return res.status(503).json({ error: "Database is not configured" });
-
   const groupId = Number(req.query.group_id);
   const dateString = String(req.query.date || "");
-  if (!Number.isInteger(groupId) || groupId < 1) {
+  if (!Number.isSafeInteger(groupId) || groupId < 1) {
     return res.status(400).json({ error: "group_id must be a positive integer" });
   }
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateString) ||
-      Number.isNaN(Date.parse(dateString + "T00:00:00Z"))) {
-    return res.status(400).json({ error: "date must use YYYY-MM-DD format" });
+  if (!validDateString(dateString)) {
+    return res.status(400).json({ error: "date must be a valid YYYY-MM-DD date" });
   }
 
   const date = new Date(dateString + "T12:00:00Z");
   const weekday = date.getUTCDay() || 7;
   const weekType = getWeekType(dateString);
+  const fields = "id,group_id,entry_kind,weekday,week_type,schedule_date,starts_at,ends_at,subject,teacher,room,lesson_type,notes,excluded_dates,valid_from,valid_to";
 
-  const { data: overrides, error: overrideError } = await supabase
-    .from("schedule_entries")
-    .select("id,group_id,entry_kind,weekday,week_type,schedule_date,starts_at,ends_at,subject,teacher,room,lesson_type,notes")
-    .eq("group_id", groupId)
-    .eq("entry_kind", "date_override")
-    .eq("schedule_date", dateString)
-    .order("starts_at");
-
+  const { data: overrides, error: overrideError } = await supabase.from("schedule_entries")
+    .select(fields).eq("group_id", groupId).eq("entry_kind", "date_override")
+    .eq("schedule_date", dateString).order("starts_at");
   if (overrideError) return res.status(500).json({ error: "Unable to load schedule" });
 
-  if (overrides && overrides.length > 0) {
-    return res.json({ date: dateString, week_type: weekType, source: "date_override", data: overrides });
-  }
-
-  const { data, error } = await supabase
-    .from("schedule_entries")
-    .select("id,group_id,entry_kind,weekday,week_type,schedule_date,starts_at,ends_at,subject,teacher,room,lesson_type,notes")
-    .eq("group_id", groupId)
-    .eq("entry_kind", "recurring")
-    .eq("weekday", weekday)
-    .or(`week_type.is.null,week_type.eq.${weekType}`)
-    .or(`valid_from.is.null,valid_from.lte.${dateString}`)
-    .or(`valid_to.is.null,valid_to.gte.${dateString}`)
+  const { data: recurring, error: recurringError } = await supabase.from("schedule_entries")
+    .select(fields).eq("group_id", groupId).eq("entry_kind", "recurring")
+    .eq("weekday", weekday).or(`week_type.is.null,week_type.eq.${weekType}`)
     .order("starts_at");
+  if (recurringError) return res.status(500).json({ error: "Unable to load schedule" });
 
-  if (error) return res.status(500).json({ error: "Unable to load schedule" });
-  res.json({ date: dateString, week_type: weekType, source: "recurring", data: data || [] });
+  const recurringForDate = (recurring || []).filter(item =>
+    (!item.valid_from || item.valid_from <= dateString) &&
+    (!item.valid_to || item.valid_to >= dateString) &&
+    !(item.excluded_dates || []).includes(dateString)
+  );
+  const data = [...recurringForDate, ...(overrides || [])]
+    .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+  res.json({ date: dateString, week_type: weekType, data });
 });
 
 app.listen(PORT, "0.0.0.0", () => {
