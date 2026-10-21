@@ -20,9 +20,9 @@ assert.strictEqual(weekLabelForDate(date(2026, 10, 19)), "А");
 assert.strictEqual(weekLabelForDate(date(2026, 10, 25)), "А");
 assert.strictEqual(weekLabelForDate(date(2026, 10, 26)), "Б");
 
-// Established anchor dates match ISO week parity: A = odd, B = even.
-assert.strictEqual(parityForDate(date(2026, 10, 12)), "чётная неделя");
-assert.strictEqual(parityForDate(date(2026, 10, 19)), "нечётная неделя");
+// The PDF's parity markers and explicit 17.10 exceptions establish A = even, B = odd.
+assert.strictEqual(parityForDate(date(2026, 10, 12)), "нечётная неделя");
+assert.strictEqual(parityForDate(date(2026, 10, 19)), "чётная неделя");
 
 const exactDateLesson = getLessonsForDate("Ю604/О-2404", date(2026, 10, 22));
 assert(
@@ -59,32 +59,20 @@ assert(
   "Должно возвращаться разовое занятие Ю604 на 22.10"
 );
 
-// Reversed synthetic mapping is used only to isolate excluded-date filtering:
- // the actual default mapping is tested above.
-const testParityMap = { А: "чётная неделя", Б: "нечётная неделя" };
-const excludedSaturday = getLessonsForDate(
-  "Ю602/О-2402",
-  date(2026, 10, 17),
-  { parityMap: testParityMap }
-);
+// The actual mapping must match the official parity markers: A = even, B = odd.
+const excludedSaturday = getLessonsForDate("Ю602/О-2402", date(2026, 10, 17));
 assert(
-  !excludedSaturday.some(x => x.title === "Правовое регулирование нотариата в РФ" && x.start === "12:20"),
-  "Занятие по нотариату с исключением 17.10 не должно показываться в исключённую дату"
+  !excludedSaturday.some(x => x.title === "Правовое регулирование нотариата в РФ" && x.start === "10:10"),
+  "Нотариат не должен показываться 17.10: дата исключена в PDF"
 );
-const defaultMappedSaturday = getLessonsForDate("Ю602/О-2402", date(2026, 10, 24));
+const regularSaturday = getLessonsForDate("Ю602/О-2402", date(2026, 10, 31));
 assert(
-  defaultMappedSaturday.some(x => x.title === "Правовое регулирование нотариата в РФ" && x.start === "10:10"),
-  "При стандартной карте неделя А должна соответствовать нечётной неделе"
-);
-
-const regularSaturday = getLessonsForDate(
-  "Ю602/О-2402",
-  date(2026, 10, 31),
-  { parityMap: testParityMap }
+  regularSaturday.some(x => x.title === "Правовое регулирование нотариата в РФ" && x.start === "10:10"),
+  "Нотариат должен показываться на неделе Б после исключённой даты"
 );
 assert(
   regularSaturday.some(x => x.title === "Правовое регулирование нотариата в РФ" && x.start === "12:20"),
-  "То же занятие должно показываться 31.10 при тестовом соответствии недели Б нечётной неделе"
+  "Практическая пара по нотариату в 12:20 должна также учитываться"
 );
 
 const saturday = getLessonsForDate("Ю603/О-2403", date(2026, 12, 19));
@@ -111,4 +99,4 @@ assert.throws(
 );
 
 console.log("OK: проверки адаптера прошли.");
-console.log("Соответствие недель: А = нечётная, Б = чётная; контрольные даты соответствуют ISO-нумерации недель.");
+console.log("Соответствие недель: А = чётная, Б = нечётная; подтверждено по парности и исключению 17.10 в PDF.");
