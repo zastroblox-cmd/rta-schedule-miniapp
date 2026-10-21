@@ -337,5 +337,6 @@ async function configureTelegramWebhook() {
 }
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`RTA schedule API listening on port ${PORT}`);\n  void configureTelegramWebhook();
+  console.log(`RTA schedule API listening on port ${PORT}`);
+  void configureTelegramWebhook();
 });
