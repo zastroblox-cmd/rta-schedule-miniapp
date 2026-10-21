@@ -53,11 +53,11 @@ function weekLabelForDate(date) {
   return ((weekIndex % 2) + 2) % 2 === 0 ? "Б" : "А";
 }
 
-// The user's anchor weeks align with ISO week parity: 12–18 Oct 2026 is
-// week B / even; 19–25 Oct is week A / odd. Keep this mapping explicit here.
+// The A/B labels are independent of ISO week numbers. The PDF's parity
+// markers and the 17.10 exceptions indicate: week A = even, week B = odd.
 const DEFAULT_PARITY_MAP = Object.freeze({
-  А: "нечётная неделя",
-  Б: "чётная неделя"
+  А: "чётная неделя",
+  Б: "нечётная неделя"
 });
 
 function parityForDate(date, parityMap = DEFAULT_PARITY_MAP) {
