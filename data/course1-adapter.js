@@ -22,6 +22,8 @@
     if (!draft || !GROUPS.includes(group)) return [];
     const date = new Date(dateString + "T12:00:00");
     if (Number.isNaN(date.getTime())) return [];
+    // This PDF describes the autumn 2026 term; do not repeat weekly classes into future terms.
+    if (date.getFullYear() !== 2026 || date < new Date(2026, 8, 1) || date > new Date(2026, 11, 31)) return [];
     const day = (date.getDay() + 6) % 7;
     const dayMonth = dm(date);
     const parity = weekParity(date);
