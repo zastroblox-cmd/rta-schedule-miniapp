@@ -3,7 +3,6 @@
   "use strict";
   let draft = null;
   const GROUPS = ["Ю600/О-2601", "Ю600/О-2602", "Ю600/О-2603", "Ю600/О-2604"];
-  const unresolved = new Set(["19.12*"]);
   function pad(n) { return String(n).padStart(2, "0"); }
   function dm(date) { return pad(date.getDate()) + "." + pad(date.getMonth() + 1); }
   function iso(date) { return date.getFullYear() + "-" + pad(date.getMonth() + 1) + "-" + pad(date.getDate()); }
@@ -29,7 +28,6 @@
     const parity = weekParity(date);
     let matches = draft.lessons.filter(item => {
       if (!appliesToGroup(item, group) || Number(item.day) !== day) return false;
-      if (Array.isArray(item.source_dates_unresolved) && item.source_dates_unresolved.some(d => unresolved.has(d))) return false;
       if (Array.isArray(item.dates) && item.dates.length) return item.dates.includes(dayMonth);
       if (item.dates_until) {
         const [d, m] = item.dates_until.split(".").map(Number);
