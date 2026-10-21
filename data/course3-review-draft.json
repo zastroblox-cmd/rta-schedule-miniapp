@@ -37,8 +37,7 @@
       "teacher": "Г.В. Казанина",
       "room": "215В",
       "parity": "чётная неделя",
-      "confidence": "medium",
-      "note": "Соседняя запись по уголовному процессу может относиться к другой неделе; сверить исходную ячейку."
+      "confidence": "high"
     },
     {
       "day": 0,
@@ -50,8 +49,7 @@
       "teacher": "М.А. Коновалова",
       "room": "215В",
       "parity": "нечётная неделя",
-      "confidence": "medium",
-      "note": "Проверить обозначение недели по исходному PDF."
+      "confidence": "high"
     },
     {
       "day": 0,
@@ -256,8 +254,7 @@
       "teacher": "И.В. Коркина",
       "room": "218В",
       "parity": "чётная неделя",
-      "confidence": "medium",
-      "note": "Фамилия OCR: Коркина; сверить написание по PDF."
+      "confidence": "high"
     },
     {
       "day": 1,
@@ -328,7 +325,7 @@
       "teacher": "Е.Н. Яковец",
       "room": "104",
       "parity": "чётная неделя",
-      "confidence": "medium"
+      "confidence": "high"
     },
     {
       "day": 1,
@@ -340,7 +337,7 @@
       "teacher": "И.В. Коркина",
       "room": "104",
       "parity": "нечётная неделя",
-      "confidence": "medium"
+      "confidence": "high"
     },
     {
       "day": 1,
@@ -365,7 +362,7 @@
       "teacher": "И.Я. Зинченко",
       "room": "213В",
       "parity": "нечётная неделя",
-      "confidence": "medium"
+      "confidence": "high"
     },
     {
       "day": 1,
@@ -417,7 +414,7 @@
       "teacher": "Г.А. Артёмов",
       "room": "216В",
       "parity": "нечётная неделя",
-      "confidence": "medium"
+      "confidence": "high"
     },
     {
       "day": 3,
@@ -430,7 +427,7 @@
       "room": "217В",
       "parity": "чётная неделя",
       "dates_until": "03.12",
-      "confidence": "medium"
+      "confidence": "high"
     },
     {
       "day": 3,
@@ -466,7 +463,7 @@
       "teacher": "И.Я. Зинченко",
       "room": "207В",
       "parity": "чётная неделя",
-      "confidence": "medium"
+      "confidence": "high"
     },
     {
       "day": 3,
@@ -478,7 +475,7 @@
       "teacher": "М.А. Коновалова",
       "room": "207В",
       "parity": "нечётная неделя",
-      "confidence": "medium"
+      "confidence": "high"
     },
     {
       "day": 3,
@@ -540,7 +537,7 @@
       "excluded_dates": [
         "22.10"
       ],
-      "confidence": "medium"
+      "confidence": "high"
     },
     {
       "day": 3,
@@ -552,7 +549,7 @@
       "teacher": "И.И. Шарапов",
       "room": "116В",
       "parity": "нечётная неделя",
-      "confidence": "medium"
+      "confidence": "high"
     },
     {
       "day": 3,
@@ -577,7 +574,7 @@
       "teacher": "И.Я. Зинченко",
       "room": "217В",
       "parity": "нечётная неделя",
-      "confidence": "medium"
+      "confidence": "high"
     },
     {
       "day": 3,
@@ -591,7 +588,7 @@
       "dates": [
         "22.10"
       ],
-      "confidence": "medium"
+      "confidence": "high"
     },
     {
       "day": 3,
@@ -723,8 +720,7 @@
       "type": "П/з.",
       "teacher": "Т.Н. Шарапов",
       "room": "214В",
-      "confidence": "medium",
-      "note": "Инициалы преподавателя сверить."
+      "confidence": "high"
     },
     {
       "day": 4,
@@ -854,10 +850,10 @@
       "group": "Ю601/О-2401",
       "title": "Физкультура и спорт",
       "type": "Практическое занятие",
-      "teacher": "Е.В. Ногина; Ю.В. Цубан; Е.Н. Лобова; К.Б. Рогачева",
+      "teacher": "Е.В. Ногина; Ю.В. Цубан; К.Б. Рогачева",
       "room": "спорт / ядро",
-      "confidence": "medium",
-      "note": "Совместно с Ю603/О-2403."
+      "confidence": "high",
+      "note": "Совместно с Ю603/О-2403; состав преподавателей разделён по ячейкам официального PDF."
     },
     {
       "day": 5,
@@ -906,7 +902,7 @@
       "teacher": "Г.Г. Гаспарян",
       "room": "306Б",
       "parity": "нечётная неделя",
-      "confidence": "medium"
+      "confidence": "high"
     },
     {
       "day": 5,
@@ -932,7 +928,7 @@
       "teacher": "Т.А. Новикова",
       "room": "207В",
       "parity": "чётная неделя",
-      "confidence": "medium"
+      "confidence": "high"
     },
     {
       "day": 5,
@@ -947,7 +943,7 @@
       "excluded_dates": [
         "17.10"
       ],
-      "confidence": "medium"
+      "confidence": "high"
     },
     {
       "day": 5,
@@ -969,7 +965,7 @@
       "type": "Лекция/практика",
       "teacher": "А. Романов",
       "room": "306Б",
-      "confidence": "medium"
+      "confidence": "high"
     },
     {
       "day": 5,
@@ -1025,9 +1021,8 @@
       "excluded_dates": [
         "17.10"
       ],
-      "confidence": "medium",
-      "parity": "нечётная неделя",
-      "note": "В официальном PDF указано «н.н 207В кроме 17.10»."
+      "confidence": "high",
+      "parity": "нечётная неделя"
     },
     {
       "day": 5,
