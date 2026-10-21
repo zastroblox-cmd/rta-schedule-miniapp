@@ -700,11 +700,11 @@
 
     // Owner Lounge: доступные без сервера личные инструменты и настройки.
     (function initLocalOwnerLounge(){
-      const $o = (selector) => document.querySelector(selector);
-      const $o = (selector) => Array.from(document.querySelectorAll(selector));
+      const ownerQuery = (selector) => document.querySelector(selector);
+      const ownerAll = (selector) => Array.from(document.querySelectorAll(selector));
       const read = (key, fallback) => { try { const v=localStorage.getItem("rta_owner_"+key); return v===null?fallback:JSON.parse(v); } catch(e) { return fallback; } };
       const write = (key, value) => { try { localStorage.setItem("rta_owner_"+key, JSON.stringify(value)); } catch(e) {} };
-      const logo = document.querySelector(".logo"), entry = $o("#ownerEntry"), modal = $o("#ownerModal");
+      const logo = document.querySelector(".logo"), entry = ownerQuery("#ownerEntry"), modal = ownerQuery("#ownerModal");
       const ownerMark = document.createElement("div");
       ownerMark.className = "owner-mark";
       ownerMark.innerHTML = '<span class="owner-crown">♛</span><span>Создатель приложения</span>';
@@ -719,29 +719,29 @@
       if (logo) { logo.style.cursor="pointer"; logo.addEventListener("click",()=>{taps++;clearTimeout(tapReset);tapReset=setTimeout(()=>{taps=0;},2200);if(taps>=5){taps=0;enableOwnerEntrance();toast("Owner Lounge активирован на этом устройстве.");}}); }
       function enableOwnerEntrance(){write("enabled",true);entry.classList.add("visible");ownerMark.classList.add("visible");profileOwner.classList.add("visible");}
       if(read("enabled",false))enableOwnerEntrance();
-      function openOwner(){if(!read("enabled",false))return;modal.classList.add("open");document.body.style.overflow="hidden";write("opens",read("opens",0)+1);$o("#ownerOpenCount").textContent=read("opens",0);applyPrefs();refreshStatuses();}
+      function openOwner(){if(!read("enabled",false))return;modal.classList.add("open");document.body.style.overflow="hidden";write("opens",read("opens",0)+1);ownerQuery("#ownerOpenCount").textContent=read("opens",0);applyPrefs();refreshStatuses();}
       function closeOwner(){modal.classList.remove("open");document.body.style.overflow="";}
-      entry.addEventListener("click",openOwner);$o("#ownerClose").addEventListener("click",closeOwner);
+      entry.addEventListener("click",openOwner);ownerQuery("#ownerClose").addEventListener("click",closeOwner);
       modal.addEventListener("click",e=>{if(e.target===modal)closeOwner();});
       document.addEventListener("keydown",e=>{if(e.key==="Escape")closeOwner();});
       document.addEventListener("click",e=>{if(e.target&&e.target.id==="ownerProfileOpen")openOwner();});
-      $o(".owner-tab").forEach(b=>b.addEventListener("click",()=>{$o(".owner-tab").forEach(x=>x.classList.toggle("active",x===b));$o(".owner-page").forEach(x=>x.classList.toggle("active",x.id==="owner-page-"+b.dataset.ownerTab));}));
+      ownerAll(".owner-tab").forEach(b=>b.addEventListener("click",()=>{ownerAll(".owner-tab").forEach(x=>x.classList.toggle("active",x===b));ownerAll(".owner-page").forEach(x=>x.classList.toggle("active",x.id==="owner-page-"+b.dataset.ownerTab));}));
       function applyPrefs(){
         const theme=read("theme","default"),palettes={default:{bg:"#0d1118",panel:"#151b26",panel2:"#1b2432",blue:"#4f8cff"},arctic:{bg:"#0a1421",panel:"#112238",panel2:"#18304b",blue:"#73adff"},midnight:{bg:"#100d19",panel:"#1b1528",panel2:"#28203b",blue:"#a68aff"}};
         const p=palettes[theme]||palettes.default;Object.entries(p).forEach(([k,v])=>document.documentElement.style.setProperty("--"+k,v));
-        $o(".owner-theme").forEach(b=>b.classList.toggle("active",b.dataset.ownerTheme===theme));
+        ownerAll(".owner-theme").forEach(b=>b.classList.toggle("active",b.dataset.ownerTheme===theme));
         const glass=read("glass",true),motion=read("motion",true),glow=read("glow",true);
         document.body.classList.toggle("owner-glass",glass);document.body.classList.toggle("owner-no-motion",!motion);
         document.documentElement.style.setProperty("--owner-glow",glow?"1":"0");
-        $o("#ownerGlass").checked=glass;$o("#ownerMotion").checked=motion;$o("#ownerGlow").checked=glow;
-        $o("#ownerStudioResult").textContent="Тема: "+({default:"Obsidian",arctic:"Arctic Blue",midnight:"Midnight"}[theme]||"Obsidian")+". Настройки сохранены на этом устройстве.";
-        $o("#ownerScanCount").textContent=read("scans",0);$o("#ownerOpenCount").textContent=read("opens",0);
+        ownerQuery("#ownerGlass").checked=glass;ownerQuery("#ownerMotion").checked=motion;ownerQuery("#ownerGlow").checked=glow;
+        ownerQuery("#ownerStudioResult").textContent="Тема: "+({default:"Obsidian",arctic:"Arctic Blue",midnight:"Midnight"}[theme]||"Obsidian")+". Настройки сохранены на этом устройстве.";
+        ownerQuery("#ownerScanCount").textContent=read("scans",0);ownerQuery("#ownerOpenCount").textContent=read("opens",0);
       }
-      $o(".owner-theme").forEach(b=>b.addEventListener("click",()=>{write("theme",b.dataset.ownerTheme);applyPrefs();}));
-      [["glass","ownerGlass"],["motion","ownerMotion"],["glow","ownerGlow"]].forEach(([key,id])=>$o("#"+id).addEventListener("change",e=>{write(key,e.target.checked);applyPrefs();}));
-      $o("#ownerReset").addEventListener("click",()=>{["theme","glass","motion","glow"].forEach(k=>{try{localStorage.removeItem("rta_owner_"+k);}catch(e){}});applyPrefs();toast("Личные настройки сброшены.");});
-      function refreshStatuses(){$o("#ownerC1").textContent=window.Course1ScheduleReady?"✓ Загружен":"… Загружается";$o("#ownerC3").textContent=window.Course3ScheduleReady?"✓ Загружен":"… Загружается";$o("#ownerC4").textContent=window.Course4ScheduleReady?"✓ Загружен":"… Загружается";}
-      $o("#ownerRunScan").addEventListener("click",()=>{
+      ownerAll(".owner-theme").forEach(b=>b.addEventListener("click",()=>{write("theme",b.dataset.ownerTheme);applyPrefs();}));
+      [["glass","ownerGlass"],["motion","ownerMotion"],["glow","ownerGlow"]].forEach(([key,id])=>ownerQuery("#"+id).addEventListener("change",e=>{write(key,e.target.checked);applyPrefs();}));
+      ownerQuery("#ownerReset").addEventListener("click",()=>{["theme","glass","motion","glow"].forEach(k=>{try{localStorage.removeItem("rta_owner_"+k);}catch(e){}});applyPrefs();toast("Личные настройки сброшены.");});
+      function refreshStatuses(){ownerQuery("#ownerC1").textContent=window.Course1ScheduleReady?"✓ Загружен":"… Загружается";ownerQuery("#ownerC3").textContent=window.Course3ScheduleReady?"✓ Загружен":"… Загружается";ownerQuery("#ownerC4").textContent=window.Course4ScheduleReady?"✓ Загружен":"… Загружается";}
+      ownerQuery("#ownerRunScan").addEventListener("click",()=>{
         let lines=[],issues=0,lessons=[];
         try{lessons=typeof lessonsForSelectedDate==="function"?lessonsForSelectedDate():[];}catch(e){issues++;lines.push("Не удалось прочитать выбранный день: "+e.message);}
         if(!Array.isArray(lessons)){lessons=[];issues++;lines.push("Данные дня имеют неожиданный формат.");}
@@ -751,12 +751,12 @@
         for(let i=0;i<lessons.length;i++)for(let j=i+1;j<lessons.length;j++){if(lessons[i]?.start&&lessons[i]?.end&&lessons[j]?.start&&lessons[j]?.end&&lessons[i].start<lessons[j].end&&lessons[j].start<lessons[i].end){issues++;lines.push("Возможное пересечение: "+lessons[i].title+" / "+lessons[j].title);}}
         refreshStatuses();lines.push("Курсы 1/3/4: "+(window.Course1ScheduleReady?"1-й загружен":"1-й не подтверждён")+", "+(window.Course3ScheduleReady?"3-й загружен":"3-й не подтверждён")+", "+(window.Course4ScheduleReady?"4-й загружен":"4-й не подтверждён"));
         lines.push(issues?"Найдено замечаний: "+issues:"Ошибок формата в доступном списке не найдено.");lines.push("Это техническая проверка, не сверка с официальным PDF.");
-        $o("#ownerScanResult").textContent=lines.join("\n");$o("#ownerScanResult").classList.toggle("warn",issues>0);write("scans",read("scans",0)+1);$o("#ownerScanCount").textContent=read("scans",0);
+        ownerQuery("#ownerScanResult").textContent=lines.join("\n");ownerQuery("#ownerScanResult").classList.toggle("warn",issues>0);write("scans",read("scans",0)+1);ownerQuery("#ownerScanCount").textContent=read("scans",0);
       });
-      $o("#ownerPulse").addEventListener("click",()=>{const mark=$o(".owner-entry");if(mark.animate)mark.animate([{transform:"scale(1)"},{transform:"scale(1.18)",filter:"drop-shadow(0 0 15px #e9c778cc)"},{transform:"scale(1)"}],{duration:800});$o("#ownerLabResult").textContent="✧ Звёздный импульс активирован.";});
-      $o("#ownerSecret").addEventListener("click",()=>$o("#ownerLabResult").textContent="Ты не просто пользуешься расписанием — ты его создаёшь. ♛");
+      ownerQuery("#ownerPulse").addEventListener("click",()=>{const mark=ownerQuery(".owner-entry");if(mark.animate)mark.animate([{transform:"scale(1)"},{transform:"scale(1.18)",filter:"drop-shadow(0 0 15px #e9c778cc)"},{transform:"scale(1)"}],{duration:800});ownerQuery("#ownerLabResult").textContent="✧ Звёздный импульс активирован.";});
+      ownerQuery("#ownerSecret").addEventListener("click",()=>ownerQuery("#ownerLabResult").textContent="Ты не просто пользуешься расписанием — ты его создаёшь. ♛");
       const nodeCopy={app:"Главная оболочка Mini App. Основной интерфейс расписания не изменяется.",courses:"Разные курсы загружаются из своих источников, когда для них настроены адаптеры.",groups:"Текущая группа: "+(typeof currentGroup!=="undefined"?currentGroup:"не определена")+".",updates:"Реальную историю изменений можно будет получить после подключения серверного журнала.",checks:"Открой раздел «Сканер», чтобы проверить формат доступных пар выбранного дня.",effects:"Темы и визуальные настройки сохраняются только на этом устройстве."};
-      $o(".owner-node").forEach(b=>b.addEventListener("click",()=>$o("#ownerMapResult").textContent=nodeCopy[b.dataset.ownerNode]||"Узел карты"));
+      ownerAll(".owner-node").forEach(b=>b.addEventListener("click",()=>ownerQuery("#ownerMapResult").textContent=nodeCopy[b.dataset.ownerNode]||"Узел карты"));
       applyPrefs();
     })();
 
