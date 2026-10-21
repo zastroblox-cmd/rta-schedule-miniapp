@@ -106,5 +106,23 @@ assert.throws(
   "Неизвестная группа должна отклоняться"
 );
 
+// Scan the full timetable period for two lessons assigned to the same group and slot.
+const courseGroups = ["Ю601/О-2401", "Ю602/О-2402", "Ю603/О-2403", "Ю604/О-2404"];
+for (let current = date(2026, 9, 21); current <= date(2026, 12, 26); current.setDate(current.getDate() + 1)) {
+  const weekday = (current.getDay() + 6) % 7;
+  if (weekday > 5) continue;
+  for (const group of courseGroups) {
+    const lessons = getLessonsForDate(group, current);
+    const slots = new Map();
+    for (const lesson of lessons) {
+      const key = lesson.start + "-" + lesson.end;
+      slots.set(key, (slots.get(key) || 0) + 1);
+    }
+    for (const [slot, count] of slots) {
+      assert(count <= 1, `Пересечение пар ${group} ${current.toLocaleDateString("ru-RU")} ${slot}`);
+    }
+  }
+}
+
 console.log("OK: проверки адаптера прошли.");
 console.log("Соответствие недель: А = чётная, Б = нечётная; подтверждено по парности и исключению 17.10 в PDF.");
