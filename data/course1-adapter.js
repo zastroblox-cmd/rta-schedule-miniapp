@@ -46,6 +46,15 @@
       color: (item.type || "").includes("Физкультура") ? "green" : "blue",
       note: item.note || ""
     }));
+    // Some PDF cells encode a one-off date that duplicates an otherwise recurring lesson.
+    // Collapse only fully identical records; different subjects in the same slot remain visible for audit.
+    const seen = new Set();
+    matches = matches.filter(item => {
+      const key = [item.start, item.end, item.title, item.type, item.teacher, item.room].join("|");
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
     const overrideSlots = new Set(matches.filter(x => x.title === "Курсовой час").map(x => x.start));
     matches = matches.filter(x => x.title === "Курсовой час" || !overrideSlots.has(x.start));
     return matches.sort((a, b) => a.start.localeCompare(b.start));
