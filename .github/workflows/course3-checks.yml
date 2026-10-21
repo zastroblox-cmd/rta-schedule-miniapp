@@ -1,0 +1,29 @@
+name: Third-year schedule draft checks
+
+on:
+  push:
+    paths:
+      - "data/course3-review-draft.json"
+      - "data/course3-adapter.js"
+      - "data/validate-course3.js"
+      - "data/test-course3-adapter.js"
+      - ".github/workflows/course3-checks.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-draft:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Validate draft data structure
+        run: node data/validate-course3.js
+      - name: Test date adapter
+        run: node data/test-course3-adapter.js
