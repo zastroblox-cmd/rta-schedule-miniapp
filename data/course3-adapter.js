@@ -99,14 +99,27 @@ function getLessonsForDate(group, value, options = {}) {
   const weekday = (date.getDay() + 6) % 7;
   if (weekday > 5) return [];
 
-  return draft.lessons
+  const matching = draft.lessons.filter(lesson =>
+    (lesson.group === group || (lesson.group === "ALL" && lesson.all_groups === true)) &&
+    lesson.day === weekday &&
+    matchesDate(lesson, date, parityMap)
+  );
+
+  // A verified all-course event (for example, the course hour) takes priority
+  // over an ordinary lesson in the same slot on that date.
+  const sharedSlots = new Set(
+    matching
+      .filter(lesson => lesson.group === "ALL" && lesson.all_groups === true)
+      .map(lesson => lesson.start + "|" + lesson.end)
+  );
+
+  return matching
     .filter(lesson =>
-      lesson.group === group &&
-      lesson.day === weekday &&
-      matchesDate(lesson, date, parityMap)
+      lesson.group === "ALL" ||
+      !sharedSlots.has(lesson.start + "|" + lesson.end)
     )
     .map(lesson => {
-      const copy = { ...lesson };
+      const copy = { ...lesson, group: lesson.group === "ALL" ? group : lesson.group };
       if (!copy.room && copy.room_by_parity) {
         copy.room = copy.room_by_parity[parityForDate(date, parityMap)] || "";
       }
