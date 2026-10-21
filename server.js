@@ -147,7 +147,6 @@ function toMiniAppLesson(row) {
     type: row.lesson_type || "Занятие",
     teacher: row.teacher || "",
     room: row.room || "Уточняется накануне",
-    confidence: "high"
   };
 
   if (row.entry_kind === "date_override" && row.schedule_date) {
