@@ -36,6 +36,12 @@ function dayMonthKey(value) {
   return month * 100 + day;
 }
 
+function weekdayIndex(value) {
+  const [day, month] = value.split(".").map(Number);
+  // Индекс 0–5 соответствует понедельнику–субботе, как поле lesson.day.
+  return (new Date(2026, month - 1, day).getDay() + 6) % 7;
+}
+
 data.lessons.forEach((lesson, index) => {
   const label = `lessons[${index}] ${lesson.group || "без группы"} ${lesson.title || "без названия"}`;
 
@@ -61,7 +67,12 @@ data.lessons.forEach((lesson, index) => {
       errors.push(`${label}: ${field} должен быть массивом`);
     } else if (Array.isArray(lesson[field])) {
       lesson[field].forEach(date => {
-        if (!validDayMonth(date)) errors.push(`${label}: дата ${date} в ${field} некорректна, ожидается существующая дата ДД.ММ`);
+        if (!validDayMonth(date)) {
+          errors.push(`${label}: дата ${date} в ${field} некорректна, ожидается существующая дата ДД.ММ`);
+        } else if (Number.isInteger(lesson.day) && lesson.day >= 0 && lesson.day <= 5 &&
+                   weekdayIndex(date) !== lesson.day) {
+          errors.push(`${label}: дата ${date} в ${field} приходится на другой день недели, чем day=${lesson.day}`);
+        }
       });
     }
   }
