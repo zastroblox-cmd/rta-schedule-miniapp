@@ -355,31 +355,37 @@
     const daysShort = ["ПН","ВТ","СР","ЧТ","ПТ","СБ","ВС"];
     function groupLabel(g){ return `${g.id} · ${g.course} курс · ОФО`; }
     function updateGroupLabel(){ const g=GROUPS.find(x=>x.id===currentGroup)||GROUPS[2]; currentCourse=g.course; localStorage.setItem("rta_schedule_course",String(currentCourse)); document.getElementById("groupName").textContent=groupLabel(g); document.getElementById("profileCourse").textContent=`${g.course} курс`; document.getElementById("profileGroupName").textContent=g.id; }
-    function renderGroupPicker(){
+    function renderGroupPicker(mode="both"){
+      const title=document.getElementById("groupModalTitle");
+      title.textContent=mode==="course"?"Выбери курс":mode==="group"?"Выбери группу":"Выбери курс и группу";
       const courses=document.getElementById("courseOptions"); courses.innerHTML="";
-      [2,3].forEach(course=>{
-        const b=document.createElement("button"); b.className="course-option"+(course===currentCourse?" selected":""); b.type="button"; b.textContent=`${course} курс`;
-        b.onclick=()=>{
-          if(course!==currentCourse){
-            localStorage.setItem(`rta_schedule_group_course_${currentCourse}`,currentGroup);
-            currentCourse=course; localStorage.setItem("rta_schedule_course",String(course));
-            const remembered=localStorage.getItem(`rta_schedule_group_course_${course}`);
-            currentGroup=GROUPS.some(g=>g.id===remembered && g.course===course) ? remembered : GROUPS.find(g=>g.course===course).id;
-            localStorage.setItem("rta_schedule_group",currentGroup); updateGroupLabel(); render();
-          }
-          renderGroupPicker();
-        };
-        courses.appendChild(b);
-      });
+      courses.style.display=mode==="group"?"none":"grid";
+      if(mode!=="group"){
+        [2,3].forEach(course=>{
+          const b=document.createElement("button"); b.className="course-option"+(course===currentCourse?" selected":""); b.type="button"; b.textContent=course+" курс";
+          b.onclick=()=>{
+            if(course!==currentCourse){
+              localStorage.setItem("rta_schedule_group_course_"+currentCourse,currentGroup);
+              currentCourse=course; localStorage.setItem("rta_schedule_course",String(course));
+              const remembered=localStorage.getItem("rta_schedule_group_course_"+course);
+              currentGroup=GROUPS.some(g=>g.id===remembered && g.course===course) ? remembered : GROUPS.find(g=>g.course===course).id;
+              localStorage.setItem("rta_schedule_group",currentGroup); updateGroupLabel(); render();
+            }
+            if(mode==="course"){ document.getElementById("groupModal").classList.remove("open"); return; }
+            renderGroupPicker(mode);
+          };
+          courses.appendChild(b);
+        });
+      }
       const wrap=document.getElementById("groupOptions"); wrap.innerHTML="";
       GROUPS.filter(g=>g.course===currentCourse).forEach(g=>{
         const b=document.createElement("button"); b.className="group-option"+(g.id===currentGroup?" selected":"");
-        b.innerHTML=`${g.id}<small>${g.status==="available"?`Расписание ${g.course} курса подключено`:"Расписание не подключено"}</small>`;
-        b.onclick=()=>{ currentGroup=g.id; currentCourse=g.course; localStorage.setItem("rta_schedule_group",currentGroup); localStorage.setItem(`rta_schedule_group_course_${currentCourse}`,currentGroup); updateGroupLabel(); document.getElementById("groupModal").classList.remove("open"); render(); };
+        b.innerHTML=g.id+"<small>"+(g.status==="available"?"Расписание "+g.course+" курса подключено":"Расписание не подключено")+"</small>";
+        b.onclick=()=>{ currentGroup=g.id; currentCourse=g.course; localStorage.setItem("rta_schedule_group",currentGroup); localStorage.setItem("rta_schedule_group_course_"+currentCourse,currentGroup); updateGroupLabel(); document.getElementById("groupModal").classList.remove("open"); render(); };
         wrap.appendChild(b);
       });
     }
-    function openGroupModal(){ renderGroupPicker(); document.getElementById("groupModal").classList.add("open"); }
+    function openGroupModal(mode="both"){ renderGroupPicker(mode); document.getElementById("groupModal").classList.add("open"); }
     document.getElementById("closeGroupModal").onclick=()=>document.getElementById("groupModal").classList.remove("open");
     document.getElementById("groupModal").addEventListener("click",e=>{if(e.target.id==="groupModal")e.currentTarget.classList.remove("open")});
     const daysFull = ["Понедельник","Вторник","Среда","Четверг","Пятница","Суббота","Воскресенье"];
@@ -586,8 +592,8 @@
       if(tab==="week") { document.getElementById("scheduleContent").style.display="block"; toast("Выбери дату в календаре или переключай недели стрелками."); }
     }
     document.getElementById("profileBtn").onclick = () => showTab("profile");
-    document.getElementById("profileChangeGroup").onclick = openGroupModal;
-    document.getElementById("profileChangeCourse").onclick = openGroupModal;
+    document.getElementById("profileChangeGroup").onclick = () => openGroupModal("group");
+    document.getElementById("profileChangeCourse").onclick = () => openGroupModal("course");
     const launchButton = document.getElementById("openTelegramApp");
     if (launchButton) launchButton.onclick = () => {
       const botUrl = "https://t.me/RTAScheduleHelperBot";
