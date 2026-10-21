@@ -124,5 +124,26 @@ for (let current = date(2026, 9, 21); current <= date(2026, 12, 26); current.set
   }
 }
 
+// Verify that the same adapter loads in a browser-like context without Node globals.
+const fs = require("fs");
+const path = require("path");
+const vm = require("vm");
+const adapterSource = fs.readFileSync(path.join(__dirname, "course3-adapter.js"), "utf8");
+const browserContext = { window: {} };
+vm.runInNewContext(adapterSource, browserContext, { filename: "course3-adapter.js" });
+const browserApi = browserContext.window.Course3Schedule;
+assert(browserApi, "Браузерная версия адаптера должна публиковать window.Course3Schedule");
+assert.throws(
+  () => browserApi.getLessonsForDate("Ю604/О-2404", "2026-10-22"),
+  /не загружены/,
+  "Браузерный адаптер должен явно требовать загрузки JSON"
+);
+browserApi.setDraft(JSON.parse(fs.readFileSync(path.join(__dirname, "course3-review-draft.json"), "utf8")));
+assert(
+  browserApi.getLessonsForDate("Ю604/О-2404", "2026-10-22")
+    .some(x => x.title === "Международное уголовное право" && x.start === "14:00"),
+  "Браузерный адаптер должен возвращать занятия после setDraft"
+);
+
 console.log("OK: проверки адаптера прошли.");
 console.log("Соответствие недель: А = чётная, Б = нечётная; подтверждено по парности и исключению 17.10 в PDF.");
