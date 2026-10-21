@@ -159,6 +159,7 @@ function toMiniAppLesson(row) {
     if (row.week_type === "B") lesson.parity = "нечётная неделя";
   }
 
+  if (row.valid_from) lesson.dates_from = dateToDM(row.valid_from);
   if (row.valid_to) lesson.dates_until = dateToDM(row.valid_to);
   if (Array.isArray(row.excluded_dates) && row.excluded_dates.length) {
     lesson.excluded_dates = row.excluded_dates.map(dateToDM).filter(Boolean);
@@ -185,7 +186,7 @@ app.get("/api/course4-schedule", async (_req, res) => {
   const ids = groups.map(group => group.id);
   const { data: entries, error: entriesError } = await supabase
     .from("schedule_entries")
-    .select("group_id,entry_kind,weekday,week_type,schedule_date,starts_at,ends_at,subject,teacher,room,lesson_type,notes,excluded_dates,valid_to")
+    .select("group_id,entry_kind,weekday,week_type,schedule_date,starts_at,ends_at,subject,teacher,room,lesson_type,notes,excluded_dates,valid_from,valid_to")
     .in("group_id", ids)
     .order("starts_at");
   if (entriesError) return res.status(500).json({ error: "Unable to load course schedule" });
