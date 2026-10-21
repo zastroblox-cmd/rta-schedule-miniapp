@@ -53,9 +53,15 @@ function weekLabelForDate(date) {
   return ((weekIndex % 2) + 2) % 2 === 0 ? "Б" : "А";
 }
 
-function parityForDate(date, parityMap) {
+// The user's anchor weeks align with ISO week parity: 12–18 Oct 2026 is
+// week B / even; 19–25 Oct is week A / odd. Keep this mapping explicit here.
+const DEFAULT_PARITY_MAP = Object.freeze({
+  А: "нечётная неделя",
+  Б: "чётная неделя"
+});
+
+function parityForDate(date, parityMap = DEFAULT_PARITY_MAP) {
   const label = weekLabelForDate(date);
-  // Не приравниваем А/Б к чётной/нечётной без подтверждения по PDF.
   return parityMap && parityMap[label] ? parityMap[label] : null;
 }
 
@@ -87,7 +93,7 @@ function matchesDate(lesson, date, parityMap) {
  * должен быть подтверждён по оригиналу PDF, иначе возможен показ лишних пар.
  */
 function getLessonsForDate(group, value, options = {}) {
-  const parityMap = options.parityMap || null;
+  const parityMap = options.parityMap || DEFAULT_PARITY_MAP;
   if (!GROUPS.has(group)) throw new Error("Неизвестная группа третьего курса: " + group);
   const date = dayOnly(value);
   const weekday = (date.getDay() + 6) % 7;
@@ -109,4 +115,4 @@ function getLessonsForDate(group, value, options = {}) {
     .sort((a, b) => a.start.localeCompare(b.start));
 }
 
-module.exports = { getLessonsForDate, parityForDate, weekLabelForDate, dateStamp, GROUPS };
+module.exports = { getLessonsForDate, parityForDate, weekLabelForDate, dateStamp, GROUPS, DEFAULT_PARITY_MAP };
