@@ -54,6 +54,9 @@
     .group-sheet { width:100%; max-width:520px; padding:20px; border:1px solid #ffffff18; border-radius:22px; background:#151b26; box-shadow:0 20px 70px #0008; }
     .group-sheet h3 { margin:0 0 6px; font-size:18px; }
     .group-sheet p { margin:0 0 15px; color:#8995a8; font-size:12px; line-height:1.5; }
+    .course-switch { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:0 0 12px; }
+    .course-option { padding:11px 10px; border-radius:12px; border:1px solid #ffffff18; background:#1b2432; color:#aebbd0; font-weight:700; }
+    .course-option.selected { border-color:#4f8cff; background:#1b2b47; color:#f2f5fb; }
     .group-options { display:grid; gap:8px; }
     .group-option { width:100%; text-align:left; padding:14px; border-radius:13px; border:1px solid #ffffff18; background:#1b2432; color:#f2f5fb; }
     .group-option.selected { border-color:#4f8cff; background:#1b2b47; }
@@ -151,7 +154,7 @@
       <div class="profile-card">
         <h2 class="profile-title">Профиль</h2>
         <p class="profile-muted">Твои учебные настройки и выбранная группа.</p>
-        <div class="profile-row"><div><strong>Курс</strong><small id="profileCourse">2 курс</small></div></div>
+        <div class="profile-row"><div><strong>Курс</strong><small id="profileCourse">2 курс</small></div><button class="profile-action" id="profileChangeCourse">Изменить ↗</button></div>
         <div class="profile-row"><div><strong>Учебная группа</strong><small id="profileGroupName">Ю603/О-2503</small></div><button class="profile-action" id="profileChangeGroup">Изменить ↗</button></div>
         <div class="profile-row"><div><strong>Форма обучения</strong><small>Очная форма обучения</small></div></div>
       </div>
@@ -189,8 +192,9 @@
   </nav>
   <div class="group-modal" id="groupModal" role="dialog" aria-modal="true" aria-labelledby="groupModalTitle">
     <div class="group-sheet">
-      <h3 id="groupModalTitle">Выбери группу</h3>
-      <p>Выбор сохранится на этом устройстве. При следующем запуске откроется выбранная группа.</p>
+      <h3 id="groupModalTitle">Выбери курс и группу</h3>
+      <p>Сначала выбери курс — ниже появятся только группы этого курса. Выбор сохранится на этом устройстве.</p>
+      <div class="course-switch" id="courseOptions" aria-label="Выбор курса"></div>
       <div class="group-options" id="groupOptions"></div>
       <button class="close-group" id="closeGroupModal">Закрыть</button>
     </div>
@@ -339,24 +343,42 @@
       {id:"Ю604/О-2404", course:3, status:"available"}
     ];
     const DEFAULT_GROUP = "Ю603/О-2503";
-    let currentGroup = localStorage.getItem("rta_schedule_group") || DEFAULT_GROUP;
-    if (!GROUPS.some(g=>g.id===currentGroup)) currentGroup=DEFAULT_GROUP;
+    const savedGroup = localStorage.getItem("rta_schedule_group") || DEFAULT_GROUP;
+    let currentGroup = GROUPS.some(g=>g.id===savedGroup) ? savedGroup : DEFAULT_GROUP;
+    let currentCourse = Number(localStorage.getItem("rta_schedule_course")) || (GROUPS.find(g=>g.id===currentGroup)?.course || 2);
+    if (!GROUPS.some(g=>g.id===currentGroup && g.course===currentCourse)) currentCourse = GROUPS.find(g=>g.id===currentGroup)?.course || 2;
+    localStorage.setItem("rta_schedule_course", String(currentCourse));
     let selectedWeek = "B";
     let schedule = scheduleB;
     let weekOffset = 0;
     const daysShort = ["ПН","ВТ","СР","ЧТ","ПТ","СБ","ВС"];
     function groupLabel(g){ return `${g.id} · ${g.course} курс · ОФО`; }
-    function updateGroupLabel(){ const g=GROUPS.find(x=>x.id===currentGroup)||GROUPS[2]; document.getElementById("groupName").textContent=groupLabel(g); document.getElementById("profileCourse").textContent=`${g.course} курс`; document.getElementById("profileGroupName").textContent=g.id; }
-    function openGroupModal(){
+    function updateGroupLabel(){ const g=GROUPS.find(x=>x.id===currentGroup)||GROUPS[2]; currentCourse=g.course; localStorage.setItem("rta_schedule_course",String(currentCourse)); document.getElementById("groupName").textContent=groupLabel(g); document.getElementById("profileCourse").textContent=`${g.course} курс`; document.getElementById("profileGroupName").textContent=g.id; }
+    function renderGroupPicker(){
+      const courses=document.getElementById("courseOptions"); courses.innerHTML="";
+      [2,3].forEach(course=>{
+        const b=document.createElement("button"); b.className="course-option"+(course===currentCourse?" selected":""); b.type="button"; b.textContent=`${course} курс`;
+        b.onclick=()=>{
+          if(course!==currentCourse){
+            localStorage.setItem(`rta_schedule_group_course_${currentCourse}`,currentGroup);
+            currentCourse=course; localStorage.setItem("rta_schedule_course",String(course));
+            const remembered=localStorage.getItem(`rta_schedule_group_course_${course}`);
+            currentGroup=GROUPS.some(g=>g.id===remembered && g.course===course) ? remembered : GROUPS.find(g=>g.course===course).id;
+            localStorage.setItem("rta_schedule_group",currentGroup); updateGroupLabel(); render();
+          }
+          renderGroupPicker();
+        };
+        courses.appendChild(b);
+      });
       const wrap=document.getElementById("groupOptions"); wrap.innerHTML="";
-      GROUPS.forEach(g=>{
+      GROUPS.filter(g=>g.course===currentCourse).forEach(g=>{
         const b=document.createElement("button"); b.className="group-option"+(g.id===currentGroup?" selected":"");
         b.innerHTML=`${g.id}<small>${g.status==="available"?`Расписание ${g.course} курса подключено`:"Расписание не подключено"}</small>`;
-        b.onclick=()=>{ currentGroup=g.id; localStorage.setItem("rta_schedule_group",currentGroup); updateGroupLabel(); document.getElementById("groupModal").classList.remove("open"); render(); };
+        b.onclick=()=>{ currentGroup=g.id; currentCourse=g.course; localStorage.setItem("rta_schedule_group",currentGroup); localStorage.setItem(`rta_schedule_group_course_${currentCourse}`,currentGroup); updateGroupLabel(); document.getElementById("groupModal").classList.remove("open"); render(); };
         wrap.appendChild(b);
       });
-      document.getElementById("groupModal").classList.add("open");
     }
+    function openGroupModal(){ renderGroupPicker(); document.getElementById("groupModal").classList.add("open"); }
     document.getElementById("closeGroupModal").onclick=()=>document.getElementById("groupModal").classList.remove("open");
     document.getElementById("groupModal").addEventListener("click",e=>{if(e.target.id==="groupModal")e.currentTarget.classList.remove("open")});
     const daysFull = ["Понедельник","Вторник","Среда","Четверг","Пятница","Суббота","Воскресенье"];
@@ -564,6 +586,7 @@
     }
     document.getElementById("profileBtn").onclick = () => showTab("profile");
     document.getElementById("profileChangeGroup").onclick = openGroupModal;
+    document.getElementById("profileChangeCourse").onclick = openGroupModal;
     const launchButton = document.getElementById("openTelegramApp");
     if (launchButton) launchButton.onclick = () => {
       const botUrl = "https://t.me/RTAScheduleHelperBot";
