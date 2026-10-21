@@ -806,7 +806,7 @@
     // Загружаем расписание 1-го курса отдельно; существующие данные 2-го и 3-го курсов не меняются.
     window.Course1ScheduleReady = false;
     const course1Script = document.createElement("script");
-    course1Script.src = "./data/course1-adapter.js";
+    course1Script.src = "./data/course1-adapter.js?v=20261022-api";
     course1Script.onload = async () => {
       try {
         let draft;
@@ -843,7 +843,7 @@
     // Загружаем данные 3-го курса отдельно, не меняя существующие расписания 2-го курса.
     window.Course3ScheduleReady = false;
     const course3Script = document.createElement("script");
-    course3Script.src = "./data/course3-adapter.js";
+    course3Script.src = "./data/course3-adapter.js?v=20261022-api";
     course3Script.onload = async () => {
       try {
         let draft;
