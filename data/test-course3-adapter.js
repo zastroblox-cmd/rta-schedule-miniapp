@@ -20,9 +20,9 @@ assert.strictEqual(weekLabelForDate(date(2026, 10, 19)), "А");
 assert.strictEqual(weekLabelForDate(date(2026, 10, 25)), "А");
 assert.strictEqual(weekLabelForDate(date(2026, 10, 26)), "Б");
 
-// Do not guess whether A/B corresponds to even/odd week.
-assert.strictEqual(parityForDate(date(2026, 10, 19)), null);
-assert.strictEqual(parityForDate(date(2026, 10, 19), { А: "чётная неделя", Б: "нечётная неделя" }), "чётная неделя");
+// Established anchor dates match ISO week parity: A = odd, B = even.
+assert.strictEqual(parityForDate(date(2026, 10, 12)), "чётная неделя");
+assert.strictEqual(parityForDate(date(2026, 10, 19)), "нечётная неделя");
 
 const exactDateLesson = getLessonsForDate("Ю604/О-2404", date(2026, 10, 22));
 assert(
@@ -49,8 +49,8 @@ assert(
   "Должно возвращаться разовое занятие Ю604 на 22.10"
 );
 
-// Synthetic mapping is used only to test mechanics; the real A/B-to-parity
-// mapping remains unconfirmed and must not be enabled in the app yet.
+// Reversed synthetic mapping is used only to isolate excluded-date filtering:
+ // the actual default mapping is tested above.
 const testParityMap = { А: "чётная неделя", Б: "нечётная неделя" };
 const excludedSaturday = getLessonsForDate(
   "Ю602/О-2402",
@@ -61,6 +61,12 @@ assert(
   !excludedSaturday.some(x => x.title === "Правовое регулирование нотариата в РФ" && x.start === "12:20"),
   "Занятие по нотариату с исключением 17.10 не должно показываться в исключённую дату"
 );
+const defaultMappedSaturday = getLessonsForDate("Ю602/О-2402", date(2026, 10, 24));
+assert(
+  defaultMappedSaturday.some(x => x.title === "Правовое регулирование нотариата в РФ" && x.start === "10:10"),
+  "При стандартной карте неделя А должна соответствовать нечётной неделе"
+);
+
 const regularSaturday = getLessonsForDate(
   "Ю602/О-2402",
   date(2026, 10, 31),
@@ -95,4 +101,4 @@ assert.throws(
 );
 
 console.log("OK: проверки адаптера прошли.");
-console.log("Внимание: соответствие А/Б чётной/нечётной неделе не задано намеренно.");
+console.log("Соответствие недель: А = нечётная, Б = чётная; контрольные даты соответствуют ISO-нумерации недель.");
