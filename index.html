@@ -343,6 +343,7 @@
       {id:"Ю604/О-2404", course:3, status:"available"}
     ];
     const DEFAULT_GROUP = "Ю603/О-2503";
+    const hasSavedGroup = Boolean(localStorage.getItem("rta_schedule_group"));
     const savedGroup = localStorage.getItem("rta_schedule_group") || DEFAULT_GROUP;
     let currentGroup = GROUPS.some(g=>g.id===savedGroup) ? savedGroup : DEFAULT_GROUP;
     let currentCourse = Number(localStorage.getItem("rta_schedule_course")) || (GROUPS.find(g=>g.id===currentGroup)?.course || 2);
@@ -603,6 +604,8 @@
     document.getElementById("todayWeek").onclick=()=>{weekOffset=0;selectedDay=mondayOffset;render();};
     updateGroupLabel();
     render();
+    // При первом запуске сразу предлагаем выбрать курс и группу; повторно окно не открывается после сохранения выбора.
+    if (!hasSavedGroup) openGroupModal();
     // Загружаем данные 3-го курса отдельно, не меняя существующие расписания 2-го курса.
     window.Course3ScheduleReady = false;
     const course3Script = document.createElement("script");
