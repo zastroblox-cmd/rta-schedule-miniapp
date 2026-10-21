@@ -290,7 +290,7 @@ app.post("/telegram/webhook", async (req, res) => {
   res.sendStatus(200);
   const message = req.body && req.body.message;
   if (!message || !message.chat || typeof message.text !== "string") return;
-  const command = message.text.trim().split(/\\s+/, 1)[0].split("@", 1)[0];
+  const command = message.text.trim().split(/\s+/, 1)[0].split("@", 1)[0];
   if (command !== "/start" && command !== "/help") return;
 
   const greeting = command === "/start"
