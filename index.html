@@ -371,12 +371,12 @@
       const sunday = new Date(monday); sunday.setDate(monday.getDate()+6);
       const fmt = d => d.toLocaleDateString("ru-RU",{day:"numeric",month:"short"});
       document.getElementById("weekRange").textContent = `${fmt(monday)} — ${fmt(sunday)}`;
-      // 12–18 октября 2026 года — нечётная неделя; дальше чередуем каждые 7 дней.
+      // По правилу пользователя: 12–18 октября 2026 — неделя Б, 19–25 октября — неделя А; далее чередуем.
       const parityDays = Math.round((monday - new Date(2026, 9, 12)) / 86400000);
       const parityWeeks = Math.floor(parityDays / 7);
       const isOddWeek = ((parityWeeks % 2) + 2) % 2 === 0;
       const parityLabel = document.getElementById("weekParity");
-      if (parityLabel) parityLabel.textContent = isOddWeek ? "Нечётная неделя" : "Чётная неделя";
+      if (parityLabel) parityLabel.textContent = isOddWeek ? "Неделя Б" : "Неделя А";
       const anchor = new Date(2026,9,12); // 12–18 октября 2026 — неделя Б по уточнению пользователя
       const days = Math.round((monday-anchor)/86400000);
       const weeks = Math.round(days/7);
