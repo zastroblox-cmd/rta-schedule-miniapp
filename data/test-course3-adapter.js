@@ -40,6 +40,14 @@ assert(
   "Общий курсовой час должен иметь приоритет над обычной парой в тот же слот"
 );
 
+const municipalExtraDate = getLessonsForDate("Ю601/О-2401", date(2026, 12, 14))
+  .filter(x => x.title === "Муниципальное право" && x.start === "10:10");
+assert.strictEqual(
+  municipalExtraDate.length,
+  1,
+  "Дополнительная дата 14.12 должна показывать ровно одну пару муниципального права"
+);
+
 const absentDateLesson = getLessonsForDate("Ю604/О-2404", date(2026, 10, 15));
 assert(
   !absentDateLesson.some(x => x.title === "Международное уголовное право" && x.start === "14:00"),
