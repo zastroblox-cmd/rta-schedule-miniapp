@@ -1,3 +1,4 @@
+(function () {
 /**
  * Адаптер расписания 3-го курса.
  * Работает в Node для тестов и в браузере для будущего подключения к Mini App.
@@ -158,3 +159,5 @@ if (isNodeRuntime) {
 } else if (typeof window !== "undefined") {
   window.Course3Schedule = api;
 }
+
+})();
