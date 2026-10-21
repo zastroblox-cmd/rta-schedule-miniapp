@@ -167,6 +167,53 @@ function toMiniAppLesson(row) {
   return lesson;
 }
 
+
+async function exportCourseSchedule(courseNumber, res) {
+  if (!supabase) return res.status(503).json({ error: "Database is not configured" });
+
+  const { data: groups, error: groupsError } = await supabase
+    .from("student_groups")
+    .select("id,group_code,display_name,courses!inner(course_number)")
+    .eq("courses.course_number", courseNumber)
+    .order("group_code");
+  if (groupsError) return res.status(500).json({ error: "Unable to load course groups" });
+  if (!groups || groups.length === 0) {
+    return res.status(404).json({ error: "No groups found for course " + courseNumber });
+  }
+
+  const ids = groups.map(group => group.id);
+  const { data: entries, error: entriesError } = await supabase
+    .from("schedule_entries")
+    .select("group_id,entry_kind,weekday,week_type,schedule_date,starts_at,ends_at,subject,teacher,room,lesson_type,notes,excluded_dates,valid_from,valid_to")
+    .in("group_id", ids)
+    .order("starts_at");
+  if (entriesError) return res.status(500).json({ error: "Unable to load course schedule" });
+
+  const groupById = new Map(groups.map(group => [group.id, group]));
+  const lessons = (entries || []).map(row => toMiniAppLesson({
+    ...row,
+    group_code: groupById.get(row.group_id)?.group_code
+  }));
+
+  res.setHeader("Cache-Control", "no-store");
+  return res.json({
+    _status: "CONNECTED_TO_SUPABASE",
+    _source: "Supabase schedule_entries",
+    _course: courseNumber,
+    _groups: groups.map(group => group.group_code),
+    _rules: {
+      weekA: "чётная неделя",
+      weekB: "нечётная неделя",
+      anchor: "12–18.10.2026 — неделя Б; 19–25.10.2026 — неделя А"
+    },
+    lessons
+  });
+}
+
+app.get("/api/course1-schedule", (_req, res) => exportCourseSchedule(1, res));
+app.get("/api/course2-schedule", (_req, res) => exportCourseSchedule(2, res));
+app.get("/api/course3-schedule", (_req, res) => exportCourseSchedule(3, res));
+
 // Compatibility export for the existing course-4 adapter.
 // The Mini App can prefer the database while retaining its local JSON fallback.
 app.get("/api/course4-schedule", async (_req, res) => {
