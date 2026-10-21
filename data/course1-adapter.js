@@ -29,6 +29,11 @@
     let matches = draft.lessons.filter(item => {
       if (!appliesToGroup(item, group) || Number(item.day) !== day) return false;
       if (Array.isArray(item.dates) && item.dates.length) return item.dates.includes(dayMonth);
+      if (item.dates_from) {
+        const [d, m] = item.dates_from.split(".").map(Number);
+        const from = new Date(date.getFullYear(), m - 1, d);
+        if (date < from) return false;
+      }
       if (item.dates_until) {
         const [d, m] = item.dates_until.split(".").map(Number);
         const until = new Date(date.getFullYear(), m - 1, d);
