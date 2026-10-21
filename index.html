@@ -409,7 +409,7 @@
       const parityWeeks = Math.floor(parityDays / 7);
       const isOddWeek = ((parityWeeks % 2) + 2) % 2 === 0;
       const parityLabel = document.getElementById("weekParity");
-      if (parityLabel) parityLabel.textContent = isOddWeek ? "Неделя Б" : "Неделя А";
+      if (parityLabel) parityLabel.textContent = isOddWeek ? "Чётная неделя" : "Нечётная неделя";
       const anchor = new Date(2026,9,12); // 12–18 октября 2026 — неделя Б по уточнению пользователя
       const days = Math.round((monday-anchor)/86400000);
       const weeks = Math.round(days/7);
