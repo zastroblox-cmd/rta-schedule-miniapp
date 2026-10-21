@@ -37,26 +37,34 @@ data.lessons.forEach((lesson, index) => {
   if (lesson.start && !timePattern.test(lesson.start)) errors.push(`${label}: неверное start ${lesson.start}`);
   if (lesson.end && !timePattern.test(lesson.end)) errors.push(`${label}: неверное end ${lesson.end}`);
   if (lesson.start && lesson.end && lesson.start >= lesson.end) errors.push(`${label}: время окончания не позже начала`);
+  if (lesson.parity && !allowedParities.has(lesson.parity)) {
+    errors.push(`${label}: неизвестное значение parity ${lesson.parity}`);
+  }
 
   for (const field of ["dates", "excluded_dates"]) {
     if (lesson[field] !== undefined && !Array.isArray(lesson[field])) {
       errors.push(`${label}: ${field} должен быть массивом`);
     } else if (Array.isArray(lesson[field])) {
       lesson[field].forEach(date => {
-        if (!datePattern.test(date)) errors.push(`${label}: дата ${date} в ${field} должна быть ДД.ММ`);
+        if (!validDayMonth(date)) errors.push(`${label}: дата ${date} в ${field} некорректна, ожидается существующая дата ДД.ММ`);
       });
     }
   }
 
   for (const field of ["dates_from", "dates_until"]) {
-    if (lesson[field] && !datePattern.test(lesson[field])) {
-      errors.push(`${label}: ${field} должен быть ДД.ММ`);
+    if (lesson[field] && !validDayMonth(lesson[field])) {
+      errors.push(`${label}: ${field} должен содержать существующую дату ДД.ММ`);
     }
   }
 
   if (!lesson.room && !lesson.room_by_parity) warnings.push(`${label}: не указана аудитория`);
   if (lesson.confidence !== "high") warnings.push(`${label}: confidence=${lesson.confidence || "не задана"} — требуется сверка`);
   if (lesson.group === "ALL") warnings.push(`${label}: общую запись нельзя показывать всем группам без подтверждения состава`);
+
+  if (lesson.dates_from && lesson.dates_until &&
+      dayMonthKey(lesson.dates_from) > dayMonthKey(lesson.dates_until)) {
+    errors.push(`${label}: dates_from позже dates_until`);
+  }
 
   // Ловим только полностью совпадающие ключи. Пересечения разных диапазонов дат
   // и недель требуют отдельной предметной проверки и автоматически не исправляются.
