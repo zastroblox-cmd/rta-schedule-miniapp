@@ -259,6 +259,83 @@ app.get("/api/course4-schedule", async (_req, res) => {
   });
 });
 
+
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const TELEGRAM_WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET;
+const MINI_APP_URL = "https://zastroblox-cmd.github.io/rta-schedule-miniapp/";
+
+async function telegramApi(method, payload) {
+  if (!TELEGRAM_BOT_TOKEN) throw new Error("TELEGRAM_BOT_TOKEN is not configured");
+  const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/${method}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  const result = await response.json();
+  if (!response.ok || !result.ok) {
+    throw new Error(`Telegram ${method} failed: ${result.description || response.status}`);
+  }
+  return result;
+}
+
+app.post("/telegram/webhook", async (req, res) => {
+  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_WEBHOOK_SECRET) {
+    return res.status(503).json({ error: "Telegram webhook is not configured" });
+  }
+  if (req.get("X-Telegram-Bot-Api-Secret-Token") !== TELEGRAM_WEBHOOK_SECRET) {
+    return res.sendStatus(403);
+  }
+
+  // Acknowledge the update immediately; process only the commands supported by this bot.
+  res.sendStatus(200);
+  const message = req.body && req.body.message;
+  if (!message || !message.chat || typeof message.text !== "string") return;
+  const command = message.text.trim().split(/\\s+/, 1)[0].split("@", 1)[0];
+  if (command !== "/start" && command !== "/help") return;
+
+  const greeting = command === "/start"
+    ? "🎓 Добро пожаловать! Это расписание РТА. Нажмите кнопку ниже, чтобы открыть расписание."
+    : "📅 Откройте расписание кнопкой ниже.";
+  try {
+    await telegramApi("sendMessage", {
+      chat_id: message.chat.id,
+      text: greeting,
+      reply_markup: {
+        keyboard: [[{ text: "📅 Открыть расписание", web_app: { url: MINI_APP_URL } }]],
+        resize_keyboard: true,
+        is_persistent: true
+      }
+    });
+  } catch (error) {
+    console.error("Unable to answer Telegram update:", error.message);
+  }
+});
+
+async function configureTelegramWebhook() {
+  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_WEBHOOK_SECRET) {
+    console.log("Telegram webhook is not configured: set TELEGRAM_BOT_TOKEN and TELEGRAM_WEBHOOK_SECRET");
+    return;
+  }
+  try {
+    await telegramApi("setWebhook", {
+      url: "https://rta-schedule-api.onrender.com/telegram/webhook",
+      secret_token: TELEGRAM_WEBHOOK_SECRET,
+      allowed_updates: ["message"],
+      drop_pending_updates: false
+    });
+    await telegramApi("setChatMenuButton", {
+      menu_button: {
+        type: "web_app",
+        text: "📅 Расписание",
+        web_app: { url: MINI_APP_URL }
+      }
+    });
+    console.log("Telegram webhook and persistent Mini App menu button configured");
+  } catch (error) {
+    console.error("Telegram webhook setup failed:", error.message);
+  }
+}
+
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`RTA schedule API listening on port ${PORT}`);
+  console.log(`RTA schedule API listening on port ${PORT}`);\n  void configureTelegramWebhook();
 });
