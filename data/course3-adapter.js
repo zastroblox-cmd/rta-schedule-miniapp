@@ -34,12 +34,18 @@ function mondayOf(date) {
   return monday;
 }
 
-function parityForDate(date) {
+function weekLabelForDate(date) {
   const targetMonday = mondayOf(date);
   const anchorMonday = mondayOf(ANCHOR_MONDAY);
   const weekIndex = Math.round((targetMonday - anchorMonday) / (7 * 86400000));
   // Якорная неделя 12–18 октября — Б; следующая — А.
-  return ((weekIndex % 2) + 2) % 2 === 0 ? "чётная неделя" : "нечётная неделя";
+  return ((weekIndex % 2) + 2) % 2 === 0 ? "Б" : "А";
+}
+
+function parityForDate(date, parityMap) {
+  const label = weekLabelForDate(date);
+  // Не приравниваем А/Б к чётной/нечётной без подтверждения по PDF.
+  return parityMap && parityMap[label] ? parityMap[label] : null;
 }
 
 function inTermRange(lesson, date) {
@@ -50,12 +56,17 @@ function inTermRange(lesson, date) {
   return true;
 }
 
-function matchesDate(lesson, date) {
+function matchesDate(lesson, date, parityMap) {
   const stamp = dateStamp(date);
   if (Array.isArray(lesson.dates) && !lesson.dates.includes(stamp)) return false;
   if (Array.isArray(lesson.excluded_dates) && lesson.excluded_dates.includes(stamp)) return false;
   if (!inTermRange(lesson, date)) return false;
-  if (lesson.parity && lesson.parity !== parityForDate(date)) return false;
+  if (lesson.parity) {
+    const calendarParity = parityForDate(date, parityMap);
+    // Если соответствие А/Б и чётности не подтверждено, не показываем такую запись,
+    // чтобы не назначить студенту занятие на неправильную неделю.
+    if (!calendarParity || lesson.parity !== calendarParity) return false;
+  }
   return true;
 }
 
@@ -64,7 +75,8 @@ function matchesDate(lesson, date) {
  * Записи group=ALL намеренно не включаются: состав групп для общих лекций
  * должен быть подтверждён по оригиналу PDF, иначе возможен показ лишних пар.
  */
-function getLessonsForDate(group, value) {
+function getLessonsForDate(group, value, options = {}) {
+  const parityMap = options.parityMap || null;
   if (!GROUPS.has(group)) throw new Error("Неизвестная группа третьего курса: " + group);
   const date = dayOnly(value);
   const weekday = (date.getDay() + 6) % 7;
@@ -74,16 +86,16 @@ function getLessonsForDate(group, value) {
     .filter(lesson =>
       lesson.group === group &&
       lesson.day === weekday &&
-      matchesDate(lesson, date)
+      matchesDate(lesson, date, parityMap)
     )
     .map(lesson => {
       const copy = { ...lesson };
       if (!copy.room && copy.room_by_parity) {
-        copy.room = copy.room_by_parity[parityForDate(date)] || "";
+        copy.room = copy.room_by_parity[parityForDate(date, parityMap)] || "";
       }
       return copy;
     })
     .sort((a, b) => a.start.localeCompare(b.start));
 }
 
-module.exports = { getLessonsForDate, parityForDate, dateStamp, GROUPS };
+module.exports = { getLessonsForDate, parityForDate, weekLabelForDate, dateStamp, GROUPS };
