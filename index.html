@@ -826,9 +826,22 @@
     course4Script.src = "./data/course4-adapter.js";
     course4Script.onload = async () => {
       try {
-        const response = await fetch("./data/course4-schedule.json", {cache:"no-store"});
-        if (!response.ok) throw new Error("HTTP " + response.status);
-        const draft = await response.json();
+        let draft;
+        try {
+          const apiResponse = await fetch("https://rta-schedule-api.onrender.com/api/course4-schedule", {cache:"no-store"});
+          if (!apiResponse.ok) throw new Error("API HTTP " + apiResponse.status);
+          draft = await apiResponse.json();
+          if (!draft || !Array.isArray(draft.lessons) || draft.lessons.length === 0) {
+            throw new Error("API вернул пустое или некорректное расписание");
+          }
+          window.Course4ScheduleSource = "api";
+        } catch (apiError) {
+          console.warn("API 4-го курса недоступен, используется локальный JSON:", apiError);
+          const response = await fetch("./data/course4-schedule.json", {cache:"no-store"});
+          if (!response.ok) throw new Error("Локальный JSON HTTP " + response.status);
+          draft = await response.json();
+          window.Course4ScheduleSource = "local-fallback";
+        }
         window.Course4Schedule.setDraft(draft);
         window.Course4ScheduleReady = true;
         if (currentGroup.includes("/О-23")) render();
