@@ -22,7 +22,7 @@ function getLessonsForDate(group,value){
  let rows=draft.lessons.filter(x=>x.group===group&&Number(x.day)===day&&(!x.parity||x.parity===p)&&(!Array.isArray(x.dates)||x.dates.includes(stamp))&&(!Array.isArray(x.excluded_dates)||!x.excluded_dates.includes(stamp))&&(!x.dates_from||(()=>{const [dd,mm]=x.dates_from.split(".").map(Number);return d>=new Date(d.getFullYear(),mm-1,dd,12);})())&&(!x.dates_until||(()=>{const [dd,mm]=x.dates_until.split(".").map(Number);return d<=new Date(d.getFullYear(),mm-1,dd,12);})()));
  const overrides=rows.filter(x=>Array.isArray(x.dates)&&x.dates.includes(stamp));
  const overrideSlots=new Set(overrides.map(x=>x.start+"|"+x.end));
- rows=rows.filter(x=>!(x.parity!==undefined&&overrideSlots.has(x.start+"|"+x.end)));
+ rows=rows.filter(x=>!( !Array.isArray(x.dates) && overrideSlots.has(x.start+"|"+x.end)));
  const courseHourSlots=new Set(rows.filter(x=>x.title==="Курсовой час").map(x=>x.start+"|"+x.end));
  rows=rows.filter(x=>x.title==="Курсовой час"||!courseHourSlots.has(x.start+"|"+x.end));
  const seen=new Set();
