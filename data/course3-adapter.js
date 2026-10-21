@@ -112,12 +112,24 @@ function getLessonsForDate(group, value, options = {}) {
       .filter(lesson => lesson.group === "ALL" && lesson.all_groups === true)
       .map(lesson => lesson.start + "|" + lesson.end)
   );
+  const exactDateOverrides = new Set(
+    matching
+      .filter(lesson =>
+        lesson.group !== "ALL" &&
+        !lesson.parity &&
+        Array.isArray(lesson.dates) &&
+        lesson.dates.includes(dateStamp(date))
+      )
+      .map(lesson => [lesson.group, lesson.day, lesson.start, lesson.end, lesson.title].join("|"))
+  );
 
   return matching
-    .filter(lesson =>
-      lesson.group === "ALL" ||
-      !sharedSlots.has(lesson.start + "|" + lesson.end)
-    )
+    .filter(lesson => {
+      if (lesson.group === "ALL") return true;
+      if (sharedSlots.has(lesson.start + "|" + lesson.end)) return false;
+      const key = [lesson.group, lesson.day, lesson.start, lesson.end, lesson.title].join("|");
+      return !(lesson.parity && exactDateOverrides.has(key));
+    })
     .map(lesson => {
       const copy = { ...lesson, group: lesson.group === "ALL" ? group : lesson.group };
       if (!copy.room && copy.room_by_parity) {
