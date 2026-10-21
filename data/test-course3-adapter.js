@@ -24,16 +24,23 @@ assert.strictEqual(weekLabelForDate(date(2026, 10, 26)), "Б");
 assert.strictEqual(parityForDate(date(2026, 10, 19)), null);
 assert.strictEqual(parityForDate(date(2026, 10, 19), { А: "чётная неделя", Б: "нечётная неделя" }), "чётная неделя");
 
-const exactDateLesson = getLessonsForDate("Ю604/О-2404", date(2026, 10, 19));
+const exactDateLesson = getLessonsForDate("Ю604/О-2404", date(2026, 10, 22));
 assert(
-  exactDateLesson.some(x => x.title === "Международное уголовное право"),
-  "Должно вернуться занятие Ю604, назначенное на 19.10"
+  exactDateLesson.some(x => x.title === "Международное уголовное право" && x.start === "14:00"),
+  "Должно вернуться разовое занятие Ю604, назначенное на 22.10"
 );
 
-const absentDateLesson = getLessonsForDate("Ю604/О-2404", date(2026, 10, 12));
+const absentDateLesson = getLessonsForDate("Ю604/О-2404", date(2026, 10, 15));
 assert(
-  !absentDateLesson.some(x => x.title === "Международное уголовное право"),
+  !absentDateLesson.some(x => x.title === "Международное уголовное право" && x.start === "14:00"),
   "Занятие с явным списком дат не должно появляться в другие даты"
+);
+
+// ISO date-only strings must preserve the requested calendar day.
+const isoDateLesson = getLessonsForDate("Ю604/О-2404", "2026-10-22");
+assert(
+  isoDateLesson.some(x => x.title === "Международное уголовное право" && x.start === "14:00"),
+  "ISO-дата должна обрабатываться без смещения календарного дня"
 );
 
 const thursdayException = getLessonsForDate("Ю604/О-2404", date(2026, 10, 22));
