@@ -260,7 +260,7 @@ app.get("/api/course4-schedule", async (_req, res) => {
 });
 
 
-const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || process.env.BOT_TOKEN;
 const TELEGRAM_WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET;
 const MINI_APP_URL = "https://zastroblox-cmd.github.io/rta-schedule-miniapp/";
 
