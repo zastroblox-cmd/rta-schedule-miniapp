@@ -30,6 +30,16 @@ assert(
   "Должно вернуться разовое занятие Ю604, назначенное на 22.10"
 );
 
+const courseHour = getLessonsForDate("Ю602/О-2402", date(2026, 10, 19));
+assert(
+  courseHour.some(x => x.title === "Курсовой час" && x.room === "ККЗ" && x.group === "Ю602/О-2402"),
+  "Курсовой час должен отображаться у всех групп в точные даты из PDF"
+);
+assert(
+  !courseHour.some(x => x.title === "Международное право" && x.start === "10:10"),
+  "Общий курсовой час должен иметь приоритет над обычной парой в тот же слот"
+);
+
 const absentDateLesson = getLessonsForDate("Ю604/О-2404", date(2026, 10, 15));
 assert(
   !absentDateLesson.some(x => x.title === "Международное уголовное право" && x.start === "14:00"),
