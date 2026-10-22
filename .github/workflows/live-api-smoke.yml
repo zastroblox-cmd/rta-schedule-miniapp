@@ -51,8 +51,9 @@ jobs:
             const exported = await get('/api/course' + course + '-schedule');
             assert.ok(Array.isArray(exported.lessons) && exported.lessons.length > 0, 'course ' + course + ' lessons must be non-empty');
             assert.equal(exported._status, 'CONNECTED_TO_SUPABASE', 'course ' + course + ' must read from Supabase');
-            assert.equal(Number(exported._course || course), course, 'course export must identify its course');
+            assert.ok(Array.isArray(exported._groups), 'course ' + course + ' must return its group list');
             const expectedGroups = groups.data.filter(g => Number(g.courses?.course_number) === course).map(g => g.group_code);
+            assert.deepEqual([...exported._groups].sort(), [...expectedGroups].sort(), 'course ' + course + ' group list');
             for (const groupCode of expectedGroups) {
               assert.ok(exported.lessons.some(x => x.group === groupCode), 'course ' + course + ' export missing group ' + groupCode);
             }
