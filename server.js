@@ -1,4 +1,5 @@
 const express = require("express");
+const crypto = require("node:crypto");
 const { createClient } = require("@supabase/supabase-js");
 
 const app = express();
@@ -29,10 +30,41 @@ app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Origin", origin);
     res.setHeader("Vary", "Origin");
   }
-  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   if (req.method === "OPTIONS") return res.sendStatus(204);
   next();
+});
+
+function verifyTelegramInitData(initData) {
+  if (!TELEGRAM_BOT_TOKEN || !OWNER_TELEGRAM_ID || typeof initData !== "string" || !initData) return null;
+  const params = new URLSearchParams(initData);
+  const receivedHash = params.get("hash");
+  if (!receivedHash || !/^[a-f0-9]{64}$/i.test(receivedHash)) return null;
+  params.delete("hash");
+  params.delete("signature");
+  const dataCheckString = [...params.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, value]) => key + "=" + value)
+    .join("\n");
+  const secretKey = crypto.createHmac("sha256", "WebAppData").update(TELEGRAM_BOT_TOKEN).digest();
+  const calculatedHash = crypto.createHmac("sha256", secretKey).update(dataCheckString).digest();
+  const suppliedHash = Buffer.from(receivedHash, "hex");
+  if (suppliedHash.length !== calculatedHash.length || !crypto.timingSafeEqual(suppliedHash, calculatedHash)) return null;
+  const authDate = Number(params.get("auth_date"));
+  const now = Math.floor(Date.now() / 1000);
+  if (!Number.isFinite(authDate) || authDate > now + 60 || now - authDate > 86400) return null;
+  let user;
+  try { user = JSON.parse(params.get("user") || "null"); } catch { return null; }
+  if (!user || String(user.id) !== OWNER_TELEGRAM_ID) return null;
+  return { id: String(user.id), first_name: String(user.first_name || "") };
+}
+
+app.post("/api/owner/verify", (req, res) => {
+  const owner = verifyTelegramInitData(req.body && req.body.initData);
+  res.setHeader("Cache-Control", "no-store");
+  if (!owner) return res.status(403).json({ authorized: false, error: "Owner access denied" });
+  return res.json({ authorized: true, owner });
 });
 
 app.get("/health", (_req, res) => {
@@ -274,6 +306,7 @@ app.get("/api/course4-schedule", async (_req, res) => {
 
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || process.env.BOT_TOKEN;
+const OWNER_TELEGRAM_ID = String(process.env.OWNER_TELEGRAM_ID || "").trim();
 const TELEGRAM_WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET;
 const MINI_APP_URL = "https://zastroblox-cmd.github.io/rta-schedule-miniapp/";
 
