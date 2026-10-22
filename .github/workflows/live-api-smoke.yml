@@ -1,0 +1,67 @@
+name: Live API smoke test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/live-api-smoke.yml"
+
+jobs:
+  api-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Test live API endpoints and date override
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+
+          const base = 'https://rta-schedule-api.onrender.com';
+          async function get(path, expected = 200) {
+            const response = await fetch(base + path, { signal: AbortSignal.timeout(20000) });
+            const text = await response.text();
+            let body;
+            try { body = JSON.parse(text); } catch { throw new Error(path + ': response is not JSON: ' + text.slice(0, 250)); }
+            assert.equal(response.status, expected, path + ': ' + JSON.stringify(body));
+            return body;
+          }
+
+          const health = await get('/health');
+          assert.equal(health.status, 'ok', 'API health status');
+          assert.equal(health.databaseConfigured, true, 'database configuration');
+
+          const faculties = await get('/api/faculties');
+          assert.ok(Array.isArray(faculties.data), '/api/faculties.data must be an array');
+
+          const groups = await get('/api/groups');
+          assert.ok(Array.isArray(groups.data) && groups.data.length > 0, '/api/groups must return groups');
+          const group = groups.data.find(g => Number(g.id) === 13);
+          assert.ok(group, 'expected group id=13 (Ю604/О-2404)');
+
+          const course3 = await get('/api/course3-schedule');
+          assert.ok(Array.isArray(course3.lessons) && course3.lessons.length > 0, 'course 3 lessons must be non-empty');
+          assert.ok(course3.lessons.some(x => x.group === group.group_code), 'course 3 export must include group id 13');
+          assert.equal(course3._status, 'CONNECTED_TO_SUPABASE', 'course 3 export source');
+
+          const course4 = await get('/api/course4-schedule');
+          assert.ok(Array.isArray(course4.lessons) && course4.lessons.length > 0, 'course 4 lessons must be non-empty');
+
+          const schedule = await get('/api/schedule?group_id=13&date=2026-10-22');
+          assert.equal(schedule.date, '2026-10-22');
+          const replacement = schedule.data.find(x => x.starts_at === '14:00:00' && x.ends_at === '15:30:00');
+          assert.ok(replacement, 'dated replacement at 14:00–15:30 must exist');
+          assert.equal(replacement.subject, 'Международное уголовное право', 'dated replacement subject');
+          assert.equal(replacement.teacher, 'С.В. Щербаков', 'dated replacement teacher');
+          assert.ok(!schedule.data.some(x => x.starts_at === '14:00:00' && x.ends_at === '15:30:00' && x.subject === 'Семейное право'), 'recurring subject must be replaced');
+
+          for (const path of [
+            '/api/schedule?group_id=abc&date=2026-10-22',
+            '/api/schedule?group_id=13&date=2026-02-30'
+          ]) {
+            const response = await fetch(base + path, { signal: AbortSignal.timeout(20000) });
+            assert.equal(response.status, 400, path + ' must return HTTP 400');
+          }
+
+          console.log('PASS: health, faculties, groups, course 3/4 exports, dated override, invalid inputs');
+          NODE
