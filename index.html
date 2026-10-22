@@ -158,7 +158,16 @@
     .owner-theme { border:1px solid #ffffff16; border-radius:11px; padding:9px 5px; color:#dfe8f7; background:#10151e; font-size:10px; }
     .owner-theme span { display:block; height:18px; border-radius:6px; margin-bottom:7px; }
     .owner-theme.active { border-color:#4f8cff; }
-    .owner-toggle { accent-color:#4f8cff; width:17px; height:17px; }
+    .owner-toggle { accent-color:var(--blue,#4f8cff); width:17px; height:17px; }
+    .owner-select { max-width:55%; background:#101722; color:#dfe8f7; border:1px solid #ffffff1a; border-radius:9px; padding:8px; font-size:11px; }
+    .owner-range { width:46%; accent-color:var(--blue,#4f8cff); }
+    .owner-card { border-radius:var(--owner-radius,15px); }
+    body.owner-compact .owner-card, body.owner-compact .owner-line { padding-top:7px; padding-bottom:7px; }
+    body.owner-large .owner-card { padding:18px; }
+    body.owner-large .owner-line strong { font-size:13px; }
+    body.owner-accent-glow .owner-action, body.owner-accent-glow .owner-tab.active { box-shadow:0 0 16px color-mix(in srgb,var(--blue,#4f8cff) 38%,transparent); }
+    body.owner-night-sky .owner-sheet { background:radial-gradient(ellipse at 15% 0%,#33436a 0%,transparent 38%),linear-gradient(145deg,#151d36,#080c16 70%); }
+    body.owner-glass .owner-card { background:rgba(21,27,38,var(--owner-opacity,.76)); }
     .owner-map { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; margin-top:10px; }
     .owner-node { text-align:left; padding:12px; border:1px solid #4f8cff28; background:#1b2a40; color:#f1f5fb; border-radius:12px; font-size:11px; }
     .owner-node small { display:block; color:#aab7ca; margin-top:5px; font-size:10px; }
@@ -251,17 +260,35 @@
         <button class="owner-tab active" data-owner-tab="scanner">⌁ Сканер</button><button class="owner-tab" data-owner-tab="studio">◈ Студия</button><button class="owner-tab" data-owner-tab="stats">✧ Статистика</button><button class="owner-tab" data-owner-tab="lab">✦ Secret Lab</button><button class="owner-tab" data-owner-tab="map">⌘ Карта</button>
       </nav>
       <section class="owner-page active" id="owner-page-scanner">
-        <div class="owner-card"><h3>System Scanner</h3><p class="owner-muted">Проверяет доступные сейчас данные выбранного дня и состояние загрузки адаптеров. Ничего не меняет в расписании.</p><button class="owner-action" id="ownerRunScan" style="width:100%;margin-top:12px">Проверить расписание</button><div class="owner-result" id="ownerScanResult">Диагностика ещё не запускалась.</div></div>
+        <div class="owner-card"><h3>Сканер расписания</h3><p class="owner-muted">Это техническая диагностика, а не сверка с PDF. Нажми кнопку — сканер проверит выбранный день: названия пар, время, пересечения и состояние загрузки курсов. Расписание он не меняет.</p><button class="owner-action" id="ownerRunScan" style="width:100%;margin-top:12px">▶ Запустить проверку</button><div class="owner-result" id="ownerScanResult">Пока проверка не запускалась. Выбери в приложении группу и дату, затем нажми «Запустить проверку».</div></div>
         <div class="owner-card"><h3>Контроль источников</h3><div class="owner-line"><div><strong>1-й курс</strong><small>Загрузка JSON и адаптера</small></div><span id="ownerC1">…</span></div><div class="owner-line"><div><strong>3-й курс</strong><small>Загрузка черновика курса</small></div><span id="ownerC3">…</span></div><div class="owner-line"><div><strong>4-й курс</strong><small>Загрузка JSON и адаптера</small></div><span id="ownerC4">…</span></div><p class="owner-muted">Для встроенных расписаний 2-го курса диагностика проверяет данные выбранного дня. Статус загрузки не подтверждает официальную корректность источника.</p></div>
       </section>
       <section class="owner-page" id="owner-page-studio">
-        <div class="owner-card"><h3>Personal Studio</h3><p class="owner-muted">Личные настройки сохраняются в этом браузере. Они не меняют расписание.</p><div class="owner-theme-grid"><button class="owner-theme active" data-owner-theme="default"><span style="background:linear-gradient(120deg,#0d1118,#273142)"></span>Obsidian</button><button class="owner-theme" data-owner-theme="arctic"><span style="background:linear-gradient(120deg,#10253d,#4f8cff)"></span>Arctic Blue</button><button class="owner-theme" data-owner-theme="midnight"><span style="background:linear-gradient(120deg,#1d1237,#633fa1)"></span>Midnight</button></div><div class="owner-line"><div><strong>Стеклянные карточки</strong><small>Мягкая прозрачность</small></div><input class="owner-toggle" id="ownerGlass" type="checkbox" checked></div><div class="owner-line"><div><strong>Анимации</strong><small>Плавные переходы</small></div><input class="owner-toggle" id="ownerMotion" type="checkbox" checked></div><div class="owner-line"><div><strong>Свечение короны</strong><small>Мягкий акцент</small></div><input class="owner-toggle" id="ownerGlow" type="checkbox" checked></div><div class="owner-result" id="ownerStudioResult">Выбери оформление.</div><button class="owner-action" id="ownerReset" style="width:100%;margin-top:10px">Сбросить мои настройки</button></div>
+        <div class="owner-card"><h3>Personal Studio</h3><p class="owner-muted">Персональное оформление только для этого устройства. Меняй настройки и сразу смотри результат; расписание и вид обычных пользователей не затрагиваются.</p><div class="owner-theme-grid"><button class="owner-theme active" data-owner-theme="default"><span style="background:linear-gradient(120deg,#0d1118,#273142)"></span>Obsidian</button><button class="owner-theme" data-owner-theme="arctic"><span style="background:linear-gradient(120deg,#10253d,#4f8cff)"></span>Arctic Blue</button><button class="owner-theme" data-owner-theme="midnight"><span style="background:linear-gradient(120deg,#1d1237,#633fa1)"></span>Midnight</button></div>
+      <div class="owner-line"><div><strong>Акцентный цвет</strong><small>Цвет кнопок и выделений</small></div><select id="ownerAccent" class="owner-select"><option value="blue">Электрик-синий</option><option value="cyan">Ледяной бирюзовый</option><option value="violet">Фиолетовый</option><option value="gold">Золотой</option><option value="mint">Мятный</option></select></div>
+      <div class="owner-line"><div><strong>Прозрачность карточек</strong><small>От плотных до стеклянных</small></div><input id="ownerOpacity" type="range" min="45" max="100" step="5" value="76" class="owner-range"></div>
+      <div class="owner-line"><div><strong>Скругление карточек</strong><small>Углы интерфейса</small></div><input id="ownerRadius" type="range" min="8" max="26" step="2" value="15" class="owner-range"></div>
+      <div class="owner-line"><div><strong>Размер интерфейса</strong><small>Компактный / стандартный / крупный</small></div><select id="ownerDensity" class="owner-select"><option value="compact">Компактный</option><option value="normal">Стандартный</option><option value="large">Крупный</option></select></div>
+      <div class="owner-line"><div><strong>Стеклянные карточки</strong><small>Размытие и полупрозрачность</small></div><input class="owner-toggle" id="ownerGlass" type="checkbox" checked></div>
+      <div class="owner-line"><div><strong>Анимации</strong><small>Плавные переходы</small></div><input class="owner-toggle" id="ownerMotion" type="checkbox" checked></div>
+      <div class="owner-line"><div><strong>Свечение короны</strong><small>Мягкий золотой акцент</small></div><input class="owner-toggle" id="ownerGlow" type="checkbox" checked></div>
+      <div class="owner-line"><div><strong>Усиленное свечение акцентов</strong><small>Подсветка активных элементов</small></div><input class="owner-toggle" id="ownerAccentGlow" type="checkbox"></div>
+      <div class="owner-result" id="ownerStudioResult">Выбери оформление.</div><button class="owner-action" id="ownerReset" style="width:100%;margin-top:10px">Сбросить настройки студии</button></div>
       </section>
       <section class="owner-page" id="owner-page-stats">
-        <div class="owner-card"><h3>Creator Stats</h3><p class="owner-muted">Счётчики локальны этому устройству; это не общая серверная статистика.</p><div class="owner-line"><div><strong>Запуски диагностики</strong><small>На этом устройстве</small></div><b id="ownerScanCount">0</b></div><div class="owner-line"><div><strong>Открытия Owner Lounge</strong><small>На этом устройстве</small></div><b id="ownerOpenCount">0</b></div><div class="owner-line"><div><strong>Отметка создателя</strong><small>Не блокирует другие функции</small></div><b>♛</b></div><div class="owner-result">Достижения и уровни не открывают и не блокируют функции. Историю реальных изменений подключим с сервером.</div></div>
+        <div class="owner-card"><h3>Статистика создателя</h3><p class="owner-muted">Показатели собираются локально на этом устройстве. Это не статистика всех пользователей приложения и не серверная аналитика.</p>
+      <div class="owner-line"><div><strong>Открытия панели владельца</strong><small>За всё время на этом устройстве</small></div><b id="ownerOpenCount">0</b></div>
+      <div class="owner-line"><div><strong>Запуски сканера</strong><small>Всего проверок</small></div><b id="ownerScanCount">0</b></div>
+      <div class="owner-line"><div><strong>Изменения оформления</strong><small>Применённые настройки</small></div><b id="ownerCustomizeCount">0</b></div>
+      <div class="owner-line"><div><strong>Запуски Secret Lab</strong><small>Эффекты и пасхалки</small></div><b id="ownerLabCount">0</b></div>
+      <div class="owner-line"><div><strong>Последняя активность</strong><small>Когда открывалась панель</small></div><b id="ownerLastActive">—</b></div>
+      <div class="owner-line"><div><strong>Текущая группа</strong><small>Группа в расписании</small></div><b id="ownerCurrentGroup">—</b></div>
+      <div class="owner-line"><div><strong>Состояние источников</strong><small>Статус флагов загрузки в приложении</small></div><b id="ownerSourceSummary">—</b></div>
+      <button class="owner-action" id="ownerRefreshStats" style="width:100%;margin-top:10px">Обновить показатели</button>
+      <div class="owner-result">Важно: посещения других людей, число всех пользователей и серверные изменения здесь не отображаются. Для этого отдельно подключается серверная аналитика.</div></div>
       </section>
       <section class="owner-page" id="owner-page-lab">
-        <div class="owner-card"><h3>Secret Lab</h3><p class="owner-muted">Все локальные эффекты доступны сразу.</p><div class="owner-line"><div><strong>Звёздный импульс</strong><small>Анимация короны</small></div><button class="owner-action" id="ownerPulse">Запустить</button></div><div class="owner-line"><div><strong>Секретное послание</strong><small>Пасхалка создателю</small></div><button class="owner-action" id="ownerSecret">Открыть</button></div><div class="owner-result" id="ownerLabResult">Выбери эффект.</div></div>
+        <div class="owner-card"><h3>Secret Lab</h3><p class="owner-muted">Это игровая комната с визуальными эффектами и пасхалками — здесь нет скрытых изменений расписания. Нажми «Запустить» или «Открыть», чтобы увидеть эффект внизу.</p><div class="owner-line"><div><strong>Звёздный импульс</strong><small>Короткая анимация кнопки-короны</small></div><button class="owner-action" id="ownerPulse">Запустить</button></div><div class="owner-line"><div><strong>Секретное послание</strong><small>Персональная пасхалка владельцу</small></div><button class="owner-action" id="ownerSecret">Открыть</button></div><div class="owner-line"><div><strong>Режим «Ночное небо»</strong><small>Временно добавляет звёздное свечение панели</small></div><button class="owner-action" id="ownerNight">Включить</button></div><div class="owner-result" id="ownerLabResult">Выбери эффект выше — результат появится здесь.</div></div>
       </section>
       <section class="owner-page" id="owner-page-map">
         <div class="owner-card"><h3>Activity Universe</h3><p class="owner-muted">Карта разделов проекта. Подробная история групп и обновлений появится после подключения серверного журнала.</p><div class="owner-map"><button class="owner-node" data-owner-node="app">✦ Приложение<small>Главная оболочка</small></button><button class="owner-node" data-owner-node="courses">▦ Курсы<small>Источники расписаний</small></button><button class="owner-node" data-owner-node="groups">♧ Группы<small>Выбранная группа</small></button><button class="owner-node" data-owner-node="updates">↻ Обновления<small>История версий</small></button><button class="owner-node" data-owner-node="checks">⌁ Диагностика<small>Результаты сканера</small></button><button class="owner-node" data-owner-node="effects">✧ Эффекты<small>Твои настройки</small></button></div><div class="owner-result" id="ownerMapResult">Нажми на узел карты.</div></div>
@@ -737,7 +764,7 @@
           if(result.authorized===true)enableOwnerEntrance();
         }catch(error){console.warn("Проверка владельца временно недоступна.",error);}
       }
-      function openOwner(){if(!entry.classList.contains("visible"))return;modal.classList.add("open");document.body.style.overflow="hidden";write("opens",read("opens",0)+1);ownerQuery("#ownerOpenCount").textContent=read("opens",0);applyPrefs();refreshStatuses();}
+      function openOwner(){if(!entry.classList.contains("visible"))return;modal.classList.add("open");document.body.style.overflow="hidden";write("opens",read("opens",0)+1);write("lastActive",new Date().toLocaleString("ru-RU",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}));applyPrefs();refreshStatuses();}
       function closeOwner(){modal.classList.remove("open");document.body.style.overflow="";}
       entry.addEventListener("click",openOwner);ownerQuery("#ownerClose").addEventListener("click",closeOwner);
       modal.addEventListener("click",e=>{if(e.target===modal)closeOwner();});
@@ -747,17 +774,33 @@
       function applyPrefs(){
         const theme=read("theme","default"),palettes={default:{bg:"#0d1118",panel:"#151b26",panel2:"#1b2432",blue:"#4f8cff"},arctic:{bg:"#0a1421",panel:"#112238",panel2:"#18304b",blue:"#73adff"},midnight:{bg:"#100d19",panel:"#1b1528",panel2:"#28203b",blue:"#a68aff"}};
         const p=palettes[theme]||palettes.default;Object.entries(p).forEach(([k,v])=>document.documentElement.style.setProperty("--"+k,v));
+        const accents={blue:"#4f8cff",cyan:"#48d7e8",violet:"#a68aff",gold:"#e9c778",mint:"#62d9ae"};
+        const accent=read("accent","blue");document.documentElement.style.setProperty("--blue",accents[accent]||accents.blue);
+        ownerQuery("#ownerAccent").value=accent;
         ownerAll(".owner-theme").forEach(b=>b.classList.toggle("active",b.dataset.ownerTheme===theme));
-        const glass=read("glass",true),motion=read("motion",true),glow=read("glow",true);
-        document.body.classList.toggle("owner-glass",glass);document.body.classList.toggle("owner-no-motion",!motion);
-        document.documentElement.style.setProperty("--owner-glow",glow?"1":"0");
-        ownerQuery("#ownerGlass").checked=glass;ownerQuery("#ownerMotion").checked=motion;ownerQuery("#ownerGlow").checked=glow;
-        ownerQuery("#ownerStudioResult").textContent="Тема: "+({default:"Obsidian",arctic:"Arctic Blue",midnight:"Midnight"}[theme]||"Obsidian")+". Настройки сохранены на этом устройстве.";
+        const glass=read("glass",true),motion=read("motion",true),glow=read("glow",true),accentGlow=read("accentGlow",false);
+        document.body.classList.toggle("owner-glass",glass);document.body.classList.toggle("owner-no-motion",!motion);document.body.classList.toggle("owner-accent-glow",accentGlow);
+        const density=read("density","normal");document.body.classList.toggle("owner-compact",density==="compact");document.body.classList.toggle("owner-large",density==="large");
+        const opacity=read("opacity",76),radius=read("radius",15);
+        document.documentElement.style.setProperty("--owner-opacity",String(opacity/100));document.documentElement.style.setProperty("--owner-radius",radius+"px");document.documentElement.style.setProperty("--owner-glow",glow?"1":"0");
+        ownerQuery("#ownerOpacity").value=opacity;ownerQuery("#ownerRadius").value=radius;ownerQuery("#ownerDensity").value=density;
+        ownerQuery("#ownerGlass").checked=glass;ownerQuery("#ownerMotion").checked=motion;ownerQuery("#ownerGlow").checked=glow;ownerQuery("#ownerAccentGlow").checked=accentGlow;
+        ownerQuery("#ownerStudioResult").textContent="Тема: "+({default:"Obsidian",arctic:"Arctic Blue",midnight:"Midnight"}[theme]||"Obsidian")+" · акцент: "+({blue:"синий",cyan:"бирюзовый",violet:"фиолетовый",gold:"золотой",mint:"мятный"}[accent]||"синий")+" · прозрачность "+opacity+"% · скругление "+radius+" px. Настройки сохранены на этом устройстве.";
         ownerQuery("#ownerScanCount").textContent=read("scans",0);ownerQuery("#ownerOpenCount").textContent=read("opens",0);
+        ownerQuery("#ownerCustomizeCount").textContent=read("customizations",0);ownerQuery("#ownerLabCount").textContent=read("labRuns",0);
+        ownerQuery("#ownerLastActive").textContent=read("lastActive","—");ownerQuery("#ownerCurrentGroup").textContent=typeof currentGroup!=="undefined"?currentGroup:"—";
+        ownerQuery("#ownerSourceSummary").textContent=[window.Course1ScheduleReady,window.Course2ScheduleReady,window.Course3ScheduleReady,window.Course4ScheduleReady].filter(Boolean).length+"/4";
       }
-      ownerAll(".owner-theme").forEach(b=>b.addEventListener("click",()=>{write("theme",b.dataset.ownerTheme);applyPrefs();}));
-      [["glass","ownerGlass"],["motion","ownerMotion"],["glow","ownerGlow"]].forEach(([key,id])=>ownerQuery("#"+id).addEventListener("change",e=>{write(key,e.target.checked);applyPrefs();}));
-      ownerQuery("#ownerReset").addEventListener("click",()=>{["theme","glass","motion","glow"].forEach(k=>{try{localStorage.removeItem("rta_owner_"+k);}catch(e){}});applyPrefs();toast("Личные настройки сброшены.");});
+      function noteCustomization(){write("customizations",read("customizations",0)+1);applyPrefs();}
+      ownerAll(".owner-theme").forEach(b=>b.addEventListener("click",()=>{write("theme",b.dataset.ownerTheme);noteCustomization();}));
+      ownerQuery("#ownerAccent").addEventListener("change",e=>{write("accent",e.target.value);noteCustomization();});
+      ownerQuery("#ownerOpacity").addEventListener("input",e=>{write("opacity",Number(e.target.value));applyPrefs();});
+      ownerQuery("#ownerOpacity").addEventListener("change",()=>{write("customizations",read("customizations",0)+1);applyPrefs();});
+      ownerQuery("#ownerRadius").addEventListener("input",e=>{write("radius",Number(e.target.value));applyPrefs();});
+      ownerQuery("#ownerRadius").addEventListener("change",()=>{write("customizations",read("customizations",0)+1);applyPrefs();});
+      ownerQuery("#ownerDensity").addEventListener("change",e=>{write("density",e.target.value);noteCustomization();});
+      [["glass","ownerGlass"],["motion","ownerMotion"],["glow","ownerGlow"],["accentGlow","ownerAccentGlow"]].forEach(([key,id])=>ownerQuery("#"+id).addEventListener("change",e=>{write(key,e.target.checked);noteCustomization();}));
+      ownerQuery("#ownerReset").addEventListener("click",()=>{["theme","accent","opacity","radius","density","glass","motion","glow","accentGlow"].forEach(k=>{try{localStorage.removeItem("rta_owner_"+k);}catch(e){}});write("customizations",read("customizations",0)+1);applyPrefs();toast("Настройки студии сброшены.");});
       function refreshStatuses(){ownerQuery("#ownerC1").textContent=window.Course1ScheduleReady?"✓ Загружен":"… Загружается";ownerQuery("#ownerC3").textContent=window.Course3ScheduleReady?"✓ Загружен":"… Загружается";ownerQuery("#ownerC4").textContent=window.Course4ScheduleReady?"✓ Загружен":"… Загружается";}
       ownerQuery("#ownerRunScan").addEventListener("click",()=>{
         let lines=[],issues=0,lessons=[];
@@ -771,8 +814,11 @@
         lines.push(issues?"Найдено замечаний: "+issues:"Ошибок формата в доступном списке не найдено.");lines.push("Это техническая проверка, не сверка с официальным PDF.");
         ownerQuery("#ownerScanResult").textContent=lines.join("\\n");ownerQuery("#ownerScanResult").classList.toggle("warn",issues>0);write("scans",read("scans",0)+1);ownerQuery("#ownerScanCount").textContent=read("scans",0);
       });
-      ownerQuery("#ownerPulse").addEventListener("click",()=>{const mark=ownerQuery(".owner-entry");if(mark.animate)mark.animate([{transform:"scale(1)"},{transform:"scale(1.18)",filter:"drop-shadow(0 0 15px #e9c778cc)"},{transform:"scale(1)"}],{duration:800});ownerQuery("#ownerLabResult").textContent="✧ Звёздный импульс активирован.";});
-      ownerQuery("#ownerSecret").addEventListener("click",()=>ownerQuery("#ownerLabResult").textContent="Ты не просто пользуешься расписанием — ты его создаёшь. ♛");
+      function noteLab(){write("labRuns",read("labRuns",0)+1);applyPrefs();}
+      ownerQuery("#ownerPulse").addEventListener("click",()=>{const mark=ownerQuery(".owner-entry");if(mark.animate)mark.animate([{transform:"scale(1)"},{transform:"scale(1.18)",filter:"drop-shadow(0 0 15px #e9c778cc)"},{transform:"scale(1)"}],{duration:800});ownerQuery("#ownerLabResult").textContent="✧ Звёздный импульс активирован. Это только визуальный эффект.";noteLab();});
+      ownerQuery("#ownerSecret").addEventListener("click",()=>{ownerQuery("#ownerLabResult").textContent="Ты не просто пользуешься расписанием — ты его создаёшь. ♛";noteLab();});
+      ownerQuery("#ownerNight").addEventListener("click",()=>{document.body.classList.toggle("owner-night-sky");const active=document.body.classList.contains("owner-night-sky");ownerQuery("#ownerNight").textContent=active?"Выключить":"Включить";ownerQuery("#ownerLabResult").textContent=active?"✦ Режим «Ночное небо» включён. Нажми ещё раз, чтобы выключить.":"Режим «Ночное небо» выключен.";noteLab();});
+      ownerQuery("#ownerRefreshStats").addEventListener("click",()=>{applyPrefs();refreshStatuses();ownerQuery("#ownerLabResult").textContent="";toast("Локальная статистика обновлена.");});
       const nodeCopy={app:"Главная оболочка Mini App. Основной интерфейс расписания не изменяется.",courses:"Разные курсы загружаются из своих источников, когда для них настроены адаптеры.",groups:"Текущая группа: "+(typeof currentGroup!=="undefined"?currentGroup:"не определена")+".",updates:"Реальную историю изменений можно будет получить после подключения серверного журнала.",checks:"Открой раздел «Сканер», чтобы проверить формат доступных пар выбранного дня.",effects:"Темы и визуальные настройки сохраняются только на этом устройстве."};
       ownerAll(".owner-node").forEach(b=>b.addEventListener("click",()=>ownerQuery("#ownerMapResult").textContent=nodeCopy[b.dataset.ownerNode]||"Узел карты"));
       applyPrefs();
