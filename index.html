@@ -743,13 +743,8 @@
       ownerMark.innerHTML = '<span class="owner-crown">♛</span><span>Создатель приложения</span>';
       const welcome = document.querySelector(".welcome");
       if (welcome) welcome.appendChild(ownerMark);
-      const profileCard = document.querySelector(".profile-card");
-      const profileOwner = document.createElement("div");
-      profileOwner.className = "owner-profile-card";
-      profileOwner.innerHTML = '<div style="display:flex;align-items:center;gap:9px;color:#e9c778;font-weight:750"><span style="font-size:19px">♛</span><span>Владелец проекта</span></div><p class="owner-muted" style="margin-top:6px">Особые инструменты создателя · Owner Lounge</p><button class="owner-action" id="ownerProfileOpen" style="width:100%;margin-top:10px">Открыть панель</button>';
-      if (profileCard) profileCard.appendChild(profileOwner);
       function enableOwnerEntrance(){
-        entry.classList.add("visible");ownerMark.classList.add("visible");profileOwner.classList.add("visible");
+        entry.classList.add("visible");ownerMark.classList.add("visible");
         const subtitle=ownerQuery(".owner-sub");if(subtitle)subtitle.textContent="Личная панель создателя · доступ подтверждён сервером";
         const warning=ownerQuery(".owner-warning");if(warning)warning.textContent="Доступ владельца подтверждён серверной проверкой Telegram ID. Локальные темы и эффекты действуют только на этом устройстве.";
         applyPrefs();
@@ -769,7 +764,6 @@
       entry.addEventListener("click",openOwner);ownerQuery("#ownerClose").addEventListener("click",closeOwner);
       modal.addEventListener("click",e=>{if(e.target===modal)closeOwner();});
       document.addEventListener("keydown",e=>{if(e.key==="Escape")closeOwner();});
-      document.addEventListener("click",e=>{if(e.target&&e.target.id==="ownerProfileOpen")openOwner();});
       ownerAll(".owner-tab").forEach(b=>b.addEventListener("click",()=>{ownerAll(".owner-tab").forEach(x=>x.classList.toggle("active",x===b));ownerAll(".owner-page").forEach(x=>x.classList.toggle("active",x.id==="owner-page-"+b.dataset.ownerTab));}));
       function applyPrefs(){
         const theme=read("theme","default"),palettes={default:{bg:"#0d1118",panel:"#151b26",panel2:"#1b2432",blue:"#4f8cff"},arctic:{bg:"#0a1421",panel:"#112238",panel2:"#18304b",blue:"#73adff"},midnight:{bg:"#100d19",panel:"#1b1528",panel2:"#28203b",blue:"#a68aff"},halloween:{bg:"#100b18",panel:"#21142d",panel2:"#30203e",blue:"#ff8a30"},winter:{bg:"#071522",panel:"#10273a",panel2:"#18384f",blue:"#8bdcff"},royal:{bg:"#100f16",panel:"#211d29",panel2:"#30283a",blue:"#e9c778"},aurora:{bg:"#07151b",panel:"#10252b",panel2:"#19343b",blue:"#42d9b0"},cyber:{bg:"#070910",panel:"#111522",panel2:"#1c2032",blue:"#00e5ff"},christmas:{bg:"#081710",panel:"#10271d",panel2:"#18382a",blue:"#e14b5c"}};
@@ -821,7 +815,7 @@
       ownerQuery("#ownerRefreshStats").addEventListener("click",()=>{applyPrefs();refreshStatuses();ownerQuery("#ownerLabResult").textContent="";toast("Локальная статистика обновлена.");});
       const nodeCopy={app:"Главная оболочка Mini App. Основной интерфейс расписания не изменяется.",courses:"Разные курсы загружаются из своих источников, когда для них настроены адаптеры.",groups:"Текущая группа: "+(typeof currentGroup!=="undefined"?currentGroup:"не определена")+".",updates:"Реальную историю изменений можно будет получить после подключения серверного журнала.",checks:"Открой раздел «Сканер», чтобы проверить формат доступных пар выбранного дня.",effects:"Темы и визуальные настройки сохраняются только на этом устройстве."};
       ownerAll(".owner-node").forEach(b=>b.addEventListener("click",()=>ownerQuery("#ownerMapResult").textContent=nodeCopy[b.dataset.ownerNode]||"Узел карты"));
-      applyPrefs();
+      // Owner preferences are applied only after server verification. Other Telegram accounts on the same device keep the default app theme.
       void verifyOwner();
     })();
 
