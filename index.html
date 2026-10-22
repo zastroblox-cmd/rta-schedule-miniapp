@@ -704,13 +704,13 @@
       document.getElementById("greeting").textContent = `Привет, ${tg.initDataUnsafe.user.first_name}! 👋`;
     }
 
-    // Owner Lounge: доступные без сервера личные инструменты и настройки.
-    (function initLocalOwnerLounge(){
+    // Owner Lounge: вход появляется только после серверной проверки Telegram initData.
+    (function initVerifiedOwnerLounge(){
       const ownerQuery = (selector) => document.querySelector(selector);
       const ownerAll = (selector) => Array.from(document.querySelectorAll(selector));
       const read = (key, fallback) => { try { const v=localStorage.getItem("rta_owner_"+key); return v===null?fallback:JSON.parse(v); } catch(e) { return fallback; } };
       const write = (key, value) => { try { localStorage.setItem("rta_owner_"+key, JSON.stringify(value)); } catch(e) {} };
-      const logo = document.querySelector(".logo"), entry = ownerQuery("#ownerEntry"), modal = ownerQuery("#ownerModal");
+      const entry = ownerQuery("#ownerEntry"), modal = ownerQuery("#ownerModal");
       const ownerMark = document.createElement("div");
       ownerMark.className = "owner-mark";
       ownerMark.innerHTML = '<span class="owner-crown">♛</span><span>Создатель приложения</span>';
@@ -721,11 +721,23 @@
       profileOwner.className = "owner-profile-card";
       profileOwner.innerHTML = '<div style="display:flex;align-items:center;gap:9px;color:#e9c778;font-weight:750"><span style="font-size:19px">♛</span><span>Владелец проекта</span></div><p class="owner-muted" style="margin-top:6px">Особые инструменты создателя · Owner Lounge</p><button class="owner-action" id="ownerProfileOpen" style="width:100%;margin-top:10px">Открыть панель</button>';
       if (profileCard) profileCard.appendChild(profileOwner);
-      let taps=0, tapReset;
-      if (logo) { logo.style.cursor="pointer"; logo.addEventListener("click",()=>{taps++;clearTimeout(tapReset);tapReset=setTimeout(()=>{taps=0;},2200);if(taps>=5){taps=0;enableOwnerEntrance();toast("Owner Lounge активирован на этом устройстве.");}}); }
-      function enableOwnerEntrance(){write("enabled",true);entry.classList.add("visible");ownerMark.classList.add("visible");profileOwner.classList.add("visible");applyPrefs();}
-      if(read("enabled",false))enableOwnerEntrance();
-      function openOwner(){if(!read("enabled",false))return;modal.classList.add("open");document.body.style.overflow="hidden";write("opens",read("opens",0)+1);ownerQuery("#ownerOpenCount").textContent=read("opens",0);applyPrefs();refreshStatuses();}
+      function enableOwnerEntrance(){
+        entry.classList.add("visible");ownerMark.classList.add("visible");profileOwner.classList.add("visible");
+        const subtitle=ownerQuery(".owner-sub");if(subtitle)subtitle.textContent="Личная панель создателя · доступ подтверждён сервером";
+        const warning=ownerQuery(".owner-warning");if(warning)warning.textContent="Доступ владельца подтверждён серверной проверкой Telegram ID. Локальные темы и эффекты действуют только на этом устройстве.";
+        applyPrefs();
+      }
+      async function verifyOwner(){
+        const initData=window.Telegram&&window.Telegram.WebApp?window.Telegram.WebApp.initData:"";
+        if(!initData)return;
+        try{
+          const response=await fetch("https://rta-schedule-api.onrender.com/api/owner/verify",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({initData}),cache:"no-store"});
+          if(!response.ok)return;
+          const result=await response.json();
+          if(result.authorized===true)enableOwnerEntrance();
+        }catch(error){console.warn("Проверка владельца временно недоступна.",error);}
+      }
+      function openOwner(){if(!entry.classList.contains("visible"))return;modal.classList.add("open");document.body.style.overflow="hidden";write("opens",read("opens",0)+1);ownerQuery("#ownerOpenCount").textContent=read("opens",0);applyPrefs();refreshStatuses();}
       function closeOwner(){modal.classList.remove("open");document.body.style.overflow="";}
       entry.addEventListener("click",openOwner);ownerQuery("#ownerClose").addEventListener("click",closeOwner);
       modal.addEventListener("click",e=>{if(e.target===modal)closeOwner();});
@@ -733,7 +745,6 @@
       document.addEventListener("click",e=>{if(e.target&&e.target.id==="ownerProfileOpen")openOwner();});
       ownerAll(".owner-tab").forEach(b=>b.addEventListener("click",()=>{ownerAll(".owner-tab").forEach(x=>x.classList.toggle("active",x===b));ownerAll(".owner-page").forEach(x=>x.classList.toggle("active",x.id==="owner-page-"+b.dataset.ownerTab));}));
       function applyPrefs(){
-        if(!read("enabled",false)) return;
         const theme=read("theme","default"),palettes={default:{bg:"#0d1118",panel:"#151b26",panel2:"#1b2432",blue:"#4f8cff"},arctic:{bg:"#0a1421",panel:"#112238",panel2:"#18304b",blue:"#73adff"},midnight:{bg:"#100d19",panel:"#1b1528",panel2:"#28203b",blue:"#a68aff"}};
         const p=palettes[theme]||palettes.default;Object.entries(p).forEach(([k,v])=>document.documentElement.style.setProperty("--"+k,v));
         ownerAll(".owner-theme").forEach(b=>b.classList.toggle("active",b.dataset.ownerTheme===theme));
@@ -758,13 +769,14 @@
         for(let i=0;i<lessons.length;i++)for(let j=i+1;j<lessons.length;j++){if(lessons[i]?.start&&lessons[i]?.end&&lessons[j]?.start&&lessons[j]?.end&&lessons[i].start<lessons[j].end&&lessons[j].start<lessons[i].end){issues++;lines.push("Возможное пересечение: "+lessons[i].title+" / "+lessons[j].title);}}
         refreshStatuses();lines.push("Курсы 1/3/4: "+(window.Course1ScheduleReady?"1-й загружен":"1-й не подтверждён")+", "+(window.Course3ScheduleReady?"3-й загружен":"3-й не подтверждён")+", "+(window.Course4ScheduleReady?"4-й загружен":"4-й не подтверждён"));
         lines.push(issues?"Найдено замечаний: "+issues:"Ошибок формата в доступном списке не найдено.");lines.push("Это техническая проверка, не сверка с официальным PDF.");
-        ownerQuery("#ownerScanResult").textContent=lines.join("\n");ownerQuery("#ownerScanResult").classList.toggle("warn",issues>0);write("scans",read("scans",0)+1);ownerQuery("#ownerScanCount").textContent=read("scans",0);
+        ownerQuery("#ownerScanResult").textContent=lines.join("\\n");ownerQuery("#ownerScanResult").classList.toggle("warn",issues>0);write("scans",read("scans",0)+1);ownerQuery("#ownerScanCount").textContent=read("scans",0);
       });
       ownerQuery("#ownerPulse").addEventListener("click",()=>{const mark=ownerQuery(".owner-entry");if(mark.animate)mark.animate([{transform:"scale(1)"},{transform:"scale(1.18)",filter:"drop-shadow(0 0 15px #e9c778cc)"},{transform:"scale(1)"}],{duration:800});ownerQuery("#ownerLabResult").textContent="✧ Звёздный импульс активирован.";});
       ownerQuery("#ownerSecret").addEventListener("click",()=>ownerQuery("#ownerLabResult").textContent="Ты не просто пользуешься расписанием — ты его создаёшь. ♛");
       const nodeCopy={app:"Главная оболочка Mini App. Основной интерфейс расписания не изменяется.",courses:"Разные курсы загружаются из своих источников, когда для них настроены адаптеры.",groups:"Текущая группа: "+(typeof currentGroup!=="undefined"?currentGroup:"не определена")+".",updates:"Реальную историю изменений можно будет получить после подключения серверного журнала.",checks:"Открой раздел «Сканер», чтобы проверить формат доступных пар выбранного дня.",effects:"Темы и визуальные настройки сохраняются только на этом устройстве."};
       ownerAll(".owner-node").forEach(b=>b.addEventListener("click",()=>ownerQuery("#ownerMapResult").textContent=nodeCopy[b.dataset.ownerNode]||"Узел карты"));
       applyPrefs();
+      void verifyOwner();
     })();
 
     document.getElementById("prevWeek").onclick=()=>{weekOffset--;render();};
