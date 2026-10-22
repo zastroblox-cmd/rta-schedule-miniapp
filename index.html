@@ -167,6 +167,18 @@
     body.owner-large .owner-line strong { font-size:13px; }
     body.owner-accent-glow .owner-action, body.owner-accent-glow .owner-tab.active { box-shadow:0 0 16px color-mix(in srgb,var(--blue,#4f8cff) 38%,transparent); }
     body.owner-night-sky .owner-sheet { background:radial-gradient(ellipse at 15% 0%,#33436a 0%,transparent 38%),linear-gradient(145deg,#151d36,#080c16 70%); } body.owner-theme-halloween .app{background-image:radial-gradient(ellipse at 90% 0%,#ff8a3028,transparent 38%),radial-gradient(ellipse at 0% 55%,#6e2ca522,transparent 35%)} body.owner-theme-winter .app{background-image:radial-gradient(ellipse at 80% 0%,#8bdcff25,transparent 42%),radial-gradient(ellipse at 10% 60%,#fff5e514,transparent 32%)} body.owner-theme-royal .app{background-image:radial-gradient(ellipse at 90% 0%,#e9c77822,transparent 40%)} body.owner-theme-aurora .app{background-image:radial-gradient(ellipse at 80% 0%,#42d9b032,transparent 40%),radial-gradient(ellipse at 0% 55%,#7359d92b,transparent 38%)} body.owner-theme-cyber .app{background-image:linear-gradient(transparent 96%,#00e5ff0b 97%),radial-gradient(ellipse at 80% 0%,#ff2bd620,transparent 40%)} body.owner-theme-christmas .app{background-image:radial-gradient(ellipse at 85% 0%,#e14b5c25,transparent 38%),radial-gradient(ellipse at 0% 65%,#42d9b01c,transparent 35%)}
+    .theme-decor{display:none;position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:20;opacity:.72}
+    .theme-decor.active{display:block}
+    .theme-decor .deco{position:absolute;display:block;user-select:none;pointer-events:none;filter:drop-shadow(0 2px 8px #0005);font-size:clamp(17px,4vw,28px);opacity:.48;animation:themeFloat 7s ease-in-out infinite}
+    .theme-decor .d1{top:13%;left:3%;}.theme-decor .d2{top:25%;right:4%;animation-delay:-2s}.theme-decor .d3{top:43%;left:2%;animation-delay:-4s}.theme-decor .d4{top:56%;right:3%;animation-delay:-1s}.theme-decor .d5{top:70%;left:4%;animation-delay:-3s}.theme-decor .d6{top:82%;right:5%;animation-delay:-5s}.theme-decor .d7{top:34%;left:7%;animation-delay:-2.5s}.theme-decor .d8{top:63%;right:7%;animation-delay:-4.5s}
+    .theme-decor[data-theme="halloween"] .deco{filter:drop-shadow(0 0 8px #ff8a3055);opacity:.55}
+    .theme-decor[data-theme="winter"] .deco,.theme-decor[data-theme="christmas"] .deco{animation-name:themeSnow;opacity:.55}
+    .theme-decor[data-theme="cyber"] .deco{font-family:monospace;color:#00e5ff;text-shadow:0 0 10px #00e5ff;font-size:clamp(12px,3vw,20px);opacity:.35}
+    .theme-decor[data-theme="royal"] .deco{color:#e9c778;text-shadow:0 0 10px #e9c77855}
+    @keyframes themeFloat{0%,100%{transform:translateY(0) rotate(-5deg)}50%{transform:translateY(-9px) rotate(5deg)}}
+    @keyframes themeSnow{0%{transform:translateY(-8px) rotate(0)}50%{transform:translateY(8px) rotate(18deg)}100%{transform:translateY(-8px) rotate(0)}}
+    body.owner-no-motion .theme-decor .deco{animation:none!important}
+    .owner-modal{z-index:60!important}
     body.owner-glass .owner-card { background:rgba(21,27,38,var(--owner-opacity,.76)); }
     .owner-map { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; margin-top:10px; }
     .owner-node { text-align:left; padding:12px; border:1px solid #4f8cff28; background:#1b2a40; color:#f1f5fb; border-radius:12px; font-size:11px; }
@@ -735,16 +747,32 @@
     (function initVerifiedOwnerLounge(){
       const ownerQuery = (selector) => document.querySelector(selector);
       const ownerAll = (selector) => Array.from(document.querySelectorAll(selector));
-      const read = (key, fallback) => { try { const v=localStorage.getItem("rta_owner_"+key); return v===null?fallback:JSON.parse(v); } catch(e) { return fallback; } };
-      const write = (key, value) => { try { localStorage.setItem("rta_owner_"+key, JSON.stringify(value)); } catch(e) {} };
+      let ownerAuthorized = false;
+      const read = (key, fallback) => { if(!ownerAuthorized)return fallback; try { const v=localStorage.getItem("rta_owner_"+key); return v===null?fallback:JSON.parse(v); } catch(e) { return fallback; } };
+      const write = (key, value) => { if(!ownerAuthorized)return; try { localStorage.setItem("rta_owner_"+key, JSON.stringify(value)); } catch(e) {} };
       const entry = ownerQuery("#ownerEntry"), modal = ownerQuery("#ownerModal");
-      const ownerMark = document.createElement("div");
-      ownerMark.className = "owner-mark";
-      ownerMark.innerHTML = '<span class="owner-crown">♛</span><span>Создатель приложения</span>';
-      const welcome = document.querySelector(".welcome");
-      if (welcome) welcome.appendChild(ownerMark);
+      const decor = document.createElement("div");
+      decor.className = "theme-decor";
+      decor.setAttribute("aria-hidden","true");
+      document.body.appendChild(decor);
+      function renderThemeDecor(theme){
+        const decorations = {
+          halloween: '<span class="deco d1">🎃</span><span class="deco d2">🕸️</span><span class="deco d3">🕷️</span><span class="deco d4">🎃</span><span class="deco d5">🦇</span><span class="deco d6">🕸️</span><span class="deco d7">🕷️</span>',
+          winter: '<span class="deco d1">❄️</span><span class="deco d2">✧</span><span class="deco d3">❄</span><span class="deco d4">💎</span><span class="deco d5">❄️</span><span class="deco d6">✦</span><span class="deco d7">💎</span><span class="deco d8">❄</span>',
+          christmas: '<span class="deco d1">🎄</span><span class="deco d2">❄️</span><span class="deco d3">🦌</span><span class="deco d4">🎄</span><span class="deco d5">✨</span><span class="deco d6">❄</span><span class="deco d7">🎄</span><span class="deco d8">🦌</span>',
+          cyber: '<span class="deco d1">⌘</span><span class="deco d2">0x</span><span class="deco d3">⟨/⟩</span><span class="deco d4">▦</span><span class="deco d5">0101</span><span class="deco d6">⌬</span><span class="deco d7">⟩_</span><span class="deco d8">01</span>',
+          aurora: '<span class="deco d1">✦</span><span class="deco d2">✧</span><span class="deco d3">☄</span><span class="deco d4">✧</span><span class="deco d5">✦</span><span class="deco d6">✧</span>',
+          royal: '<span class="deco d1">♛</span><span class="deco d2">✦</span><span class="deco d3">♜</span><span class="deco d4">♛</span><span class="deco d5">✧</span>',
+          arctic: '<span class="deco d1">❄</span><span class="deco d2">✧</span><span class="deco d3">❄️</span><span class="deco d4">💠</span>',
+          midnight: '<span class="deco d1">✦</span><span class="deco d2">☾</span><span class="deco d3">✧</span><span class="deco d4">✦</span>'
+        };
+        decor.innerHTML=ownerAuthorized?(decorations[theme]||""):"";
+        decor.classList.toggle("active",ownerAuthorized&&!!decorations[theme]);
+        decor.dataset.theme=theme;
+      }
       function enableOwnerEntrance(){
-        entry.classList.add("visible");ownerMark.classList.add("visible");
+        ownerAuthorized = true;
+        entry.classList.add("visible");
         const subtitle=ownerQuery(".owner-sub");if(subtitle)subtitle.textContent="Личная панель создателя · доступ подтверждён сервером";
         const warning=ownerQuery(".owner-warning");if(warning)warning.textContent="Доступ владельца подтверждён серверной проверкой Telegram ID. Локальные темы и эффекты действуют только на этом устройстве.";
         applyPrefs();
@@ -767,7 +795,7 @@
       ownerAll(".owner-tab").forEach(b=>b.addEventListener("click",()=>{ownerAll(".owner-tab").forEach(x=>x.classList.toggle("active",x===b));ownerAll(".owner-page").forEach(x=>x.classList.toggle("active",x.id==="owner-page-"+b.dataset.ownerTab));}));
       function applyPrefs(){
         const theme=read("theme","default"),palettes={default:{bg:"#0d1118",panel:"#151b26",panel2:"#1b2432",blue:"#4f8cff"},arctic:{bg:"#0a1421",panel:"#112238",panel2:"#18304b",blue:"#73adff"},midnight:{bg:"#100d19",panel:"#1b1528",panel2:"#28203b",blue:"#a68aff"},halloween:{bg:"#100b18",panel:"#21142d",panel2:"#30203e",blue:"#ff8a30"},winter:{bg:"#071522",panel:"#10273a",panel2:"#18384f",blue:"#8bdcff"},royal:{bg:"#100f16",panel:"#211d29",panel2:"#30283a",blue:"#e9c778"},aurora:{bg:"#07151b",panel:"#10252b",panel2:"#19343b",blue:"#42d9b0"},cyber:{bg:"#070910",panel:"#111522",panel2:"#1c2032",blue:"#00e5ff"},christmas:{bg:"#081710",panel:"#10271d",panel2:"#18382a",blue:"#e14b5c"}};
-        const p=palettes[theme]||palettes.default;Object.entries(p).forEach(([k,v])=>document.documentElement.style.setProperty("--"+k,v));document.body.classList.remove("owner-theme-halloween","owner-theme-winter","owner-theme-royal","owner-theme-aurora","owner-theme-cyber","owner-theme-christmas");if(theme!=="default"&&theme!=="arctic"&&theme!=="midnight")document.body.classList.add("owner-theme-"+theme);
+        const activeTheme=ownerAuthorized?theme:"default";const p=palettes[activeTheme]||palettes.default;Object.entries(p).forEach(([k,v])=>document.documentElement.style.setProperty("--"+k,v));document.body.classList.remove("owner-theme-halloween","owner-theme-winter","owner-theme-royal","owner-theme-aurora","owner-theme-cyber","owner-theme-christmas");if(activeTheme!=="default"&&activeTheme!=="arctic"&&activeTheme!=="midnight")document.body.classList.add("owner-theme-"+activeTheme);renderThemeDecor(activeTheme);
         const accents={blue:"#4f8cff",cyan:"#48d7e8",violet:"#a68aff",gold:"#e9c778",mint:"#62d9ae"};
         const accent=read("accent","blue");document.documentElement.style.setProperty("--blue",accents[accent]||accents.blue);
         ownerQuery("#ownerAccent").value=accent;
