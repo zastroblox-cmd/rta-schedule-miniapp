@@ -132,8 +132,58 @@
     .week-day-summary { color:var(--muted); font-size:11px; line-height:1.5; overflow-wrap:anywhere; }
     .week-day-count { color:#a9caff; font-size:10px; font-weight:700; white-space:nowrap; padding-top:4px; }
     .nav-item.active { color:#8bb7ff; background:linear-gradient(180deg,rgba(79,140,255,.15),rgba(79,140,255,.045)); }
-    .nav-item.active .nav-icon { color:#65a0ff; opacity:1; filter:drop-shadow(0 0 5px rgba(79,140,255,.8)) drop-shadow(0 0 12px rgba(79,140,255,.42)); }
-    .nav-item:not(.active) .nav-icon { filter:drop-shadow(0 0 2px rgba(255,255,255,.12)); }
+    .nav-item.active .nav-icon { color:var(--nav-accent,#65a0ff); opacity:1; filter:drop-shadow(0 0 5px var(--nav-glow,rgba(79,140,255,.8))) drop-shadow(0 0 12px var(--nav-glow-soft,rgba(79,140,255,.42))); }
+    .nav-item:not(.active) .nav-icon { filter:drop-shadow(0 0 3px var(--nav-muted-glow,rgba(255,255,255,.12))); }
+    .nav-item .nav-icon { position:relative; width:25px; height:25px; }
+    .nav-item .nav-icon svg { width:24px; height:24px; }
+    .nav-item > span:last-child { font-size:10px; letter-spacing:.01em; }
+    /* Темы владельца: цвет иконок синхронизирован с оформлением */
+    body.owner-theme-halloween { --nav-accent:#ff9b45; --nav-glow:rgba(255,125,35,.9); --nav-glow-soft:rgba(255,91,25,.48); --nav-muted-glow:rgba(255,145,70,.25); }
+    body.owner-theme-winter, body.owner-theme-arctic { --nav-accent:#8ee7ff; --nav-glow:rgba(89,205,255,.92); --nav-glow-soft:rgba(89,205,255,.48); --nav-muted-glow:rgba(180,235,255,.24); }
+    body.owner-theme-royal { --nav-accent:#f0d17b; --nav-glow:rgba(233,199,120,.9); --nav-glow-soft:rgba(233,199,120,.48); --nav-muted-glow:rgba(233,199,120,.23); }
+    body.owner-theme-aurora { --nav-accent:#62e8c1; --nav-glow:rgba(66,217,176,.9); --nav-glow-soft:rgba(115,89,217,.55); --nav-muted-glow:rgba(115,220,210,.24); }
+    body.owner-theme-cyber { --nav-accent:#00e5ff; --nav-glow:rgba(0,229,255,.95); --nav-glow-soft:rgba(255,43,214,.5); --nav-muted-glow:rgba(0,229,255,.26); }
+    body.owner-theme-christmas { --nav-accent:#ff7d8b; --nav-glow:rgba(225,75,92,.9); --nav-glow-soft:rgba(66,217,176,.48); --nav-muted-glow:rgba(120,235,180,.25); }
+    body.owner-theme-midnight { --nav-accent:#a9a2ff; --nav-glow:rgba(130,115,255,.9); --nav-glow-soft:rgba(80,100,255,.48); --nav-muted-glow:rgba(160,160,255,.23); }
+    body.owner-theme-halloween .nav-item .nav-icon { color:rgba(255,220,190,.94); }
+    body.owner-theme-winter .nav-item .nav-icon, body.owner-theme-arctic .nav-item .nav-icon { color:rgba(211,245,255,.94); }
+    body.owner-theme-royal .nav-item .nav-icon { color:rgba(255,239,190,.95); }
+    body.owner-theme-aurora .nav-item .nav-icon { color:rgba(204,255,239,.95); }
+    body.owner-theme-cyber .nav-item .nav-icon { color:rgba(180,255,255,.95); }
+    body.owner-theme-christmas .nav-item .nav-icon { color:rgba(225,255,235,.95); }
+    body.owner-theme-midnight .nav-item .nav-icon { color:rgba(220,218,255,.95); }
+    /* Декор крепится к панели, а не хаотично летает по экрану */
+    .bottom-nav { isolation:isolate; }
+    .bottom-nav:before,.bottom-nav:after { content:""; position:absolute; pointer-events:none; z-index:-1; opacity:0; transition:opacity .2s; }
+    body.owner-theme-halloween .bottom-nav:before { content:"🕸️"; top:-17px; left:5px; font-size:36px; opacity:.78; transform:rotate(-18deg); filter:drop-shadow(0 2px 5px #ff8a3055); }
+    body.owner-theme-halloween .bottom-nav:after { content:"🕷️"; top:-12px; right:12px; font-size:23px; opacity:.9; filter:drop-shadow(0 0 5px #ff8a3070); }
+    body.owner-theme-winter .bottom-nav:before,body.owner-theme-arctic .bottom-nav:before { content:"❄"; top:-14px; left:9%; font-size:25px; color:#9deaff; opacity:.8; }
+    body.owner-theme-winter .bottom-nav:after,body.owner-theme-arctic .bottom-nav:after { content:"❄"; top:-12px; right:10%; font-size:20px; color:#9deaff; opacity:.75; }
+    body.owner-theme-royal .bottom-nav:before { content:"✦"; top:-12px; left:9%; font-size:23px; color:#f0d17b; opacity:.85; }
+    body.owner-theme-royal .bottom-nav:after { content:"♛"; top:-15px; right:8%; font-size:25px; color:#f0d17b; opacity:.8; }
+    body.owner-theme-aurora .bottom-nav:before { content:"✧"; top:-13px; left:10%; font-size:24px; color:#62e8c1; opacity:.85; }
+    body.owner-theme-aurora .bottom-nav:after { content:"✦"; top:-12px; right:9%; font-size:22px; color:#a99aff; opacity:.8; }
+    body.owner-theme-cyber .bottom-nav:before { content:"⌘"; top:-13px; left:8%; font-size:24px; color:#00e5ff; opacity:.9; text-shadow:0 0 8px #00e5ff; }
+    body.owner-theme-cyber .bottom-nav:after { content:"⟨/⟩"; top:-11px; right:8%; font:700 14px monospace; color:#ff6bdf; opacity:.9; text-shadow:0 0 8px #ff2bd6; }
+    body.owner-theme-christmas .bottom-nav:before { content:"🎄"; top:-17px; left:7%; font-size:25px; opacity:.9; }
+    body.owner-theme-christmas .bottom-nav:after { content:"❄"; top:-13px; right:9%; font-size:22px; color:#a8ffe0; opacity:.85; }
+    body.owner-theme-midnight .bottom-nav:before { content:"☾"; top:-17px; left:8%; font-size:26px; color:#b9b0ff; opacity:.85; }
+    body.owner-theme-midnight .bottom-nav:after { content:"✦"; top:-12px; right:9%; font-size:22px; color:#b9b0ff; opacity:.85; }
+    /* Закреплённые тематические детали вместо россыпи анимированных символов */
+    .theme-decor .deco { font-size:clamp(23px,5.5vw,38px); opacity:.68; animation:none; }
+    .theme-decor .d1 { top:8%; left:0; }
+    .theme-decor .d2 { top:0; right:0; }
+    .theme-decor .d3 { top:34%; left:0; }
+    .theme-decor .d4 { top:49%; right:0; }
+    .theme-decor .d5 { top:68%; left:0; }
+    .theme-decor .d6 { top:auto; bottom:calc(84px + env(safe-area-inset-bottom)); right:0; }
+    .theme-decor .d7 { top:30%; left:4%; }
+    .theme-decor .d8 { top:62%; right:4%; }
+    .theme-decor[data-theme="halloween"] .deco { opacity:.82; }
+    .theme-decor[data-theme="halloween"] .d2,.theme-decor[data-theme="halloween"] .d6 { font-size:clamp(36px,8vw,54px); opacity:.78; }
+    .theme-decor[data-theme="halloween"] .d2 { top:0; right:0; transform:rotate(12deg); }
+    .theme-decor[data-theme="halloween"] .d6 { bottom:calc(80px + env(safe-area-inset-bottom)); right:0; transform:rotate(180deg); }
+    .theme-decor[data-theme="halloween"] .d3,.theme-decor[data-theme="halloween"] .d7 { font-size:clamp(26px,6vw,36px); }
     .exams-panel { display:none; padding:22px 18px; border:1px solid rgba(79,140,255,.17); border-radius:20px; background:linear-gradient(145deg,rgba(28,43,65,.82),rgba(21,27,38,.96)); text-align:center; }
     .exams-panel.open { display:block; }
     .exams-icon { width:58px; height:58px; display:grid; place-items:center; margin:0 auto 14px; border-radius:18px; color:#8bb7ff; background:rgba(79,140,255,.11); border:1px solid rgba(79,140,255,.2); box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 0 24px rgba(79,140,255,.08); }
@@ -191,9 +241,13 @@
     body.owner-night-sky .owner-sheet { background:radial-gradient(ellipse at 15% 0%,#33436a 0%,transparent 38%),linear-gradient(145deg,#151d36,#080c16 70%); } body.owner-theme-halloween .app{background-image:radial-gradient(ellipse at 90% 0%,#ff8a3028,transparent 38%),radial-gradient(ellipse at 0% 55%,#6e2ca522,transparent 35%)} body.owner-theme-winter .app{background-image:radial-gradient(ellipse at 80% 0%,#8bdcff25,transparent 42%),radial-gradient(ellipse at 10% 60%,#fff5e514,transparent 32%)} body.owner-theme-royal .app{background-image:radial-gradient(ellipse at 90% 0%,#e9c77822,transparent 40%)} body.owner-theme-aurora .app{background-image:radial-gradient(ellipse at 80% 0%,#42d9b032,transparent 40%),radial-gradient(ellipse at 0% 55%,#7359d92b,transparent 38%)} body.owner-theme-cyber .app{background-image:linear-gradient(transparent 96%,#00e5ff0b 97%),radial-gradient(ellipse at 80% 0%,#ff2bd620,transparent 40%)} body.owner-theme-christmas .app{background-image:radial-gradient(ellipse at 85% 0%,#e14b5c25,transparent 38%),radial-gradient(ellipse at 0% 65%,#42d9b01c,transparent 35%)}
     .theme-decor{display:none;position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:20;opacity:.72}
     .theme-decor.active{display:block}
-    .theme-decor .deco{position:absolute;display:block;user-select:none;pointer-events:none;filter:drop-shadow(0 2px 8px #0005);font-size:clamp(17px,4vw,28px);opacity:.48;animation:themeFloat 7s ease-in-out infinite}
-    .theme-decor .d1{top:13%;left:3%;}.theme-decor .d2{top:25%;right:4%;animation-delay:-2s}.theme-decor .d3{top:43%;left:2%;animation-delay:-4s}.theme-decor .d4{top:56%;right:3%;animation-delay:-1s}.theme-decor .d5{top:70%;left:4%;animation-delay:-3s}.theme-decor .d6{top:82%;right:5%;animation-delay:-5s}.theme-decor .d7{top:34%;left:7%;animation-delay:-2.5s}.theme-decor .d8{top:63%;right:7%;animation-delay:-4.5s}
-    .theme-decor[data-theme="halloween"] .deco{filter:drop-shadow(0 0 8px #ff8a3055);opacity:.55}
+    .theme-decor .deco{position:absolute;display:block;user-select:none;pointer-events:none;filter:drop-shadow(0 2px 8px #0005);font-size:clamp(23px,5.5vw,38px);opacity:.68;animation:none}
+    .theme-decor .d1{top:8%;left:0}.theme-decor .d2{top:0;right:0}.theme-decor .d3{top:34%;left:0}.theme-decor .d4{top:49%;right:0}.theme-decor .d5{top:68%;left:0}.theme-decor .d6{top:auto;bottom:calc(84px + env(safe-area-inset-bottom));right:0}.theme-decor .d7{top:30%;left:4%}.theme-decor .d8{top:62%;right:4%}
+    .theme-decor[data-theme="halloween"] .deco{filter:drop-shadow(0 0 8px #ff8a3055);opacity:.82}
+    .theme-decor[data-theme="halloween"] .d2,.theme-decor[data-theme="halloween"] .d6{font-size:clamp(36px,8vw,54px);opacity:.78}
+    .theme-decor[data-theme="halloween"] .d2{top:0;right:0;transform:rotate(12deg)}
+    .theme-decor[data-theme="halloween"] .d6{top:auto;bottom:calc(80px + env(safe-area-inset-bottom));right:0;transform:rotate(180deg)}
+    .theme-decor[data-theme="halloween"] .d3,.theme-decor[data-theme="halloween"] .d7{font-size:clamp(26px,6vw,36px)}
     .theme-decor[data-theme="winter"] .deco,.theme-decor[data-theme="christmas"] .deco{animation-name:themeSnow;opacity:.55}
     .theme-decor[data-theme="cyber"] .deco{font-family:monospace;color:#00e5ff;text-shadow:0 0 10px #00e5ff;font-size:clamp(12px,3vw,20px);opacity:.35}
     .theme-decor[data-theme="royal"] .deco{color:#e9c778;text-shadow:0 0 10px #e9c77855}
