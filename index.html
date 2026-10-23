@@ -193,16 +193,16 @@
     .theme-decor[data-theme="midnight"] { background:radial-gradient(ellipse at 100% 0,rgba(145,130,255,.075),transparent 42%); }
 
     /* Обновлённый декор: крупные рисунки по бокам, не поверх текста и кнопок */
-    .theme-decor { opacity:.68; }
+    .theme-decor { opacity:.68; z-index:2; }
     .theme-decor .deco-art { width:clamp(58px,16vw,92px); height:clamp(58px,16vw,92px); opacity:.88; }
-    .theme-decor .d1 { top:12%; left:-7px; }
-    .theme-decor .d2 { top:27%; right:-7px; }
-    .theme-decor .d3 { top:34%; left:-7px; }
-    .theme-decor .d4 { top:49%; right:-7px; }
-    .theme-decor .d5 { top:68%; left:-7px; }
-    .theme-decor .d6 { top:auto; bottom:calc(100px + env(safe-area-inset-bottom)); right:-5px; width:clamp(56px,15vw,84px); height:clamp(56px,15vw,84px); }
-    .theme-decor .d7 { top:30%; left:-5px; }
-    .theme-decor .d8 { top:62%; right:-5px; }
+    .theme-decor .d1 { top:12%; left:0; }
+    .theme-decor .d2 { top:27%; right:0; }
+    .theme-decor .d3 { top:34%; left:0; }
+    .theme-decor .d4 { top:49%; right:0; }
+    .theme-decor .d5 { top:68%; left:0; }
+    .theme-decor .d6 { top:auto; bottom:calc(100px + env(safe-area-inset-bottom)); right:0; width:clamp(56px,15vw,84px); height:clamp(56px,15vw,84px); }
+    .theme-decor .d7 { top:30%; left:0; }
+    .theme-decor .d8 { top:62%; right:0; }
     .theme-decor[data-theme="winter"] .deco-art,
     .theme-decor[data-theme="arctic"] .deco-art { filter:drop-shadow(0 0 9px rgba(126,220,255,.42)); opacity:.92; }
     .theme-decor[data-theme="christmas"] .deco-art { filter:drop-shadow(0 0 8px rgba(110,240,190,.28)); opacity:.92; }
