@@ -789,7 +789,7 @@
           if(result.authorized===true)enableOwnerEntrance();
         }catch(error){console.warn("Проверка владельца временно недоступна.",error);}
       }
-      function openOwner(){if(!entry.classList.contains("visible"))return;modal.classList.add("open");document.body.style.overflow="hidden";write("opens",read("opens",0)+1);write("lastActive",new Date().toLocaleString("ru-RU",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}));applyPrefs();refreshStatuses();}
+      function openOwner(){if(!entry.classList.contains("visible"))return;modal.classList.add("open");document.body.style.overflow="hidden";applyPrefs();refreshStatuses();}
       function closeOwner(){modal.classList.remove("open");document.body.style.overflow="";}
       entry.addEventListener("click",openOwner);ownerQuery("#ownerClose").addEventListener("click",closeOwner);
       modal.addEventListener("click",e=>{if(e.target===modal)closeOwner();});
@@ -810,10 +810,6 @@
         ownerQuery("#ownerOpacity").value=opacity;ownerQuery("#ownerRadius").value=radius;ownerQuery("#ownerDensity").value=density;
         ownerQuery("#ownerGlass").checked=glass;ownerQuery("#ownerMotion").checked=motion;ownerQuery("#ownerGlow").checked=glow;ownerQuery("#ownerAccentGlow").checked=accentGlow;
         ownerQuery("#ownerStudioResult").textContent="Тема: "+({default:"Obsidian",arctic:"Arctic Blue",midnight:"Midnight",halloween:"Halloween",winter:"Winter",royal:"Royal Gold",aurora:"Aurora",cyber:"Cyberpunk",christmas:"Новый год"}[theme]||"Obsidian")+" · акцент: "+({blue:"синий",cyan:"бирюзовый",violet:"фиолетовый",gold:"золотой",mint:"мятный"}[accent]||"синий")+" · прозрачность "+opacity+"% · скругление "+radius+" px. Настройки сохранены на этом устройстве.";
-        ownerQuery("#ownerScanCount").textContent=read("scans",0);ownerQuery("#ownerOpenCount").textContent=read("opens",0);
-        ownerQuery("#ownerCustomizeCount").textContent=read("customizations",0);ownerQuery("#ownerLabCount").textContent=read("labRuns",0);
-        ownerQuery("#ownerLastActive").textContent=read("lastActive","—");ownerQuery("#ownerCurrentGroup").textContent=typeof currentGroup!=="undefined"?currentGroup:"—";
-        ownerQuery("#ownerSourceSummary").textContent=[window.Course1ScheduleReady,window.Course2ScheduleReady,window.Course3ScheduleReady,window.Course4ScheduleReady].filter(Boolean).length+"/4";
       }
       function noteCustomization(){write("customizations",read("customizations",0)+1);applyPrefs();}
       ownerAll(".owner-theme").forEach(b=>b.addEventListener("click",()=>{write("theme",b.dataset.ownerTheme);noteCustomization();}));
@@ -836,9 +832,8 @@
         for(let i=0;i<lessons.length;i++)for(let j=i+1;j<lessons.length;j++){if(lessons[i]?.start&&lessons[i]?.end&&lessons[j]?.start&&lessons[j]?.end&&lessons[i].start<lessons[j].end&&lessons[j].start<lessons[i].end){issues++;lines.push("Возможное пересечение: "+lessons[i].title+" / "+lessons[j].title);}}
         refreshStatuses();lines.push("Источники всех курсов:");[[1,window.Course1ScheduleReady,window.Course1ScheduleSource],[2,window.Course2ScheduleReady,window.Course2ScheduleSource],[3,window.Course3ScheduleReady,window.Course3ScheduleSource],[4,window.Course4ScheduleReady,window.Course4ScheduleSource]].forEach(([n,ready,source])=>lines.push("Курс "+n+": "+(ready?"готов":"не готов")+" · "+(source||"источник не указан")));
         lines.push(issues?"Найдено замечаний: "+issues:"Ошибок формата в доступном списке не найдено.");lines.push("Это техническая проверка, не сверка с официальным PDF.");
-        ownerQuery("#ownerScanResult").textContent=lines.join("\\n");ownerQuery("#ownerScanResult").classList.toggle("warn",issues>0);write("scans",read("scans",0)+1);ownerQuery("#ownerScanCount").textContent=read("scans",0);
       });
-      function noteLab(){write("labRuns",read("labRuns",0)+1);applyPrefs();}
+      function noteLab(){}
       ownerQuery("#ownerPulse").addEventListener("click",()=>{const mark=ownerQuery(".owner-entry");if(mark.animate)mark.animate([{transform:"scale(1)"},{transform:"scale(1.18)",filter:"drop-shadow(0 0 15px #e9c778cc)"},{transform:"scale(1)"}],{duration:800});ownerQuery("#ownerLabResult").textContent="✧ Звёздный импульс активирован. Это только визуальный эффект.";noteLab();});
       ownerQuery("#ownerSecret").addEventListener("click",()=>{ownerQuery("#ownerLabResult").textContent="Ты не просто пользуешься расписанием — ты его создаёшь. ♛";noteLab();});
       ownerQuery("#ownerNight").addEventListener("click",()=>{document.body.classList.toggle("owner-night-sky");const active=document.body.classList.contains("owner-night-sky");ownerQuery("#ownerNight").textContent=active?"Выключить":"Включить";ownerQuery("#ownerLabResult").textContent=active?"✦ Режим «Ночное небо» включён. Нажми ещё раз, чтобы выключить.":"Режим «Ночное небо» выключен.";noteLab();});
