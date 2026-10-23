@@ -152,39 +152,43 @@
     body.owner-theme-cyber .nav-item .nav-icon { color:rgba(180,255,255,.95); }
     body.owner-theme-christmas .nav-item .nav-icon { color:rgba(225,255,235,.95); }
     body.owner-theme-midnight .nav-item .nav-icon { color:rgba(220,218,255,.95); }
-    /* Декор крепится к панели, а не хаотично летает по экрану */
+    /* Декор темы: спокойные фоновые линии + несколько аккуратных «стикеров» */
     .bottom-nav { isolation:isolate; }
-    .bottom-nav:before,.bottom-nav:after { content:""; position:absolute; pointer-events:none; z-index:1; opacity:0; transition:opacity .2s; }
+    .bottom-nav:before,.bottom-nav:after { content:""; position:absolute; pointer-events:none; z-index:1; opacity:0; }
     .bottom-nav .nav-inner { position:relative; z-index:2; }
-    body.owner-theme-halloween .bottom-nav:before { content:"🕸️"; top:-17px; left:5px; font-size:36px; opacity:.78; transform:rotate(-18deg); filter:drop-shadow(0 2px 5px #ff8a3055); }
-    body.owner-theme-halloween .bottom-nav:after { content:"🕷️"; top:-12px; right:12px; font-size:23px; opacity:.9; filter:drop-shadow(0 0 5px #ff8a3070); }
-    body.owner-theme-winter .bottom-nav:before,body.owner-theme-arctic .bottom-nav:before { content:"❄"; top:-14px; left:9%; font-size:25px; color:#9deaff; opacity:.8; }
-    body.owner-theme-winter .bottom-nav:after,body.owner-theme-arctic .bottom-nav:after { content:"❄"; top:-12px; right:10%; font-size:20px; color:#9deaff; opacity:.75; }
-    body.owner-theme-royal .bottom-nav:before { content:"✦"; top:-12px; left:9%; font-size:23px; color:#f0d17b; opacity:.85; }
-    body.owner-theme-royal .bottom-nav:after { content:"♛"; top:-15px; right:8%; font-size:25px; color:#f0d17b; opacity:.8; }
-    body.owner-theme-aurora .bottom-nav:before { content:"✧"; top:-13px; left:10%; font-size:24px; color:#62e8c1; opacity:.85; }
-    body.owner-theme-aurora .bottom-nav:after { content:"✦"; top:-12px; right:9%; font-size:22px; color:#a99aff; opacity:.8; }
-    body.owner-theme-cyber .bottom-nav:before { content:"⌘"; top:-13px; left:8%; font-size:24px; color:#00e5ff; opacity:.9; text-shadow:0 0 8px #00e5ff; }
-    body.owner-theme-cyber .bottom-nav:after { content:"⟨/⟩"; top:-11px; right:8%; font:700 14px monospace; color:#ff6bdf; opacity:.9; text-shadow:0 0 8px #ff2bd6; }
-    body.owner-theme-christmas .bottom-nav:before { content:"🎄"; top:-17px; left:7%; font-size:25px; opacity:.9; }
-    body.owner-theme-christmas .bottom-nav:after { content:"❄"; top:-13px; right:9%; font-size:22px; color:#a8ffe0; opacity:.85; }
-    body.owner-theme-midnight .bottom-nav:before { content:"☾"; top:-17px; left:8%; font-size:26px; color:#b9b0ff; opacity:.85; }
-    body.owner-theme-midnight .bottom-nav:after { content:"✦"; top:-12px; right:9%; font-size:22px; color:#b9b0ff; opacity:.85; }
-    /* Закреплённые тематические детали вместо россыпи анимированных символов */
-    .theme-decor .deco { font-size:clamp(23px,5.5vw,38px); opacity:.68; animation:none; }
-    .theme-decor .d1 { top:8%; left:0; }
-    .theme-decor .d2 { top:0; right:0; }
-    .theme-decor .d3 { top:34%; left:0; }
-    .theme-decor .d4 { top:49%; right:0; }
-    .theme-decor .d5 { top:68%; left:0; }
-    .theme-decor .d6 { top:auto; bottom:calc(84px + env(safe-area-inset-bottom)); right:0; }
+    /* Вместо символов над кнопками — тонкая тематическая линия по краю панели */
+    body[class*="owner-theme-"] .bottom-nav:before { left:12%; right:12%; top:0; height:1px; opacity:.7; background:linear-gradient(90deg,transparent,var(--nav-accent,#65a0ff),transparent); box-shadow:0 0 12px var(--nav-glow,rgba(79,140,255,.35)); }
+    body.owner-theme-cyber .bottom-nav:after { top:0; left:18%; right:18%; height:2px; opacity:.35; background:linear-gradient(90deg,transparent,#00e5ff,#ff6bdf,transparent); }
+    .theme-decor .deco { position:absolute; display:grid; place-items:center; font-size:clamp(22px,5vw,34px); opacity:.64; animation:none; filter:drop-shadow(0 2px 7px rgba(0,0,0,.2)); text-shadow:0 0 14px currentColor; }
+    .theme-decor .d1 { top:7%; left:3%; }
+    .theme-decor .d2 { top:3%; right:4%; }
+    .theme-decor .d3 { top:34%; left:3%; }
+    .theme-decor .d4 { top:49%; right:3%; }
+    .theme-decor .d5 { top:68%; left:3%; }
+    .theme-decor .d6 { top:auto; bottom:calc(90px + env(safe-area-inset-bottom)); right:4%; }
     .theme-decor .d7 { top:30%; left:4%; }
     .theme-decor .d8 { top:62%; right:4%; }
-    .theme-decor[data-theme="halloween"] .deco { opacity:.82; }
-    .theme-decor[data-theme="halloween"] .d2,.theme-decor[data-theme="halloween"] .d6 { font-size:clamp(36px,8vw,54px); opacity:.78; }
-    .theme-decor[data-theme="halloween"] .d2 { top:0; right:0; transform:rotate(12deg); }
-    .theme-decor[data-theme="halloween"] .d6 { bottom:calc(80px + env(safe-area-inset-bottom)); right:0; transform:rotate(180deg); }
-    .theme-decor[data-theme="halloween"] .d3,.theme-decor[data-theme="halloween"] .d7 { font-size:clamp(26px,6vw,36px); }
+    /* Ненавязчивые фоновые ореолы и линии под карточками */
+    .theme-decor:before,.theme-decor:after { content:""; position:absolute; pointer-events:none; border-radius:50%; filter:blur(28px); opacity:.14; }
+    .theme-decor:before { width:42vw; height:42vw; max-width:260px; max-height:260px; top:5%; left:-15%; background:var(--nav-accent,#65a0ff); }
+    .theme-decor:after { width:48vw; height:48vw; max-width:300px; max-height:300px; right:-20%; bottom:15%; background:var(--nav-glow-soft,rgba(79,140,255,.4)); }
+    .theme-decor[data-theme="halloween"] .deco { color:#ffc08a; opacity:.72; }
+    .theme-decor[data-theme="halloween"] .d2 { font-size:clamp(30px,6vw,44px); transform:rotate(12deg); }
+    .theme-decor[data-theme="winter"] .deco,.theme-decor[data-theme="arctic"] .deco { color:#c7f4ff; }
+    .theme-decor[data-theme="christmas"] .deco { color:#c6ffe1; }
+    .theme-decor[data-theme="cyber"] .deco { color:#a5fbff; font-family:monospace; }
+    .theme-decor[data-theme="aurora"] .deco { color:#b7ffe9; }
+    .theme-decor[data-theme="royal"] .deco { color:#ffe6a1; }
+    .theme-decor[data-theme="midnight"] .deco { color:#d5d0ff; }
+    /* Дополнительный тематический рисунок строится линиями, а не россыпью эмодзи */
+    .theme-decor[data-theme="halloween"] { background:radial-gradient(ellipse at 0 0,rgba(255,130,45,.08),transparent 38%); }
+    .theme-decor[data-theme="halloween"]:before { border:1px solid rgba(255,153,76,.22); border-radius:0 0 100% 0; filter:none; background:transparent; width:44vw; height:44vw; }
+    .theme-decor[data-theme="winter"],.theme-decor[data-theme="arctic"] { background:linear-gradient(125deg,rgba(120,220,255,.035),transparent 45%,rgba(160,205,255,.045)); }
+    .theme-decor[data-theme="royal"] { background:linear-gradient(135deg,rgba(240,209,123,.035),transparent 38%); }
+    .theme-decor[data-theme="aurora"] { background:linear-gradient(145deg,rgba(70,240,190,.06),transparent 42%,rgba(125,100,255,.055)); }
+    .theme-decor[data-theme="cyber"] { background:linear-gradient(135deg,rgba(0,229,255,.045),transparent 40%,rgba(255,43,214,.045)); }
+    .theme-decor[data-theme="christmas"] { background:linear-gradient(145deg,rgba(80,220,160,.04),transparent 45%,rgba(255,100,125,.035)); }
+    .theme-decor[data-theme="midnight"] { background:radial-gradient(ellipse at 100% 0,rgba(145,130,255,.075),transparent 42%); }
     .exams-panel { display:none; padding:22px 18px; border:1px solid rgba(79,140,255,.17); border-radius:20px; background:linear-gradient(145deg,rgba(28,43,65,.82),rgba(21,27,38,.96)); text-align:center; }
     .exams-panel.open { display:block; }
     .exams-icon { width:58px; height:58px; display:grid; place-items:center; margin:0 auto 14px; border-radius:18px; color:#8bb7ff; background:rgba(79,140,255,.11); border:1px solid rgba(79,140,255,.2); box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 0 24px rgba(79,140,255,.08); }
@@ -869,14 +873,14 @@
       document.body.appendChild(decor);
       function renderThemeDecor(theme){
         const decorations = {
-          halloween: '<span class="deco d1">🎃</span><span class="deco d2">🕸️</span><span class="deco d3">🕷️</span><span class="deco d4">🎃</span><span class="deco d5">🦇</span><span class="deco d6">🕸️</span><span class="deco d7">🕷️</span>',
-          winter: '<span class="deco d1">❄️</span><span class="deco d2">✧</span><span class="deco d3">❄</span><span class="deco d4">💎</span><span class="deco d5">❄️</span><span class="deco d6">✦</span><span class="deco d7">💎</span><span class="deco d8">❄</span>',
-          christmas: '<span class="deco d1">🎄</span><span class="deco d2">❄️</span><span class="deco d3">🦌</span><span class="deco d4">🎄</span><span class="deco d5">✨</span><span class="deco d6">❄</span><span class="deco d7">🎄</span><span class="deco d8">🦌</span>',
-          cyber: '<span class="deco d1">⌘</span><span class="deco d2">0x</span><span class="deco d3">⟨/⟩</span><span class="deco d4">▦</span><span class="deco d5">0101</span><span class="deco d6">⌬</span><span class="deco d7">⟩_</span><span class="deco d8">01</span>',
-          aurora: '<span class="deco d1">✦</span><span class="deco d2">✧</span><span class="deco d3">☄</span><span class="deco d4">✧</span><span class="deco d5">✦</span><span class="deco d6">✧</span>',
-          royal: '<span class="deco d1">♛</span><span class="deco d2">✦</span><span class="deco d3">♜</span><span class="deco d4">♛</span><span class="deco d5">✧</span>',
-          arctic: '<span class="deco d1">❄</span><span class="deco d2">✧</span><span class="deco d3">❄️</span><span class="deco d4">💠</span>',
-          midnight: '<span class="deco d1">✦</span><span class="deco d2">☾</span><span class="deco d3">✧</span><span class="deco d4">✦</span>'
+          halloween: '<span class="deco d1">🎃</span><span class="deco d2">🕸️</span><span class="deco d6">🦇</span>',
+          winter: '<span class="deco d1">❄️</span><span class="deco d2">✧</span><span class="deco d6">❄</span>',
+          christmas: '<span class="deco d1">🎄</span><span class="deco d2">❄️</span><span class="deco d6">✨</span>',
+          cyber: '<span class="deco d1">⌘</span><span class="deco d2">⟨/⟩</span><span class="deco d6">01</span>',
+          aurora: '<span class="deco d1">✦</span><span class="deco d2">✧</span><span class="deco d6">✦</span>',
+          royal: '<span class="deco d1">♛</span><span class="deco d2">✧</span><span class="deco d6">♜</span>',
+          arctic: '<span class="deco d1">❄</span><span class="deco d2">✧</span><span class="deco d6">❄</span>',
+          midnight: '<span class="deco d1">✦</span><span class="deco d2">☾</span><span class="deco d6">✧</span>'
         };
         decor.innerHTML=ownerAuthorized?(decorations[theme]||""):"";
         decor.classList.toggle("active",ownerAuthorized&&!!decorations[theme]);
