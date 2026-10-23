@@ -699,7 +699,7 @@
       lessons.forEach((l,index) => {
         const card = document.createElement("article"); card.className="lesson";
         const badge=currentLesson===l?'<span class="status-badge">Сейчас</span>':(nextLesson===l?'<span class="status-badge next">Далее</span>':'');
-        card.innerHTML = `<div class="time">${l.start}<small>до ${l.end}</small></div><div class="stripe ${l.color}"></div><div class="lesson-main">${badge}<div class="lesson-head"><div class="lesson-title">${l.title}</div></div><div class="lesson-meta"><span class="tag">▣ Ауд. ${l.room}</span><span class="tag">${l.type}</span>${l.teacher ? `<span class="tag">♙ ${l.teacher}</span>` : ``}${l.dates ? `<span class="tag">📅 ${l.dates}</span>` : ``}</div>${l.note ? `<div style="margin-top:8px;color:#8995a8;font-size:11px;line-height:1.4">${l.note}</div>` : ``}</div>`;
+        card.innerHTML = `<div class="time">${l.start}<small>до ${l.end}</small></div><div class="stripe ${l.color}"></div><div class="lesson-main">${badge}<div class="lesson-head"><div class="lesson-title">${l.title}</div></div><div class="lesson-meta"><span class="tag">▣ Ауд. ${l.room}</span><span class="tag">${l.type}</span>${l.teacher ? `<span class="tag">♙ ${l.teacher}</span>` : ``}</div>${l.note ? `<div style="margin-top:8px;color:#8995a8;font-size:11px;line-height:1.4">${l.note}</div>` : ``}</div>`;
         list.appendChild(card);
       });
     }
