@@ -58,8 +58,16 @@
       seen.add(key);
       return true;
     });
-    const overrideSlots = new Set(matches.filter(x => x.title === "Курсовой час").map(x => x.start));
-    matches = matches.filter(x => x.title === "Курсовой час" || !overrideSlots.has(x.start));
+    // Разовая запись из API должна заменять регулярную пару в том же слоте.
+    const datedOverrides = new Set(matches
+      .filter(x => Array.isArray(x.dates) && x.dates.includes(dayMonth))
+      .map(x => x.start + "|" + x.end));
+    matches = matches.filter(x =>
+      (Array.isArray(x.dates) && x.dates.includes(dayMonth)) ||
+      !datedOverrides.has(x.start + "|" + x.end)
+    );
+    const courseHourSlots = new Set(matches.filter(x => x.title === "Курсовой час").map(x => x.start + "|" + x.end));
+    matches = matches.filter(x => x.title === "Курсовой час" || !courseHourSlots.has(x.start + "|" + x.end));
     return matches.sort((a, b) => a.start.localeCompare(b.start));
   }
   root.Course1Schedule = {
