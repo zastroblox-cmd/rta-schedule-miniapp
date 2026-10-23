@@ -1,0 +1,56 @@
+name: Mini App frontend audit
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "index.html"
+      - ".github/workflows/frontend-audit.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  frontend-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Check inline JavaScript syntax, DOM IDs, and required app hooks
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const html = fs.readFileSync('index.html', 'utf8');
+          const inlineScripts = [...html.matchAll(/<script\b(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)<\/script>/gi)]
+            .map(match => match[1])
+            .filter(script => script.trim());
+          if (!inlineScripts.length) throw new Error('No inline application script found');
+          fs.writeFileSync('/tmp/rta-miniapp-inline.js', inlineScripts.join('\n;\n'));
+
+          const inlineStart = html.search(/<script\b(?![^>]*\bsrc\s*=)/i);
+          const markup = inlineStart >= 0 ? html.slice(0, inlineStart) : html;
+          const ids = [...markup.matchAll(/\bid=["']([^"']+)["']/g)].map(match => match[1]);
+          const duplicates = [...new Set(ids.filter((id, index) => ids.indexOf(id) !== index))];
+          if (duplicates.length) throw new Error('Duplicate DOM IDs: ' + duplicates.join(', '));
+
+          const idSet = new Set(ids);
+          const refs = [...inlineScripts.join('\n').matchAll(/ownerQuery\(["']#([^"']+)["']\)/g)].map(match => match[1]);
+          const missing = [...new Set(refs.filter(id => !idSet.has(id)))];
+          if (missing.length) throw new Error('Owner panel references missing DOM IDs: ' + missing.join(', '));
+
+          for (const id of ['days','weekRange','weekParity','lessonList','ownerTotalUsers','ownerActiveUsers7d','ownerRefreshStats']) {
+            if (!idSet.has(id)) throw new Error('Required app element missing: #' + id);
+          }
+          for (const token of ['/api/course2-schedule','/api/analytics/track','/api/owner/analytics','2026, 9, 12']) {
+            if (!html.includes(token)) throw new Error('Required app hook missing: ' + token);
+          }
+          console.log('PASS: unique DOM IDs, owner-panel selectors, required schedule/analytics hooks, and inline script extraction');
+          NODE
+      - name: Parse application JavaScript
+        run: node --check /tmp/rta-miniapp-inline.js
