@@ -42,6 +42,9 @@
     .welcome { margin-bottom:19px; }
     .welcome h2 { margin:0 0 6px; font-size:27px; letter-spacing:-.045em; }
     .welcome p { margin:0; color:var(--muted); font-size:14px; }
+    .owner-label { display:none; width:max-content; max-width:100%; margin-top:11px; padding:8px 13px; border:1px solid #e6bd54; border-radius:11px; background:linear-gradient(135deg,#f8d978,#dcae36); color:#17130a; font-size:12px; font-weight:850; letter-spacing:.025em; box-shadow:0 5px 18px rgba(220,174,54,.16); }
+    .owner-label.visible { display:inline-flex; align-items:center; gap:7px; }
+    .owner-label .owner-label-icon { font-size:15px; line-height:1; }
     .beta-notice { display:flex; align-items:center; gap:9px; padding:10px 12px; margin:-5px 0 18px; border:1px solid rgba(79,140,255,.22); border-radius:13px; background:linear-gradient(110deg,rgba(79,140,255,.10),rgba(255,255,255,.025)); color:#b9ccec; font-size:11px; line-height:1.45; }
     .beta-notice .beta-dot { width:7px; height:7px; flex:0 0 7px; border-radius:50%; background:#72a7ff; box-shadow:0 0 10px rgba(79,140,255,.55); }
     .beta-notice strong { color:#e4edff; font-weight:750; }
@@ -203,6 +206,7 @@
     <section class="welcome">
       <h2 id="greeting">Привет! 👋</h2>
       <p>Твой учебный день — в одном месте.</p>
+      <div class="owner-label" id="ownerLabel" role="status"><span class="owner-label-icon" aria-hidden="true">♛</span><span>Владелец приложения</span></div>
     </section>
 
     <div class="beta-notice" role="note"><span class="beta-dot" aria-hidden="true"></span><span><strong>Бета-версия</strong> · Пока бесплатно. В дальнейшем планируется платная подписка.</span></div>
@@ -726,6 +730,8 @@
       document.getElementById("scheduleContent").style.display=profile?"none":"block";
       document.getElementById("scheduleGroupCard").style.display=profile?"none":"flex";
       document.querySelectorAll(".nav-item").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));
+      const ownerLabel=document.getElementById("ownerLabel");
+      if(ownerLabel) ownerLabel.classList.toggle("visible",tab==="schedule" && ownerAuthorized);
       if(tab==="week") { document.getElementById("scheduleContent").style.display="block"; toast("Выбери дату в календаре или переключай недели стрелками."); }
     }
     document.getElementById("profileBtn").onclick = () => showTab("profile");
@@ -772,6 +778,7 @@
       }
       function enableOwnerEntrance(){
         ownerAuthorized = true;
+        const ownerLabel=document.getElementById("ownerLabel");if(ownerLabel)ownerLabel.classList.toggle("visible",selectedTab==="schedule");
         entry.classList.add("visible");
         const subtitle=ownerQuery(".owner-sub");if(subtitle)subtitle.textContent="Личная панель создателя · доступ подтверждён сервером";
         const warning=ownerQuery(".owner-warning");if(warning)warning.textContent="Доступ владельца подтверждён серверной проверкой Telegram ID. Локальные темы и эффекты действуют только на этом устройстве.";
