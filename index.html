@@ -896,20 +896,11 @@
     course1Script.src = "./data/course1-adapter.js?v=20261022-api";
     course1Script.onload = async () => {
       try {
-        let draft;
-        try {
-          const apiResponse = await fetch("https://rta-schedule-api.onrender.com/api/course1-schedule", {cache:"no-store"});
-          if (!apiResponse.ok) throw new Error("API HTTP " + apiResponse.status);
-          draft = await apiResponse.json();
-          if (!draft || !Array.isArray(draft.lessons) || draft.lessons.length === 0) throw new Error("API вернул пустое расписание 1-го курса");
-          window.Course1ScheduleSource = "api";
-        } catch (apiError) {
-          console.warn("API 1-го курса недоступен, используется локальный JSON:", apiError);
-          const response = await fetch("./data/course1-schedule.json", {cache:"no-store"});
-          if (!response.ok) throw new Error("Локальный JSON HTTP " + response.status);
-          draft = await response.json();
-          window.Course1ScheduleSource = "local-fallback";
-        }
+        const response = await fetch("./data/course1-schedule.json?v=20261023-restore", {cache:"no-store"});
+        if (!response.ok) throw new Error("Локальный JSON 1-го курса HTTP " + response.status);
+        const draft = await response.json();
+        if (!draft || !Array.isArray(draft.lessons) || draft.lessons.length === 0) throw new Error("Локальное расписание 1-го курса пустое");
+        window.Course1ScheduleSource = "local-json";
         window.Course1Schedule.setDraft(draft);
         window.Course1ScheduleReady = true;
         if (currentGroup.startsWith("Ю600/О-26")) render();
@@ -933,20 +924,11 @@
     course3Script.src = "./data/course3-adapter.js?v=20261022-date-override-fix";
     course3Script.onload = async () => {
       try {
-        let draft;
-        try {
-          const apiResponse = await fetch("https://rta-schedule-api.onrender.com/api/course3-schedule", {cache:"no-store"});
-          if (!apiResponse.ok) throw new Error("API HTTP " + apiResponse.status);
-          draft = await apiResponse.json();
-          if (!draft || !Array.isArray(draft.lessons) || draft.lessons.length === 0) throw new Error("API вернул пустое расписание 3-го курса");
-          window.Course3ScheduleSource = "api";
-        } catch (apiError) {
-          console.warn("API 3-го курса недоступен, используется локальный JSON:", apiError);
-          const response = await fetch("./data/course3-review-draft.json", {cache:"no-store"});
-          if (!response.ok) throw new Error("Локальный JSON HTTP " + response.status);
-          draft = await response.json();
-          window.Course3ScheduleSource = "local-fallback";
-        }
+        const response = await fetch("./data/course3-review-draft.json?v=20261023-restore", {cache:"no-store"});
+        if (!response.ok) throw new Error("Локальный JSON 3-го курса HTTP " + response.status);
+        const draft = await response.json();
+        if (!draft || !Array.isArray(draft.lessons) || draft.lessons.length === 0) throw new Error("Локальное расписание 3-го курса пустое");
+        window.Course3ScheduleSource = "local-json";
         window.Course3Schedule.setDraft(draft);
         window.Course3ScheduleReady = true;
         if (currentGroup.startsWith("Ю") && currentGroup.includes("/О-24")) render();
@@ -970,22 +952,11 @@
     course4Script.src = "./data/course4-adapter.js";
     course4Script.onload = async () => {
       try {
-        let draft;
-        try {
-          const apiResponse = await fetch("https://rta-schedule-api.onrender.com/api/course4-schedule", {cache:"no-store"});
-          if (!apiResponse.ok) throw new Error("API HTTP " + apiResponse.status);
-          draft = await apiResponse.json();
-          if (!draft || !Array.isArray(draft.lessons) || draft.lessons.length === 0) {
-            throw new Error("API вернул пустое или некорректное расписание");
-          }
-          window.Course4ScheduleSource = "api";
-        } catch (apiError) {
-          console.warn("API 4-го курса недоступен, используется локальный JSON:", apiError);
-          const response = await fetch("./data/course4-schedule.json", {cache:"no-store"});
-          if (!response.ok) throw new Error("Локальный JSON HTTP " + response.status);
-          draft = await response.json();
-          window.Course4ScheduleSource = "local-fallback";
-        }
+        const response = await fetch("./data/course4-schedule.json?v=20261023-restore", {cache:"no-store"});
+        if (!response.ok) throw new Error("Локальный JSON 4-го курса HTTP " + response.status);
+        const draft = await response.json();
+        if (!draft || !Array.isArray(draft.lessons) || draft.lessons.length === 0) throw new Error("Локальное расписание 4-го курса пустое");
+        window.Course4ScheduleSource = "local-json";
         window.Course4Schedule.setDraft(draft);
         window.Course4ScheduleReady = true;
         if (currentGroup.includes("/О-23")) render();
