@@ -36,8 +36,8 @@ app.use((req, res, next) => {
   next();
 });
 
-function verifyTelegramInitData(initData) {
-  if (!TELEGRAM_BOT_TOKEN || !OWNER_TELEGRAM_ID || typeof initData !== "string" || !initData) return null;
+function verifyTelegramInitData(initData, requireOwner = true) {
+  if (!TELEGRAM_BOT_TOKEN || (requireOwner && !OWNER_TELEGRAM_ID) || typeof initData !== "string" || !initData) return null;
   const params = new URLSearchParams(initData);
   const receivedHash = params.get("hash");
   if (!receivedHash || !/^[a-f0-9]{64}$/i.test(receivedHash)) return null;
@@ -55,9 +55,38 @@ function verifyTelegramInitData(initData) {
   if (!Number.isFinite(authDate) || authDate > now + 60 || now - authDate > 86400) return null;
   let user;
   try { user = JSON.parse(params.get("user") || "null"); } catch { return null; }
-  if (!user || String(user.id) !== OWNER_TELEGRAM_ID) return null;
+  if (!user || !/^[0-9]{1,24}$/.test(String(user.id)) || (requireOwner && String(user.id) !== OWNER_TELEGRAM_ID)) return null;
   return { id: String(user.id), first_name: String(user.first_name || "") };
 }
+
+app.post("/api/analytics/track", async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  const user = verifyTelegramInitData(req.body && req.body.initData, false);
+  if (!user) return res.status(403).json({ error: "Valid Telegram Mini App data required" });
+  if (!supabase || !ANALYTICS_SECRET) return res.status(503).json({ error: "Analytics is not configured" });
+  const { error } = await supabase.rpc("track_app_user", {
+    p_user_id: user.id,
+    p_secret: ANALYTICS_SECRET
+  });
+  if (error) {
+    console.error("Analytics tracking failed:", error.message);
+    return res.status(503).json({ error: "Unable to record activity" });
+  }
+  return res.json({ ok: true });
+});
+
+app.post("/api/owner/analytics", async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  const owner = verifyTelegramInitData(req.body && req.body.initData);
+  if (!owner) return res.status(403).json({ authorized: false, error: "Owner access denied" });
+  if (!supabase || !ANALYTICS_SECRET) return res.status(503).json({ error: "Analytics is not configured" });
+  const { data, error } = await supabase.rpc("get_app_user_stats", { p_secret: ANALYTICS_SECRET });
+  if (error) {
+    console.error("Analytics stats query failed:", error.message);
+    return res.status(503).json({ error: "Unable to load analytics" });
+  }
+  return res.json({ authorized: true, ...data });
+});
 
 app.post("/api/owner/verify", (req, res) => {
   const owner = verifyTelegramInitData(req.body && req.body.initData);
@@ -306,6 +335,7 @@ app.get("/api/course4-schedule", async (_req, res) => {
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || process.env.BOT_TOKEN;
 const OWNER_TELEGRAM_ID = String(process.env.OWNER_TELEGRAM_ID || "").trim();
+const ANALYTICS_SECRET = String(process.env.ANALYTICS_SECRET || "");
 const TELEGRAM_WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET;
 const MINI_APP_URL = "https://zastroblox-cmd.github.io/rta-schedule-miniapp/";
 
