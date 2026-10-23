@@ -119,6 +119,16 @@
     .profile-row strong { display:block; font-size:14px; margin-bottom:4px; }
     .profile-row small { color:var(--muted); font-size:12px; }
     .profile-action { border:1px solid #ffffff20; border-radius:12px; background:#ffffff09; color:#e5edff; padding:10px 12px; font-size:12px; white-space:nowrap; }
+    .week-overview { display:grid; gap:10px; }
+    .week-day-card { width:100%; text-align:left; display:grid; grid-template-columns:48px minmax(0,1fr) auto; align-items:start; gap:12px; padding:13px; border:1px solid var(--line); border-radius:16px; background:linear-gradient(120deg,rgba(25,38,58,.82),rgba(21,27,38,.92)); color:var(--text); }
+    .week-day-date { display:flex; flex-direction:column; align-items:center; gap:4px; padding:8px 3px; border-radius:12px; background:rgba(79,140,255,.10); color:#a9caff; font-size:11px; font-weight:700; }
+    .week-day-date strong { font-size:19px; color:#f3f7ff; line-height:1.1; }
+    .week-day-card.today { border-color:#4f8cff80; box-shadow:inset 0 0 0 1px #4f8cff18; }
+    .week-day-card.selected { background:linear-gradient(120deg,#203657,#172132); }
+    .week-day-main { min-width:0; }
+    .week-day-name { font-size:13px; font-weight:750; margin:2px 0 6px; }
+    .week-day-summary { color:var(--muted); font-size:11px; line-height:1.5; overflow-wrap:anywhere; }
+    .week-day-count { color:#a9caff; font-size:10px; font-weight:700; white-space:nowrap; padding-top:4px; }
     .nav-item.active { color:#8bb7ff; background:#4f8cff12; }
     .toast { position:fixed; left:50%; transform:translateX(-50%); bottom:90px; max-width:calc(100% - 32px); padding:11px 15px; border:1px solid #ffffff1c; border-radius:12px; background:#222d3e; color:#f2f5fb; font-size:13px; box-shadow:0 10px 30px #0005; opacity:0; pointer-events:none; transition:opacity .2s; z-index:30; text-align:center; }
     .toast.show { opacity:1; }
@@ -229,23 +239,24 @@
 </section>
 
     <div id="scheduleContent">
-    <div class="section-head"><h3>Расписание</h3><span id="dateLabel">На сегодня</span></div>
-    <div class="days" id="days" aria-label="Дни недели"></div>
-
-    <section class="next-card" id="nextCard">
-      <div class="next-icon">◷</div>
-      <div class="next-copy"><div class="label">Ближайшая пара</div><strong id="nextTitle">Гражданское право</strong><small id="nextMeta">10:10 · ауд. 204</small></div>
-      <div class="countdown" id="nextStatus">Скоро</div>
-    </section>
-
-    <div style="display:flex;align-items:center;gap:8px;margin:0 0 16px">
-      <button id="prevWeek" aria-label="Предыдущая неделя" style="padding:11px 15px;border-radius:12px;border:1px solid #ffffff20;background:#151b26;color:#fff;font-weight:700">‹</button>
-      <div style="flex:1;text-align:center"><div id="weekRange" style="font-weight:700;font-size:13px">Эта неделя</div><small id="weekParity" class="week-parity">Нечётная неделя</small></div>
-      <button id="todayWeek" style="padding:11px 12px;border-radius:12px;border:1px solid #ffffff20;background:#151b26;color:#fff;font-weight:600">Сегодня</button>
-      <button id="nextWeek" aria-label="Следующая неделя" style="padding:11px 15px;border-radius:12px;border:1px solid #ffffff20;background:#151b26;color:#fff;font-weight:700">›</button>
-    </div>
-    <div class="section-head"><h3 id="dayHeading">Понедельник</h3><span id="lessonCount">3 пары</span></div>
-    <section class="lesson-list" id="lessonList"></section>
+      <div style="display:flex;align-items:center;gap:8px;margin:0 0 16px">
+        <button id="prevWeek" aria-label="Предыдущая неделя" style="padding:11px 15px;border-radius:12px;border:1px solid #ffffff20;background:#151b26;color:#fff;font-weight:700">‹</button>
+        <div style="flex:1;text-align:center"><div id="weekRange" style="font-weight:700;font-size:13px">Эта неделя</div><small id="weekParity" class="week-parity">Нечётная неделя</small></div>
+        <button id="todayWeek" style="padding:11px 12px;border-radius:12px;border:1px solid #ffffff20;background:#151b26;color:#fff;font-weight:600">Сегодня</button>
+        <button id="nextWeek" aria-label="Следующая неделя" style="padding:11px 15px;border-radius:12px;border:1px solid #ffffff20;background:#151b26;color:#fff;font-weight:700">›</button>
+      </div>
+      <div id="dayView">
+        <div class="section-head"><h3>Расписание</h3><span id="dateLabel">На сегодня</span></div>
+        <div class="days" id="days" aria-label="Дни недели"></div>
+        <section class="next-card" id="nextCard">
+          <div class="next-icon">◷</div>
+          <div class="next-copy"><div class="label">Ближайшая пара</div><strong id="nextTitle">Гражданское право</strong><small id="nextMeta">10:10 · ауд. 204</small></div>
+          <div class="countdown" id="nextStatus">Скоро</div>
+        </section>
+        <div class="section-head"><h3 id="dayHeading">Понедельник</h3><span id="lessonCount">3 пары</span></div>
+        <section class="lesson-list" id="lessonList"></section>
+      </div>
+      <section id="weekOverview" class="week-overview" style="display:none" aria-label="Обзор недели"></section>
     </div>
   </main>
 
@@ -713,7 +724,31 @@
       document.getElementById("nextMeta").textContent = next ? `${next.start} · ауд. ${next.room}` : "Можно немного выдохнуть";
       document.getElementById("nextStatus").textContent = next ? (isToday ? "Сегодня" : "В этот день") : "Свободно";
     }
-    function render() { updateCalendarWeek(); renderDays(); renderLessons(); renderNext(); }
+    function renderWeekOverview() {
+      const container=document.getElementById("weekOverview");
+      if(!container) return;
+      container.innerHTML="";
+      for(let i=0;i<7;i++) {
+        const d=dateForDay(i);
+        const previous=selectedDay;
+        selectedDay=i;
+        const lessons=lessonsForSelectedDate();
+        selectedDay=previous;
+        const card=document.createElement("button");
+        const isToday=d.toDateString()===realNow.toDateString();
+        card.type="button";
+        card.className="week-day-card"+(isToday?" today":"")+(i===selectedDay?" selected":"");
+        const dateLabel=d.toLocaleDateString("ru-RU",{month:"short"});
+        const summary=lessons.length
+          ? lessons.slice(0,3).map(l=>l.start+" "+l.title).join(" · ")+(lessons.length>3?" · ещё "+(lessons.length-3):"")
+          : "Занятий не запланировано";
+        card.innerHTML='<span class="week-day-date"><span>'+daysShort[i]+'</span><strong>'+d.getDate()+'</strong><span>'+dateLabel+'</span></span><span class="week-day-main"><span class="week-day-name">'+daysFull[i]+(isToday?' · Сегодня':'')+'</span><span class="week-day-summary"></span></span><span class="week-day-count">'+(lessons.length?lessons.length+' '+(lessons.length===1?'пара':lessons.length<5?'пары':'пар'):'Свободно')+'</span>';
+        card.querySelector(".week-day-summary").textContent=summary;
+        card.onclick=()=>{selectedDay=i;showTab("schedule");render();};
+        container.appendChild(card);
+      }
+    }
+    function render() { updateCalendarWeek(); renderDays(); renderLessons(); renderNext(); if(selectedTab==="week") renderWeekOverview(); }
     function toast(text) {
       const el=document.getElementById("toast"); el.textContent=text; el.classList.add("show");
       setTimeout(()=>el.classList.remove("show"),2200);
@@ -721,13 +756,16 @@
     function showTab(tab) {
       selectedTab=tab;
       const profile=tab==="profile";
+      const week=tab==="week";
       document.getElementById("profilePanel").classList.toggle("open",profile);
       document.getElementById("scheduleContent").style.display=profile?"none":"block";
       document.getElementById("scheduleGroupCard").style.display=profile?"none":"flex";
+      document.getElementById("dayView").style.display=week?"none":"block";
+      document.getElementById("weekOverview").style.display=week?"grid":"none";
       document.querySelectorAll(".nav-item").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));
       const ownerLabel=document.getElementById("ownerLabel");
       if(ownerLabel) ownerLabel.classList.toggle("visible",tab==="schedule" && ownerAuthorized);
-      if(tab==="week") { document.getElementById("scheduleContent").style.display="block"; toast("Выбери дату в календаре или переключай недели стрелками."); }
+      if(week) renderWeekOverview();
     }
     document.getElementById("profileBtn").onclick = () => showTab("profile");
     document.getElementById("profileChangeGroup").onclick = () => openGroupModal("group");
