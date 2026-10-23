@@ -1311,9 +1311,17 @@
     try{const gid=await groupId();await request("/api/representative/change",{method:"POST",body:JSON.stringify({group_id:gid,entry_id:x.id,action:"delete_for_date",entry:{schedule_date:selectedDate()}})});await loadEntries();$("repStatus").textContent="Пара убрана на выбранную дату.";setTimeout(()=>window.location.reload(),350);}
     catch(e){$("repStatus").textContent=e.message||"Не удалось убрать пару.";}
   }
+  async function restoreHistory(historyId){
+    if(!confirm("Отменить это изменение? Расписание будет восстановлено до предыдущего состояния."))return;
+    try{const gid=await groupId();await request("/api/representative/restore",{method:"POST",body:JSON.stringify({group_id:gid,history_id:historyId})});$("repStatus").textContent="Изменение отменено. Обновляем расписание…";await loadEntries();setTimeout(()=>window.location.reload(),350);}
+    catch(e){$("repStatus").textContent=e.message||"Не удалось отменить изменение.";}
+  }
   async function loadHistory(){
-    try{const gid=await groupId(),d=await request("/api/representative/history?group_id="+gid);const items=d.data||[];$("repHistory").innerHTML=items.length?items.map(x=>'<div class="rep-history-item"><strong>'+esc(x.action==="insert"?"Добавление":x.action==="delete"?"Удаление":x.action==="restore"?"Восстановление":"Изменение")+'</strong><br>'+esc(x.reason||"Правка расписания")+'<br>'+esc(new Date(x.created_at).toLocaleString("ru-RU"))+'</div>').join(""):'<div class="rep-history-item">Изменений пока нет.</div>';}
-    catch(_){$("repHistory").innerHTML='<div class="rep-history-item">История пока недоступна.</div>';}
+    try{
+      const gid=await groupId(),d=await request("/api/representative/history?group_id="+gid),items=d.data||[];
+      $("repHistory").innerHTML=items.length?items.map(x=>'<div class="rep-history-item"><strong>'+esc(x.action==="insert"?"Добавление":x.action==="delete"?"Удаление":x.action==="restore"?"Восстановление":"Изменение")+'</strong><br>'+esc(x.reason||"Правка расписания")+'<br>'+esc(new Date(x.created_at).toLocaleString("ru-RU"))+'<br><button class="rep-secondary" style="margin-top:6px;padding:6px 9px" data-restore="'+Number(x.id)+'">Отменить это изменение</button></div>').join(""):'<div class="rep-history-item">Изменений пока нет.</div>';
+      $("repHistory").querySelectorAll("[data-restore]").forEach(b=>b.onclick=()=>void restoreHistory(Number(b.dataset.restore)));
+    }catch(_){$("repHistory").innerHTML='<div class="rep-history-item">История пока недоступна.</div>';}
   }
   $("repOpen").addEventListener("click",async()=>{
     panel.classList.toggle("open");
