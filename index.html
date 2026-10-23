@@ -191,6 +191,47 @@
     .theme-decor[data-theme="cyber"] { background:linear-gradient(135deg,rgba(0,229,255,.045),transparent 40%,rgba(255,43,214,.045)); }
     .theme-decor[data-theme="christmas"] { background:linear-gradient(145deg,rgba(80,220,160,.04),transparent 45%,rgba(255,100,125,.035)); }
     .theme-decor[data-theme="midnight"] { background:radial-gradient(ellipse at 100% 0,rgba(145,130,255,.075),transparent 42%); }
+
+    /* Обновлённый декор: крупные рисунки по бокам, не поверх текста и кнопок */
+    .theme-decor { opacity:.68; }
+    .theme-decor .deco-art { width:clamp(58px,16vw,92px); height:clamp(58px,16vw,92px); opacity:.88; }
+    .theme-decor .d1 { top:12%; left:-7px; }
+    .theme-decor .d2 { top:27%; right:-7px; }
+    .theme-decor .d3 { top:34%; left:-7px; }
+    .theme-decor .d4 { top:49%; right:-7px; }
+    .theme-decor .d5 { top:68%; left:-7px; }
+    .theme-decor .d6 { top:auto; bottom:calc(100px + env(safe-area-inset-bottom)); right:-5px; width:clamp(56px,15vw,84px); height:clamp(56px,15vw,84px); }
+    .theme-decor .d7 { top:30%; left:-5px; }
+    .theme-decor .d8 { top:62%; right:-5px; }
+    .theme-decor[data-theme="winter"] .deco-art,
+    .theme-decor[data-theme="arctic"] .deco-art { filter:drop-shadow(0 0 9px rgba(126,220,255,.42)); opacity:.92; }
+    .theme-decor[data-theme="christmas"] .deco-art { filter:drop-shadow(0 0 8px rgba(110,240,190,.28)); opacity:.92; }
+    .theme-decor .snowfall { position:absolute; inset:0; overflow:hidden; pointer-events:none; }
+    .theme-decor .snowflake { position:absolute; top:-12vh; left:var(--snow-left); color:#e2f8ff; font-size:var(--snow-size); line-height:1; opacity:var(--snow-opacity); text-shadow:0 0 9px rgba(140,220,255,.8); animation:snowfallDrop var(--snow-duration) linear var(--snow-delay) infinite; will-change:transform; }
+    .theme-decor .f1 {--snow-left:4%;--snow-size:16px;--snow-opacity:.75;--snow-duration:12s;--snow-delay:-7s}
+    .theme-decor .f2 {--snow-left:9%;--snow-size:10px;--snow-opacity:.65;--snow-duration:16s;--snow-delay:-12s}
+    .theme-decor .f3 {--snow-left:15%;--snow-size:20px;--snow-opacity:.8;--snow-duration:14s;--snow-delay:-3s}
+    .theme-decor .f4 {--snow-left:22%;--snow-size:12px;--snow-opacity:.6;--snow-duration:18s;--snow-delay:-15s}
+    .theme-decor .f5 {--snow-left:29%;--snow-size:17px;--snow-opacity:.72;--snow-duration:13s;--snow-delay:-9s}
+    .theme-decor .f6 {--snow-left:35%;--snow-size:9px;--snow-opacity:.55;--snow-duration:17s;--snow-delay:-5s}
+    .theme-decor .f7 {--snow-left:41%;--snow-size:15px;--snow-opacity:.7;--snow-duration:15s;--snow-delay:-11s}
+    .theme-decor .f8 {--snow-left:47%;--snow-size:11px;--snow-opacity:.62;--snow-duration:19s;--snow-delay:-2s}
+    .theme-decor .f9 {--snow-left:53%;--snow-size:19px;--snow-opacity:.78;--snow-duration:13s;--snow-delay:-10s}
+    .theme-decor .f10 {--snow-left:59%;--snow-size:12px;--snow-opacity:.58;--snow-duration:16s;--snow-delay:-6s}
+    .theme-decor .f11 {--snow-left:65%;--snow-size:16px;--snow-opacity:.72;--snow-duration:14s;--snow-delay:-13s}
+    .theme-decor .f12 {--snow-left:71%;--snow-size:9px;--snow-opacity:.55;--snow-duration:18s;--snow-delay:-8s}
+    .theme-decor .f13 {--snow-left:77%;--snow-size:20px;--snow-opacity:.78;--snow-duration:15s;--snow-delay:-4s}
+    .theme-decor .f14 {--snow-left:83%;--snow-size:12px;--snow-opacity:.62;--snow-duration:17s;--snow-delay:-14s}
+    .theme-decor .f15 {--snow-left:89%;--snow-size:16px;--snow-opacity:.7;--snow-duration:13s;--snow-delay:-1s}
+    .theme-decor .f16 {--snow-left:95%;--snow-size:10px;--snow-opacity:.58;--snow-duration:19s;--snow-delay:-9s}
+    .theme-decor .f17 {--snow-left:18%;--snow-size:8px;--snow-opacity:.48;--snow-duration:21s;--snow-delay:-17s}
+    .theme-decor .f18 {--snow-left:38%;--snow-size:13px;--snow-opacity:.6;--snow-duration:20s;--snow-delay:-7s}
+    .theme-decor .f19 {--snow-left:62%;--snow-size:8px;--snow-opacity:.5;--snow-duration:22s;--snow-delay:-12s}
+    .theme-decor .f20 {--snow-left:80%;--snow-size:14px;--snow-opacity:.66;--snow-duration:18s;--snow-delay:-5s}
+    .theme-decor .f21 {--snow-left:32%;--snow-size:11px;--snow-opacity:.56;--snow-duration:23s;--snow-delay:-19s}
+    .theme-decor .f22 {--snow-left:74%;--snow-size:17px;--snow-opacity:.7;--snow-duration:16s;--snow-delay:-10s}
+    @keyframes snowfallDrop { 0% { transform:translate3d(0,-12vh,0) rotate(0deg); } 50% { transform:translate3d(22px,55vh,0) rotate(180deg); } 100% { transform:translate3d(-12px,115vh,0) rotate(360deg); } }
+    @media (prefers-reduced-motion:reduce) { .theme-decor .snowflake { animation:none; top:var(--snow-static-top,22%); } }
     .exams-panel { display:none; padding:22px 18px; border:1px solid rgba(79,140,255,.17); border-radius:20px; background:linear-gradient(145deg,rgba(28,43,65,.82),rgba(21,27,38,.96)); text-align:center; }
     .exams-panel.open { display:block; }
     .exams-icon { width:58px; height:58px; display:grid; place-items:center; margin:0 auto 14px; border-radius:18px; color:#8bb7ff; background:rgba(79,140,255,.11); border:1px solid rgba(79,140,255,.2); box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 0 24px rgba(79,140,255,.08); }
@@ -884,7 +925,9 @@
           arctic: '<span class="deco-art d1" aria-hidden="true"><svg viewBox="0 0 100 100"><path d="M6 79 34 33l16 24 13-18 31 40Z" fill="#75d9f4" fill-opacity=".28" stroke="#c8f4ff" stroke-width="2.5" stroke-linejoin="round"/><path d="m25 48 9-15 10 15M54 49l9-10 8 12" fill="none" stroke="#effdff" stroke-width="3"/><path d="M8 87h84" stroke="#75d9f4" stroke-width="2"/></svg></span><span class="deco-art d2" aria-hidden="true"><svg viewBox="0 0 100 100"><path d="M50 8v84M14 30l72 40M14 70l72-40" fill="none" stroke="#c8f4ff" stroke-width="3" stroke-linecap="round"/><path d="m39 20 11 11 11-11M39 80l11-11 11 11" fill="none" stroke="#c8f4ff" stroke-width="3"/></svg></span><span class="deco-art d6" aria-hidden="true"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="36" fill="#8ee7ff" fill-opacity=".08" stroke="#c8f4ff" stroke-width="2.5"/><path d="M50 19v62M19 50h62M28 28l44 44M72 28 28 72" stroke="#c8f4ff" stroke-width="2"/></svg></span>',
           midnight: '<span class="deco-art d1" aria-hidden="true"><svg viewBox="0 0 100 100"><path d="M66 13C39 15 25 40 35 63s35 29 53 13C67 84 40 70 40 46c0-15 10-28 26-33Z" fill="#b7afff" fill-opacity=".42" stroke="#dedaff" stroke-width="2.5"/><path d="m22 22 4 11 11 4-11 4-4 11-4-11-11-4 11-4Z" fill="#dedaff"/></svg></span><span class="deco-art d2" aria-hidden="true"><svg viewBox="0 0 100 100"><path d="M50 8 57 37 86 50 57 57 50 86 43 57 14 50 43 37Z" fill="#b7afff" fill-opacity=".2" stroke="#dedaff" stroke-width="2.5"/><circle cx="50" cy="50" r="7" fill="#dedaff"/></svg></span><span class="deco-art d6" aria-hidden="true"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="none" stroke="#b7afff" stroke-width="2" stroke-dasharray="2 7"/><path d="M50 10v14M50 76v14M10 50h14M76 50h14" stroke="#dedaff" stroke-width="3" stroke-linecap="round"/></svg></span>'
         };
-        decor.innerHTML=ownerAuthorized?(decorations[theme]||""):"";
+        const snowThemes=["winter","christmas","arctic"];
+        const snowfall=snowThemes.includes(theme)?'<div class="snowfall" aria-hidden="true">'+Array.from({length:22},(_,i)=>'<span class="snowflake f'+(i+1)+'">❄</span>').join("")+'</div>':"";
+        decor.innerHTML=ownerAuthorized?((decorations[theme]||"")+snowfall):"";
         decor.classList.toggle("active",ownerAuthorized&&!!decorations[theme]);
         decor.dataset.theme=theme;
       }
