@@ -32,7 +32,7 @@
       -webkit-font-smoothing: antialiased;
     }
     button { font: inherit; cursor: pointer; }
-    .app { max-width: 520px; margin: 0 auto; padding: 18px 16px calc(100px + env(safe-area-inset-bottom)); }
+    .app { position:relative; z-index:1; max-width: 520px; margin: 0 auto; padding: 18px 16px calc(100px + env(safe-area-inset-bottom)); }
     .top { display:flex; align-items:center; justify-content:space-between; gap:12px; margin: 5px 0 24px; }
     .brand { display:flex; align-items:center; gap:11px; }
     .logo { width:44px; height:44px; display:grid; place-items:center; border-radius:15px; background:linear-gradient(145deg,#5d9bff,#2863df); box-shadow:0 8px 26px #2863df40; font-weight:900; font-size:20px; }
@@ -240,12 +240,12 @@
     body.owner-large .owner-line strong { font-size:13px; }
     body.owner-accent-glow .owner-action, body.owner-accent-glow .owner-tab.active { box-shadow:0 0 16px color-mix(in srgb,var(--blue,#4f8cff) 38%,transparent); }
     body.owner-night-sky .owner-sheet { background:radial-gradient(ellipse at 15% 0%,#33436a 0%,transparent 38%),linear-gradient(145deg,#151d36,#080c16 70%); } body.owner-theme-halloween .app{background-image:radial-gradient(ellipse at 90% 0%,#ff8a3028,transparent 38%),radial-gradient(ellipse at 0% 55%,#6e2ca522,transparent 35%)} body.owner-theme-winter .app{background-image:radial-gradient(ellipse at 80% 0%,#8bdcff25,transparent 42%),radial-gradient(ellipse at 10% 60%,#fff5e514,transparent 32%)} body.owner-theme-royal .app{background-image:radial-gradient(ellipse at 90% 0%,#e9c77822,transparent 40%)} body.owner-theme-aurora .app{background-image:radial-gradient(ellipse at 80% 0%,#42d9b032,transparent 40%),radial-gradient(ellipse at 0% 55%,#7359d92b,transparent 38%)} body.owner-theme-cyber .app{background-image:linear-gradient(transparent 96%,#00e5ff0b 97%),radial-gradient(ellipse at 80% 0%,#ff2bd620,transparent 40%)} body.owner-theme-christmas .app{background-image:radial-gradient(ellipse at 85% 0%,#e14b5c25,transparent 38%),radial-gradient(ellipse at 0% 65%,#42d9b01c,transparent 35%)}
-    .theme-decor{display:none;position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:20;opacity:.72}
+    .theme-decor{display:none;position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0;opacity:.30}
     .theme-decor.active{display:block}
     .theme-decor .deco{position:absolute;display:block;user-select:none;pointer-events:none;filter:drop-shadow(0 2px 8px #0005);font-size:clamp(23px,5.5vw,38px);opacity:.68;animation:none}
     .theme-decor .d1{top:8%;left:0}.theme-decor .d2{top:0;right:0}.theme-decor .d3{top:34%;left:0}.theme-decor .d4{top:49%;right:0}.theme-decor .d5{top:68%;left:0}.theme-decor .d6{top:auto;bottom:calc(84px + env(safe-area-inset-bottom));right:0}.theme-decor .d7{top:30%;left:4%}.theme-decor .d8{top:62%;right:4%}
-    .theme-decor[data-theme="halloween"] .deco{filter:drop-shadow(0 0 8px #ff8a3055);opacity:.82}
-    .theme-decor[data-theme="halloween"] .d2,.theme-decor[data-theme="halloween"] .d6{font-size:clamp(36px,8vw,54px);opacity:.78}
+    .theme-decor[data-theme="halloween"] .deco{filter:drop-shadow(0 0 8px #ff8a3055);opacity:.52}
+    .theme-decor[data-theme="halloween"] .d2,.theme-decor[data-theme="halloween"] .d6{font-size:clamp(30px,7vw,46px);opacity:.48}
     .theme-decor[data-theme="halloween"] .d2{top:0;right:0;transform:rotate(12deg)}
     .theme-decor[data-theme="halloween"] .d6{top:auto;bottom:calc(80px + env(safe-area-inset-bottom));right:0;transform:rotate(180deg)}
     .theme-decor[data-theme="halloween"] .d3,.theme-decor[data-theme="halloween"] .d7{font-size:clamp(26px,6vw,36px)}
