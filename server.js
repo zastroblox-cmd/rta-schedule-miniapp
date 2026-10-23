@@ -412,6 +412,142 @@ async function configureTelegramWebhook() {
   }
 }
 
+
+const REPRESENTATIVE_API_SECRET = String(process.env.REPRESENTATIVE_API_SECRET || "");
+const REPRESENTATIVE_SESSION_SECRET = String(process.env.REPRESENTATIVE_SESSION_SECRET || "");
+let REPRESENTATIVE_PASSWORDS = {};
+try { REPRESENTATIVE_PASSWORDS = JSON.parse(process.env.REPRESENTATIVE_PASSWORDS_JSON || "{}"); } catch { REPRESENTATIVE_PASSWORDS = {}; }
+const representativeAttempts = new Map();
+
+function signRepresentativeToken(payload) {
+  const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
+  const sig = crypto.createHmac("sha256", REPRESENTATIVE_SESSION_SECRET).update(body).digest("base64url");
+  return body + "." + sig;
+}
+function verifyRepresentativeToken(req) {
+  if (!REPRESENTATIVE_SESSION_SECRET) return null;
+  const raw = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "");
+  const parts = raw.split(".");
+  if (parts.length !== 2) return null;
+  const expected = crypto.createHmac("sha256", REPRESENTATIVE_SESSION_SECRET).update(parts[0]).digest();
+  let supplied;
+  try { supplied = Buffer.from(parts[1], "base64url"); } catch { return null; }
+  if (expected.length !== supplied.length || !crypto.timingSafeEqual(expected, supplied)) return null;
+  let payload;
+  try { payload = JSON.parse(Buffer.from(parts[0], "base64url").toString("utf8")); } catch { return null; }
+  if (!payload || !Number.isFinite(payload.exp) || payload.exp < Date.now()) return null;
+  return payload;
+}
+function safeStringEqual(a, b) {
+  const aa = Buffer.from(String(a || ""), "utf8");
+  const bb = Buffer.from(String(b || ""), "utf8");
+  return aa.length === bb.length && aa.length > 0 && crypto.timingSafeEqual(aa, bb);
+}
+function getRepresentativeAccess(req, groupId) {
+  const token = verifyRepresentativeToken(req);
+  if (!token) return { ok: false, status: 401, error: "Сессия старосты истекла. Войди снова." };
+  if (token.role === "owner") return { ok: true, actor: "Владелец", role: "owner" };
+  if (token.role !== "representative" || Number(token.groupId) !== Number(groupId)) {
+    return { ok: false, status: 403, error: "Этот пароль не даёт доступ к выбранной группе." };
+  }
+  return { ok: true, actor: "Староста " + String(token.groupCode || ""), role: "representative" };
+}
+
+app.post("/api/representative/login", (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  if (!supabase || !REPRESENTATIVE_SESSION_SECRET || !REPRESENTATIVE_API_SECRET) {
+    return res.status(503).json({ error: "Режим старосты ещё не настроен на сервере." });
+  }
+  const ip = String(req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown").split(",")[0].trim();
+  const now = Date.now();
+  const attempt = representativeAttempts.get(ip) || { count: 0, until: 0 };
+  if (attempt.until > now) return res.status(429).json({ error: "Слишком много попыток. Попробуй через несколько минут." });
+  if (req.body && req.body.initData) {
+    const owner = verifyTelegramInitData(req.body.initData);
+    if (owner) return res.json({ token: signRepresentativeToken({ role: "owner", exp: now + 8 * 60 * 60 * 1000 }), role: "owner", expiresIn: 28800 });
+  }
+  const groupCode = String(req.body && req.body.group_code || "").trim();
+  const password = String(req.body && req.body.password || "");
+  const expectedPassword = REPRESENTATIVE_PASSWORDS[groupCode];
+  if (!expectedPassword || !safeStringEqual(password, expectedPassword)) {
+    attempt.count += 1;
+    if (attempt.count >= 6) { attempt.count = 0; attempt.until = now + 10 * 60 * 1000; }
+    representativeAttempts.set(ip, attempt);
+    return res.status(403).json({ error: "Неверный пароль для этой группы." });
+  }
+  representativeAttempts.delete(ip);
+  supabase.from("student_groups").select("id,group_code").eq("group_code", groupCode).maybeSingle()
+    .then(({ data, error }) => {
+      if (error || !data) return res.status(503).json({ error: "Не удалось определить группу в базе." });
+      return res.json({
+        token: signRepresentativeToken({ role: "representative", groupId: data.id, groupCode: data.group_code, exp: now + 8 * 60 * 60 * 1000 }),
+        role: "representative", groupId: data.id, groupCode: data.group_code, expiresIn: 28800
+      });
+    })
+    .catch(() => res.status(503).json({ error: "Сервер временно недоступен." }));
+});
+
+app.get("/api/representative/schedule", async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  if (!supabase) return res.status(503).json({ error: "База данных не настроена." });
+  const groupId = Number(req.query.group_id);
+  const dateString = String(req.query.date || "");
+  const access = getRepresentativeAccess(req, groupId);
+  if (!access.ok) return res.status(access.status).json({ error: access.error });
+  if (!Number.isSafeInteger(groupId) || groupId < 1 || !validDateString(dateString)) return res.status(400).json({ error: "Неверная группа или дата." });
+  const date = new Date(dateString + "T12:00:00Z");
+  const weekday = date.getUTCDay() || 7;
+  const weekType = getWeekType(dateString);
+  const fields = "id,group_id,entry_kind,weekday,week_type,schedule_date,starts_at,ends_at,subject,teacher,room,lesson_type,notes,excluded_dates,valid_from,valid_to";
+  const [overridesResult, recurringResult] = await Promise.all([
+    supabase.from("schedule_entries").select(fields).eq("group_id", groupId).eq("entry_kind", "date_override").eq("schedule_date", dateString).order("starts_at"),
+    supabase.from("schedule_entries").select(fields).eq("group_id", groupId).eq("entry_kind", "recurring").eq("weekday", weekday).or("week_type.is.null,week_type.eq." + weekType).order("starts_at")
+  ]);
+  if (overridesResult.error || recurringResult.error) return res.status(503).json({ error: "Не удалось загрузить пары." });
+  const overrides = overridesResult.data || [];
+  const overrideSlots = new Set(overrides.map(x => x.starts_at + "|" + x.ends_at));
+  const recurring = (recurringResult.data || []).filter(x => (!x.valid_from || x.valid_from <= dateString) && (!x.valid_to || x.valid_to >= dateString) && !(x.excluded_dates || []).includes(dateString) && !overrideSlots.has(x.starts_at + "|" + x.ends_at));
+  return res.json({ data: [...recurring, ...overrides].sort((a,b) => String(a.starts_at).localeCompare(String(b.starts_at))), date: dateString, group_id: groupId, group_code: access.role === "representative" ? verifyRepresentativeToken(req).groupCode : undefined });
+});
+
+app.post("/api/representative/change", async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  if (!supabase || !REPRESENTATIVE_API_SECRET) return res.status(503).json({ error: "Редактирование не настроено." });
+  const body = req.body || {};
+  const groupId = Number(body.group_id);
+  const access = getRepresentativeAccess(req, groupId);
+  if (!access.ok) return res.status(access.status).json({ error: access.error });
+  if (!validDateString(String(body.entry && body.entry.schedule_date || ""))) return res.status(400).json({ error: "Укажи корректную дату." });
+  const { data, error } = await supabase.rpc("representative_apply_change", {
+    p_secret: REPRESENTATIVE_API_SECRET,
+    p_action: String(body.action || "save_override"),
+    p_group_id: groupId,
+    p_entry_id: body.entry_id == null ? null : Number(body.entry_id),
+    p_entry: body.entry || {},
+    p_actor: access.actor
+  });
+  if (error) {
+    console.error("Representative change failed:", error.message);
+    return res.status(400).json({ error: "Не удалось сохранить изменение. Проверь поля и попробуй ещё раз." });
+  }
+  return res.json({ ok: true, result: data });
+});
+
+app.get("/api/representative/history", async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  if (!supabase || !REPRESENTATIVE_API_SECRET) return res.status(503).json({ error: "История недоступна." });
+  const groupId = Number(req.query.group_id);
+  const access = getRepresentativeAccess(req, groupId);
+  if (!access.ok) return res.status(access.status).json({ error: access.error });
+  if (!Number.isSafeInteger(groupId) || groupId < 1) return res.status(400).json({ error: "Неверная группа." });
+  const { data, error } = await supabase.rpc("representative_get_history", { p_secret: REPRESENTATIVE_API_SECRET, p_group_id: groupId, p_limit: 30 });
+  if (error) {
+    console.error("Representative history failed:", error.message);
+    return res.status(503).json({ error: "Не удалось загрузить историю." });
+  }
+  return res.json({ data });
+});
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`RTA schedule API listening on port ${PORT}`);
   void configureTelegramWebhook();
