@@ -311,6 +311,27 @@
     body.owner-glass .profile-card, body.owner-glass .group-card, body.owner-glass .next-card { backdrop-filter:blur(12px); background-color:rgba(21,27,38,.76); }
     @media(min-width:520px) { .owner-tabs { grid-template-columns:repeat(5,minmax(0,1fr)); } .owner-map { grid-template-columns:repeat(3,minmax(0,1fr)); } }
 
+  
+    .rep-panel { display:none; margin:12px 0 14px; padding:16px; border:1px solid rgba(79,140,255,.22); border-radius:18px; background:linear-gradient(145deg,rgba(26,39,60,.88),rgba(18,24,35,.96)); }
+    .rep-panel.open { display:block; }
+    .rep-panel h3 { margin:0 0 6px; font-size:17px; }
+    .rep-help { color:var(--muted); font-size:12px; line-height:1.5; margin:0 0 12px; }
+    .rep-field { display:grid; gap:6px; margin:10px 0; color:#aebbd0; font-size:12px; }
+    .rep-field input,.rep-field select,.rep-field textarea { width:100%; min-width:0; padding:11px 12px; border:1px solid #ffffff1b; border-radius:11px; color:var(--text); background:#0e1420; font:inherit; font-size:13px; outline:none; }
+    .rep-grid { display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+    .rep-primary,.rep-secondary,.rep-danger { border-radius:11px; padding:11px 12px; font-size:12px; font-weight:700; }
+    .rep-primary { border:1px solid #5794ff70; color:#fff; background:linear-gradient(135deg,#397be9,#2458bb); }
+    .rep-secondary { border:1px solid #ffffff20; color:#e4edff; background:#ffffff09; }
+    .rep-danger { border:1px solid #ff7d7d45; color:#ffb6b6; background:#ff555510; }
+    .rep-lesson { display:flex; align-items:center; gap:9px; padding:10px 0; border-top:1px solid var(--line); }
+    .rep-lesson-main { flex:1; min-width:0; }
+    .rep-lesson-main strong,.rep-lesson-main small { display:block; overflow-wrap:anywhere; }
+    .rep-lesson-main strong { font-size:13px; }
+    .rep-lesson-main small { color:var(--muted); font-size:11px; margin-top:4px; }
+    .rep-status { font-size:12px; color:#a9caff; margin:10px 0; white-space:pre-wrap; }
+    .rep-history { border-top:1px solid var(--line); margin-top:14px; padding-top:10px; }
+    .rep-history-item { padding:8px 0; color:var(--muted); font-size:11px; line-height:1.45; border-bottom:1px solid #ffffff0c; }
+
   </style>
   <!-- schedule-build: 2026-10-21-course3-integration-v1 -->
 </head>
@@ -344,6 +365,41 @@
         <div class="profile-row"><div><strong>Курс</strong><small id="profileCourse">2 курс</small></div><button class="profile-action" id="profileChangeCourse">Изменить ↗</button></div>
         <div class="profile-row"><div><strong>Учебная группа</strong><small id="profileGroupName">Ю603/О-2503</small></div><button class="profile-action" id="profileChangeGroup">Изменить ↗</button></div>
         <div class="profile-row"><div><strong>Форма обучения</strong><small>Очная форма обучения</small></div></div>
+
+      <div class="profile-row"><div><strong>Режим старосты</strong><small>Изменение расписания своей группы</small></div><button class="profile-action" id="repOpen">Открыть ↗</button></div>
+      <section class="rep-panel" id="repPanel">
+        <h3>Режим старосты</h3>
+        <p class="rep-help" id="repIntro">Вход выдаёт права только на выбранную группу. Изменения сохраняются на сервере и видны всем пользователям.</p>
+        <div id="repLogin">
+          <label class="rep-field">Пароль старосты для <strong id="repGroupLabel"></strong><input id="repPassword" type="password" autocomplete="current-password" placeholder="Введи пароль группы"></label>
+          <button class="rep-primary" id="repLoginButton" style="width:100%">Войти в режим старосты</button>
+        </div>
+        <div id="repEditor" style="display:none">
+          <div class="rep-field">Дата расписания<input type="date" id="repDate"></div>
+          <div class="rep-grid"><button class="rep-secondary" id="repRefresh">Обновить пары</button><button class="rep-secondary" id="repNew">+ Добавить пару</button></div>
+          <div id="repLessons" style="margin-top:12px"></div>
+          <form id="repEditForm" style="display:none">
+            <h3 id="repFormTitle" style="margin-top:16px">Пара на выбранную дату</h3>
+            <label class="rep-field">Предмет<input id="repSubject" required maxlength="250"></label>
+            <div class="rep-grid">
+              <label class="rep-field">Начало<input id="repStart" type="time" required></label>
+              <label class="rep-field">Конец<input id="repEnd" type="time" required></label>
+            </div>
+            <label class="rep-field">Преподаватель<input id="repTeacher" maxlength="250"></label>
+            <div class="rep-grid">
+              <label class="rep-field">Аудитория<input id="repRoom" maxlength="100"></label>
+              <label class="rep-field">Тип пары<input id="repType" maxlength="100" placeholder="Лекция / практика"></label>
+            </div>
+            <label class="rep-field">Комментарий<textarea id="repNotes" rows="2" maxlength="1000"></textarea></label>
+            <div class="rep-grid"><button class="rep-primary" type="submit">Сохранить</button><button class="rep-secondary" type="button" id="repCancelEdit">Отмена</button></div>
+          </form>
+          <div class="rep-status" id="repStatus" role="status"></div>
+          <div class="rep-history"><strong style="font-size:13px">История изменений</strong><div id="repHistory"></div></div>
+          <button class="rep-secondary" id="repLogout" style="margin-top:12px;width:100%">Выйти из режима старосты</button>
+        </div>
+        <div class="rep-status" id="repLoginStatus" role="status"></div>
+      </section>
+
       </div>
     
       <div class="profile-row"><div><strong>Быстрый запуск</strong><small>Переход к боту расписания в Telegram</small></div><button class="profile-action" id="openTelegramApp">Открыть бота ↗</button></div>
@@ -1186,5 +1242,102 @@
     }, 60_000);
 
   </script>
+
+<script>
+(function initRepresentativeEditor(){
+  const API="https://rta-schedule-api.onrender.com";
+  const $=id=>document.getElementById(id);
+  const panel=$("repPanel"), tokenKey="rta_rep_token", roleKey="rta_rep_role", groupKey="rta_rep_group";
+  let token=sessionStorage.getItem(tokenKey)||"", role=sessionStorage.getItem(roleKey)||"", tokenGroup=sessionStorage.getItem(groupKey)||"";
+  let groupRows=[], activeEntries=[], editingId=null;
+  const tg=window.Telegram&&window.Telegram.WebApp?window.Telegram.WebApp:null;
+  function selectedDate(){const d=$("repDate").value;if(d)return d;const value=typeof dateForDay==="function"?dateForDay(selectedDay):new Date();return [value.getFullYear(),String(value.getMonth()+1).padStart(2,"0"),String(value.getDate()).padStart(2,"0")].join("-");}
+  function todayIso(){const d=typeof dateForDay==="function"?dateForDay(selectedDay):new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-");}
+  async function request(path,options={}){const response=await fetch(API+path,{...options,headers:{"Content-Type":"application/json",...(token?{Authorization:"Bearer "+token}:{}),...(options.headers||{})},cache:"no-store"});const data=await response.json().catch(()=>({error:"Сервер вернул некорректный ответ."}));if(!response.ok)throw new Error(data.error||"Ошибка сервера");return data;}
+  function showEditor(){ $("repLogin").style.display="none";$("repEditor").style.display="block";$("repLoginStatus").textContent="";$("repIntro").textContent=role==="owner"?"Доступ владельца: все группы.":"Доступ ограничен группой "+currentGroup+"."; $("repGroupLabel").textContent=currentGroup; }
+  function showLogin(message=""){ $("repLogin").style.display="block";$("repEditor").style.display="none";$("repGroupLabel").textContent=currentGroup;$("repLoginStatus").textContent=message; }
+  function clearToken(){token="";role="";tokenGroup="";sessionStorage.removeItem(tokenKey);sessionStorage.removeItem(roleKey);sessionStorage.removeItem(groupKey);}
+  async function login(){
+    $("repLoginButton").disabled=true;$("repLoginStatus").textContent="Проверяем доступ…";
+    try{
+      let data=null;
+      const initData=tg&&tg.initData?tg.initData:"";
+      if(initData){try{data=await request("/api/representative/login",{method:"POST",body:JSON.stringify({initData})});}catch(_){}}
+      if(!data){data=await fetch(API+"/api/representative/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({group_code:currentGroup,password:$("repPassword").value},),cache:"no-store"}).then(async r=>{const d=await r.json();if(!r.ok)throw new Error(d.error||"Не удалось войти");return d;});}
+      token=data.token;role=data.role;tokenGroup=data.groupCode||currentGroup;
+      sessionStorage.setItem(tokenKey,token);sessionStorage.setItem(roleKey,role);sessionStorage.setItem(groupKey,tokenGroup);
+      $("repPassword").value="";showEditor();await loadEntries();
+    }catch(e){$("repLoginStatus").textContent=e.message||"Не удалось войти.";}
+    finally{$("repLoginButton").disabled=false;}
+  }
+  async function groupId(){
+    if(!groupRows.length){const d=await request("/api/groups",{headers:{}});groupRows=d.data||[];}
+    const g=groupRows.find(x=>x.group_code===currentGroup);
+    if(!g)throw new Error("Не нашёл выбранную группу в базе данных.");
+    return Number(g.id);
+  }
+  function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+  async function loadEntries(){
+    $("repStatus").textContent="Загружаем пары…";$("repLessons").innerHTML="";
+    try{
+      const gid=await groupId(),date=selectedDate();
+      if(role!=="owner"&&tokenGroup!==currentGroup)throw new Error("Пароль действует только для "+tokenGroup+". Выйди и войди заново.");
+      const d=await request("/api/representative/schedule?group_id="+encodeURIComponent(gid)+"&date="+encodeURIComponent(date));
+      activeEntries=d.data||[];
+      $("repLessons").innerHTML=activeEntries.length?activeEntries.map((x,i)=>'<div class="rep-lesson"><div class="rep-lesson-main"><strong>'+esc(String(x.starts_at||"").slice(0,5))+'–'+esc(String(x.ends_at||"").slice(0,5))+' · '+esc(x.subject)+'</strong><small>'+esc([x.teacher,x.room,x.entry_kind==="recurring"?"Повторяющаяся пара":"Только на эту дату"].filter(Boolean).join(" · "))+'</small></div><button class="rep-secondary" data-edit="'+i+'">Изменить</button><button class="rep-danger" data-delete="'+i+'">Убрать</button></div>').join(""):'<p class="rep-help">На эту дату пар нет. Можно добавить новую.</p>';
+      $("repLessons").querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>startEdit(activeEntries[Number(b.dataset.edit)]));
+      $("repLessons").querySelectorAll("[data-delete]").forEach(b=>b.onclick=()=>removeEntry(activeEntries[Number(b.dataset.delete)]));
+      $("repStatus").textContent="Группа: "+currentGroup+" · "+date;
+      await loadHistory();
+    }catch(e){$("repStatus").textContent=e.message||"Не удалось загрузить пары.";}
+  }
+  function startEdit(x=null){
+    editingId=x?x.id:null;
+    $("repEditForm").style.display="block";$("repFormTitle").textContent=x?"Изменить пару на выбранную дату":"Новая пара на выбранную дату";
+    $("repSubject").value=x?.subject||"";$("repStart").value=String(x?.starts_at||"").slice(0,5);$("repEnd").value=String(x?.ends_at||"").slice(0,5);
+    $("repTeacher").value=x?.teacher||"";$("repRoom").value=x?.room||"";$("repType").value=x?.lesson_type||"Занятие";$("repNotes").value=x?.notes||"";
+    $("repEditForm").scrollIntoView({behavior:"smooth",block:"start"});
+  }
+  async function saveEntry(e){
+    e.preventDefault();const date=selectedDate(),gid=await groupId();
+    const entry={schedule_date:date,subject:$("repSubject").value.trim(),starts_at:$("repStart").value,ends_at:$("repEnd").value,teacher:$("repTeacher").value.trim(),room:$("repRoom").value.trim(),lesson_type:$("repType").value.trim()||"Занятие",notes:$("repNotes").value.trim()};
+    if(!entry.subject||!entry.starts_at||!entry.ends_at||entry.starts_at>=entry.ends_at){$("repStatus").textContent="Проверь предмет и время пары.";return;}
+    $("repStatus").textContent="Сохраняем…";
+    try{await request("/api/representative/change",{method:"POST",body:JSON.stringify({group_id:gid,entry_id:editingId,action:"save_override",entry})});$("repEditForm").style.display="none";editingId=null;await loadEntries();$("repStatus").textContent="Сохранено. Обновляем расписание…";setTimeout(()=>window.location.reload(),350);}
+    catch(err){$("repStatus").textContent=err.message||"Не удалось сохранить.";}
+  }
+  async function removeEntry(x){
+    if(!confirm("Убрать «"+x.subject+"» только на "+selectedDate()+"?"))return;
+    try{const gid=await groupId();await request("/api/representative/change",{method:"POST",body:JSON.stringify({group_id:gid,entry_id:x.id,action:"delete_for_date",entry:{schedule_date:selectedDate()}})});await loadEntries();$("repStatus").textContent="Пара убрана на выбранную дату.";setTimeout(()=>window.location.reload(),350);}
+    catch(e){$("repStatus").textContent=e.message||"Не удалось убрать пару.";}
+  }
+  async function loadHistory(){
+    try{const gid=await groupId(),d=await request("/api/representative/history?group_id="+gid);const items=d.data||[];$("repHistory").innerHTML=items.length?items.map(x=>'<div class="rep-history-item"><strong>'+esc(x.action==="insert"?"Добавление":x.action==="delete"?"Удаление":x.action==="restore"?"Восстановление":"Изменение")+'</strong><br>'+esc(x.reason||"Правка расписания")+'<br>'+esc(new Date(x.created_at).toLocaleString("ru-RU"))+'</div>').join(""):'<div class="rep-history-item">Изменений пока нет.</div>';}
+    catch(_){$("repHistory").innerHTML='<div class="rep-history-item">История пока недоступна.</div>';}
+  }
+  $("repOpen").addEventListener("click",async()=>{
+    panel.classList.toggle("open");
+    if(!panel.classList.contains("open"))return;
+    $("repGroupLabel").textContent=currentGroup;
+    if(token&&(role==="owner"||tokenGroup===currentGroup)){showEditor();await loadEntries();return;}
+    clearToken();
+    const initData=tg&&tg.initData?tg.initData:"";
+    if(initData){
+      try{const response=await fetch(API+"/api/representative/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({initData}),cache:"no-store"});const d=await response.json();if(response.ok&&d.token){token=d.token;role=d.role;tokenGroup=d.groupCode||currentGroup;sessionStorage.setItem(tokenKey,token);sessionStorage.setItem(roleKey,role);sessionStorage.setItem(groupKey,tokenGroup);showEditor();await loadEntries();return;}}catch(_){}
+    }
+    showLogin();
+  });
+  $("repLoginButton").addEventListener("click",login);
+  $("repPassword").addEventListener("keydown",e=>{if(e.key==="Enter")login();});
+  $("repRefresh").addEventListener("click",()=>void loadEntries());
+  $("repDate").addEventListener("change",()=>void loadEntries());
+  $("repNew").addEventListener("click",()=>startEdit());
+  $("repCancelEdit").addEventListener("click",()=>{$("repEditForm").style.display="none";editingId=null;});
+  $("repEditForm").addEventListener("submit",saveEntry);
+  $("repLogout").addEventListener("click",()=>{clearToken();showLogin("Ты вышел из режима старосты.");});
+  $("repDate").value=todayIso();
+})();
+</script>
+
 </body>
 </html>
