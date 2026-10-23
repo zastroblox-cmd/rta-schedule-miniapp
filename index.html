@@ -882,21 +882,33 @@
       if (currentGroup.includes("/О-25")) render();
     };
     document.head.appendChild(course2Script);
-    // Загружаем расписание 1-го курса отдельно; существующие данные 2-го и 3-го курсов не меняются.
+    // Курс 1: API из Supabase — основной источник; локальный JSON остаётся резервом.
     window.Course1ScheduleReady = false;
+    window.Course1ScheduleSource = "loading";
     const course1Script = document.createElement("script");
-    course1Script.src = "./data/course1-adapter.js?v=20261022-api";
+    course1Script.src = "./data/course1-adapter.js?v=20261023-api-all";
     course1Script.onload = async () => {
       try {
-        const response = await fetch("./data/course1-schedule.json?v=20261023-restore", {cache:"no-store"});
-        if (!response.ok) throw new Error("Локальный JSON 1-го курса HTTP " + response.status);
-        const draft = await response.json();
-        if (!draft || !Array.isArray(draft.lessons) || draft.lessons.length === 0) throw new Error("Локальное расписание 1-го курса пустое");
-        window.Course1ScheduleSource = "local-json";
+        let draft;
+        try {
+          const response = await fetch("https://rta-schedule-api.onrender.com/api/course1-schedule", {cache:"no-store"});
+          if (!response.ok) throw new Error("API HTTP " + response.status);
+          draft = await response.json();
+          if (!draft || !Array.isArray(draft.lessons) || draft.lessons.length === 0) throw new Error("API вернул пустое расписание 1-го курса");
+          window.Course1ScheduleSource = "api";
+        } catch (apiError) {
+          console.warn("API 1-го курса недоступен; включаю локальный резерв:", apiError);
+          const response = await fetch("./data/course1-schedule.json?v=20261023-api-all", {cache:"no-store"});
+          if (!response.ok) throw new Error("Локальный JSON 1-го курса HTTP " + response.status);
+          draft = await response.json();
+          if (!draft || !Array.isArray(draft.lessons) || draft.lessons.length === 0) throw new Error("Локальное расписание 1-го курса пустое");
+          window.Course1ScheduleSource = "local-json-fallback";
+        }
         window.Course1Schedule.setDraft(draft);
         window.Course1ScheduleReady = true;
         if (currentGroup.startsWith("Ю600/О-26")) render();
       } catch (error) {
+        window.Course1ScheduleReady = false;
         console.error("Не удалось загрузить расписание 1-го курса:", error);
         if (currentGroup.startsWith("Ю600/О-26")) {
           document.getElementById("lessonList").innerHTML = '<div class="empty"><div class="emoji">⚠️</div><strong>Не удалось загрузить расписание</strong><span>Проверь подключение к интернету и открой приложение ещё раз.</span></div>';
@@ -904,27 +916,52 @@
       }
     };
     course1Script.onerror = () => {
-      console.error("Не удалось загрузить адаптер 1-го курса");
+      window.Course1ScheduleReady = false;
+      window.Course1ScheduleSource = "adapter-error";
       if (currentGroup.startsWith("Ю600/О-26")) {
         document.getElementById("lessonList").innerHTML = '<div class="empty"><div class="emoji">⚠️</div><strong>Расписание временно недоступно</strong><span>Попробуй открыть приложение ещё раз чуть позже.</span></div>';
       }
     };
     document.head.appendChild(course1Script);
-    // Загружаем данные 3-го курса отдельно, не меняя существующие расписания 2-го курса.
+    // Курс 3: API — основной источник. Локальный JSON остаётся резервом и хранит исходные OCR-предупреждения.
     window.Course3ScheduleReady = false;
+    window.Course3ScheduleSource = "loading";
     const course3Script = document.createElement("script");
-    course3Script.src = "./data/course3-adapter.js?v=20261022-date-override-fix";
+    course3Script.src = "./data/course3-adapter.js?v=20261023-api-all";
     course3Script.onload = async () => {
       try {
-        const response = await fetch("./data/course3-review-draft.json?v=20261023-restore", {cache:"no-store"});
-        if (!response.ok) throw new Error("Локальный JSON 3-го курса HTTP " + response.status);
-        const draft = await response.json();
-        if (!draft || !Array.isArray(draft.lessons) || draft.lessons.length === 0) throw new Error("Локальное расписание 3-го курса пустое");
-        window.Course3ScheduleSource = "local-json";
+        let draft;
+        try {
+          const response = await fetch("https://rta-schedule-api.onrender.com/api/course3-schedule", {cache:"no-store"});
+          if (!response.ok) throw new Error("API HTTP " + response.status);
+          draft = await response.json();
+          if (!draft || !Array.isArray(draft.lessons) || draft.lessons.length === 0) throw new Error("API вернул пустое расписание 3-го курса");
+          window.Course3ScheduleSource = "api · OCR-предупреждения исходника сохранены в резервном JSON";
+          // Подтягиваем только метаданные проверки источника; занятия берутся из API.
+          try {
+            const sourceResponse = await fetch("./data/course3-review-draft.json?v=20261023-api-all", {cache:"no-store"});
+            if (sourceResponse.ok) {
+              const sourceDraft = await sourceResponse.json();
+              draft._sourceReviewStatus = sourceDraft._status || "CONNECTED_WITH_REVIEW_WARNINGS";
+              draft._sourceReview = sourceDraft._rules || [];
+              draft._sourceLabel = sourceDraft._source || "";
+            }
+          } catch (metadataError) {
+            console.warn("Метаданные предупреждений OCR 3-го курса недоступны; расписание API остаётся активным:", metadataError);
+          }
+        } catch (apiError) {
+          console.warn("API 3-го курса недоступен; включаю локальный резерв:", apiError);
+          const response = await fetch("./data/course3-review-draft.json?v=20261023-api-all", {cache:"no-store"});
+          if (!response.ok) throw new Error("Локальный JSON 3-го курса HTTP " + response.status);
+          draft = await response.json();
+          if (!draft || !Array.isArray(draft.lessons) || draft.lessons.length === 0) throw new Error("Локальное расписание 3-го курса пустое");
+          window.Course3ScheduleSource = "local-json-fallback · предупреждения OCR сохранены";
+        }
         window.Course3Schedule.setDraft(draft);
         window.Course3ScheduleReady = true;
         if (currentGroup.startsWith("Ю") && currentGroup.includes("/О-24")) render();
       } catch (error) {
+        window.Course3ScheduleReady = false;
         console.error("Не удалось загрузить расписание 3-го курса:", error);
         if (currentGroup.includes("/О-24")) {
           document.getElementById("lessonList").innerHTML = '<div class="empty"><div class="emoji">⚠️</div><strong>Не удалось загрузить расписание</strong><span>Проверь подключение к интернету и открой приложение ещё раз.</span></div>';
@@ -932,33 +969,47 @@
       }
     };
     course3Script.onerror = () => {
-      console.error("Не удалось загрузить адаптер 3-го курса");
+      window.Course3ScheduleReady = false;
+      window.Course3ScheduleSource = "adapter-error";
       if (currentGroup.includes("/О-24")) {
         document.getElementById("lessonList").innerHTML = '<div class="empty"><div class="emoji">⚠️</div><strong>Расписание временно недоступно</strong><span>Попробуй открыть приложение ещё раз чуть позже.</span></div>';
       }
     };
     document.head.appendChild(course3Script);
-    // Загружаем 4-й курс из отдельного JSON, не меняя расписания остальных курсов.
+    // Курс 4: API из Supabase — основной источник; прежний JSON сохранён как резерв.
     window.Course4ScheduleReady = false;
+    window.Course4ScheduleSource = "loading";
     const course4Script = document.createElement("script");
-    course4Script.src = "./data/course4-adapter.js";
+    course4Script.src = "./data/course4-adapter.js?v=20261023-api-all";
     course4Script.onload = async () => {
       try {
-        const response = await fetch("./data/course4-schedule.json?v=20261023-restore", {cache:"no-store"});
-        if (!response.ok) throw new Error("Локальный JSON 4-го курса HTTP " + response.status);
-        const draft = await response.json();
-        if (!draft || !Array.isArray(draft.lessons) || draft.lessons.length === 0) throw new Error("Локальное расписание 4-го курса пустое");
-        window.Course4ScheduleSource = "local-json";
+        let draft;
+        try {
+          const response = await fetch("https://rta-schedule-api.onrender.com/api/course4-schedule", {cache:"no-store"});
+          if (!response.ok) throw new Error("API HTTP " + response.status);
+          draft = await response.json();
+          if (!draft || !Array.isArray(draft.lessons) || draft.lessons.length === 0) throw new Error("API вернул пустое расписание 4-го курса");
+          window.Course4ScheduleSource = "api";
+        } catch (apiError) {
+          console.warn("API 4-го курса недоступен; включаю локальный резерв:", apiError);
+          const response = await fetch("./data/course4-schedule.json?v=20261023-api-all", {cache:"no-store"});
+          if (!response.ok) throw new Error("Локальный JSON 4-го курса HTTP " + response.status);
+          draft = await response.json();
+          if (!draft || !Array.isArray(draft.lessons) || draft.lessons.length === 0) throw new Error("Локальное расписание 4-го курса пустое");
+          window.Course4ScheduleSource = "local-json-fallback";
+        }
         window.Course4Schedule.setDraft(draft);
         window.Course4ScheduleReady = true;
         if (currentGroup.includes("/О-23")) render();
       } catch (error) {
+        window.Course4ScheduleReady = false;
         console.error("Не удалось загрузить расписание 4-го курса:", error);
         if (currentGroup.includes("/О-23")) document.getElementById("lessonList").innerHTML = '<div class="empty"><div class="emoji">⚠️</div><strong>Не удалось загрузить расписание</strong><span>Проверь подключение к интернету и открой приложение ещё раз.</span></div>';
       }
     };
     course4Script.onerror = () => {
-      console.error("Не удалось загрузить адаптер 4-го курса");
+      window.Course4ScheduleReady = false;
+      window.Course4ScheduleSource = "adapter-error";
       if (currentGroup.includes("/О-23")) document.getElementById("lessonList").innerHTML = '<div class="empty"><div class="emoji">⚠️</div><strong>Расписание временно недоступно</strong><span>Попробуй открыть приложение ещё раз чуть позже.</span></div>';
     };
     document.head.appendChild(course4Script);
