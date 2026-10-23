@@ -548,6 +548,29 @@ app.get("/api/representative/history", async (req, res) => {
   return res.json({ data });
 });
 
+
+app.post("/api/representative/restore", async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  if (!supabase || !REPRESENTATIVE_API_SECRET) return res.status(503).json({ error: "Восстановление недоступно." });
+  const body = req.body || {};
+  const groupId = Number(body.group_id);
+  const historyId = Number(body.history_id);
+  const access = getRepresentativeAccess(req, groupId);
+  if (!access.ok) return res.status(access.status).json({ error: access.error });
+  if (!Number.isSafeInteger(groupId) || groupId < 1 || !Number.isSafeInteger(historyId) || historyId < 1) return res.status(400).json({ error: "Неверная запись истории." });
+  const { data, error } = await supabase.rpc("representative_restore_history", {
+    p_secret: REPRESENTATIVE_API_SECRET,
+    p_group_id: groupId,
+    p_history_id: historyId,
+    p_actor: access.actor
+  });
+  if (error) {
+    console.error("Representative restore failed:", error.message);
+    return res.status(400).json({ error: "Не удалось отменить изменение. Возможно, запись уже изменена." });
+  }
+  return res.json({ ok: true, result: data });
+});
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`RTA schedule API listening on port ${PORT}`);
   void configureTelegramWebhook();
