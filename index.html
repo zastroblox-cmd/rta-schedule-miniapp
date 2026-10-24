@@ -1424,6 +1424,38 @@
       if (currentGroup.includes("/О-23")) document.getElementById("lessonList").innerHTML = '<div class="empty"><div class="emoji">⚠️</div><strong>Расписание временно недоступно</strong><span>Попробуй открыть приложение ещё раз чуть позже.</span></div>';
     };
     document.head.appendChild(course4Script);
+    // Экономический факультет: подключаем отдельный адаптер и только проверенный JSON.
+    // Черновик со статусом IMPORT_IN_PROGRESS намеренно не включается в календарь.
+    window.EconomicsScheduleReady = false;
+    window.EconomicsScheduleSource = "loading";
+    const economicsScript = document.createElement("script");
+    economicsScript.src = "./data/economics-adapter.js?v=20261024-1";
+    economicsScript.onload = async () => {
+      try {
+        const response = await fetch("./data/economics-schedule.json?v=20261024-1", {cache:"no-store"});
+        if (!response.ok) throw new Error("Локальный JSON экономики HTTP " + response.status);
+        const draft = await response.json();
+        if (draft._status !== "VERIFIED" || !Array.isArray(draft.lessons) || !draft.lessons.length) {
+          window.EconomicsScheduleReady = false;
+          window.EconomicsScheduleSource = "import-in-progress";
+          return;
+        }
+        window.EconomicsSchedule.setDraft(draft);
+        window.EconomicsScheduleReady = true;
+        window.EconomicsScheduleSource = "verified-local-json";
+        if (currentGroup.startsWith("Э")) render();
+      } catch (error) {
+        window.EconomicsScheduleReady = false;
+        window.EconomicsScheduleSource = "unavailable";
+        console.warn("Расписание экономического факультета пока не подключено:", error);
+      }
+    };
+    economicsScript.onerror = () => {
+      window.EconomicsScheduleReady = false;
+      window.EconomicsScheduleSource = "adapter-error";
+      console.warn("Не удалось загрузить адаптер экономического факультета.");
+    };
+    document.head.appendChild(economicsScript);
     // Обновляем статусы пар, пока Mini App открыт; при смене даты обновляем календарную основу.
     setInterval(() => {
       const updated = new Date();
