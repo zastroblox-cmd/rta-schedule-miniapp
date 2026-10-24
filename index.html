@@ -1271,7 +1271,7 @@
     course2Script.src = "./data/course2-adapter.js?v=20261022";
     course2Script.onload = async () => {
       try {
-        throw new Error("Временное восстановление проверенного локального расписания юристов");
+        if (window.USE_SERVER_LAW_SCHEDULES !== true) throw new Error("Временно используется проверенное локальное расписание юристов");
         const apiResponse = await fetch("https://rta-schedule-api.onrender.com/api/course2-schedule", {cache:"no-store"});
         if (!apiResponse.ok) throw new Error("API HTTP " + apiResponse.status);
         const draft = await apiResponse.json();
@@ -1303,7 +1303,7 @@
       try {
         let draft;
         try {
-          throw new Error("Временное восстановление локального расписания юристов");
+          if (window.USE_SERVER_LAW_SCHEDULES !== true) throw new Error("Временно используется локальное расписание юристов");
           const response = await fetch("https://rta-schedule-api.onrender.com/api/course1-schedule", {cache:"no-store"});
           if (!response.ok) throw new Error("API HTTP " + response.status);
           draft = await response.json();
@@ -1345,7 +1345,7 @@
       try {
         let draft;
         try {
-          throw new Error("Временное восстановление локального расписания юристов");
+          if (window.USE_SERVER_LAW_SCHEDULES !== true) throw new Error("Временно используется локальное расписание юристов");
           const response = await fetch("https://rta-schedule-api.onrender.com/api/course3-schedule", {cache:"no-store"});
           if (!response.ok) throw new Error("API HTTP " + response.status);
           draft = await response.json();
@@ -1399,7 +1399,7 @@
       try {
         let draft;
         try {
-          throw new Error("Временное восстановление локального расписания юристов");
+          if (window.USE_SERVER_LAW_SCHEDULES !== true) throw new Error("Временно используется локальное расписание юристов");
           const response = await fetch("https://rta-schedule-api.onrender.com/api/course4-schedule", {cache:"no-store"});
           if (!response.ok) throw new Error("API HTTP " + response.status);
           draft = await response.json();
