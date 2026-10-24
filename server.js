@@ -241,13 +241,14 @@ function toMiniAppLesson(row) {
 }
 
 
-async function exportCourseSchedule(courseNumber, res) {
+async function exportCourseSchedule(courseNumber, res, facultySlug = "law") {
   if (!supabase) return res.status(503).json({ error: "Database is not configured" });
 
   const { data: groups, error: groupsError } = await supabase
     .from("student_groups")
-    .select("id,group_code,display_name,courses!inner(course_number)")
+    .select("id,group_code,display_name,courses!inner(course_number,faculties!inner(slug))")
     .eq("courses.course_number", courseNumber)
+    .eq("courses.faculties.slug", facultySlug)
     .order("group_code");
   if (groupsError) return res.status(500).json({ error: "Unable to load course groups" });
   if (!groups || groups.length === 0) {
@@ -283,55 +284,17 @@ async function exportCourseSchedule(courseNumber, res) {
   });
 }
 
-app.get("/api/course1-schedule", (_req, res) => exportCourseSchedule(1, res));
-app.get("/api/course2-schedule", (_req, res) => exportCourseSchedule(2, res));
-app.get("/api/course3-schedule", (_req, res) => exportCourseSchedule(3, res));
+app.get("/api/course1-schedule", (_req, res) => exportCourseSchedule(1, res, "law"));
+app.get("/api/course2-schedule", (_req, res) => exportCourseSchedule(2, res, "law"));
+app.get("/api/course3-schedule", (_req, res) => exportCourseSchedule(3, res, "law"));
+app.get("/api/course4-schedule", (_req, res) => exportCourseSchedule(4, res, "law"));
 
-// Compatibility export for the existing course-4 adapter.
-// The Mini App can prefer the database while retaining its local JSON fallback.
-app.get("/api/course4-schedule", async (_req, res) => {
-  if (!supabase) return res.status(503).json({ error: "Database is not configured" });
+app.get("/api/economics/course1-schedule", (_req, res) => exportCourseSchedule(1, res, "economics"));
+app.get("/api/economics/course2-schedule", (_req, res) => exportCourseSchedule(2, res, "economics"));
+app.get("/api/economics/course3-schedule", (_req, res) => exportCourseSchedule(3, res, "economics"));
+app.get("/api/economics/course4-schedule", (_req, res) => exportCourseSchedule(4, res, "economics"));
 
-  const { data: groups, error: groupsError } = await supabase
-    .from("student_groups")
-    .select("id,group_code,display_name,courses!inner(course_number)")
-    .eq("courses.course_number", 4)
-    .order("group_code");
-  if (groupsError) return res.status(500).json({ error: "Unable to load course groups" });
-  if (!groups || groups.length === 0) {
-    return res.status(404).json({ error: "No course-4 groups found" });
-  }
-
-  const ids = groups.map(group => group.id);
-  const { data: entries, error: entriesError } = await supabase
-    .from("schedule_entries")
-    .select("group_id,entry_kind,weekday,week_type,schedule_date,starts_at,ends_at,subject,teacher,room,lesson_type,notes,excluded_dates,valid_from,valid_to")
-    .in("group_id", ids)
-    .order("starts_at");
-  if (entriesError) return res.status(500).json({ error: "Unable to load course schedule" });
-
-  const groupById = new Map(groups.map(group => [group.id, group]));
-  const lessons = (entries || []).map(row => ({
-    ...toMiniAppLesson({
-      ...row,
-      group_code: groupById.get(row.group_id)?.group_code
-    })
-  }));
-
-  res.setHeader("Cache-Control", "no-store");
-  res.json({
-    _status: "CONNECTED_TO_SUPABASE",
-    _source: "Supabase schedule_entries",
-    _groups: groups.map(group => group.group_code),
-    _rules: {
-      weekA: "чётная неделя",
-      weekB: "нечётная неделя",
-      anchor: "12–18.10.2026 — неделя Б; 19–25.10.2026 — неделя А"
-    },
-    lessons
-  });
-});
-
+// Course 4 uses the same faculty-scoped database export as courses 1–3.
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || process.env.BOT_TOKEN;
 const OWNER_TELEGRAM_ID = String(process.env.OWNER_TELEGRAM_ID || "").trim();
