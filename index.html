@@ -1441,9 +1441,9 @@
         );
         const payloads = await Promise.all(endpoints);
         const lessons = payloads.flatMap(payload => Array.isArray(payload.lessons) ? payload.lessons : []);
-        if (!lessons.length) {
+        if (!lessons.length || payloads.some(payload => payload._status !== "VERIFIED")) {
           window.EconomicsScheduleReady = false;
-          window.EconomicsScheduleSource = "database-empty";
+          window.EconomicsScheduleSource = lessons.length ? "database-pending-verification" : "database-empty";
           return;
         }
         window.EconomicsSchedule.setDraft({
