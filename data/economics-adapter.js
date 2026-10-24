@@ -28,7 +28,7 @@
     return ((weeks%2)+2)%2===0?"Б":"А";
   }
   function getLessonsForDate(group,value){
-    if(!draft || draft._status!=="VERIFIED" || !Array.isArray(draft.lessons)) return [];
+    if(!draft || !["VERIFIED","PRELIMINARY"].includes(draft._status) || !Array.isArray(draft.lessons)) return [];
     if(!GROUPS.includes(group)) return [];
     const d=dayOnly(value);
     if(Number.isNaN(d.getTime()) || d.getFullYear()!==2026 ||
@@ -60,7 +60,7 @@
   root.EconomicsSchedule={
     groups:GROUPS.slice(),
     setDraft(data){
-      if(!data || data._status!=="VERIFIED" || !Array.isArray(data.lessons) || data.lessons.length===0)
+      if(!data || !["VERIFIED","PRELIMINARY"].includes(data._status) || !Array.isArray(data.lessons) || data.lessons.length===0)
         throw new Error("Экономическое расписание не прошло проверку источника");
       for(const row of data.lessons){
         if(!GROUPS.includes(row.group) || !Number.isInteger(Number(row.day)) ||
@@ -70,7 +70,7 @@
       draft=data;
     },
     getLessonsForDate,
-    get loaded(){return !!draft && draft._status==="VERIFIED" && draft.lessons.length>0;}
+    get loaded(){return !!draft && ["VERIFIED","PRELIMINARY"].includes(draft._status) && draft.lessons.length>0;}
   };
   if(typeof module!=="undefined"&&module.exports)module.exports=root.EconomicsSchedule;
 })(typeof window!=="undefined"?window:globalThis);
