@@ -246,15 +246,44 @@ function toMiniAppLesson(row) {
 async function exportCourseSchedule(courseNumber, res, facultySlug = "law") {
   if (!supabase) return res.status(503).json({ error: "Database is not configured" });
 
+  // Resolve faculty -> course -> groups in separate queries. Nested PostgREST
+  // filters on courses.faculties.slug can silently yield no groups in some schemas.
+  const { data: faculty, error: facultyError } = await supabase
+    .from("faculties")
+    .select("id,slug")
+    .eq("slug", facultySlug)
+    .maybeSingle();
+  if (facultyError) {
+    console.error("Schedule API faculty lookup failed:", facultyError.message);
+    return res.status(500).json({ error: "Unable to load faculty", detail: facultyError.message });
+  }
+  if (!faculty) return res.status(404).json({ error: "Faculty not found: " + facultySlug });
+
+  const { data: courses, error: coursesError } = await supabase
+    .from("courses")
+    .select("id,course_number,faculty_id")
+    .eq("faculty_id", faculty.id)
+    .eq("course_number", courseNumber);
+  if (coursesError) {
+    console.error("Schedule API course lookup failed:", coursesError.message);
+    return res.status(500).json({ error: "Unable to load course", detail: coursesError.message });
+  }
+  if (!courses || courses.length === 0) {
+    return res.status(404).json({ error: "No course found for faculty " + facultySlug + ", course " + courseNumber });
+  }
+
+  const courseIds = courses.map(course => course.id);
   const { data: groups, error: groupsError } = await supabase
     .from("student_groups")
-    .select("id,group_code,display_name,courses!inner(course_number,faculties!inner(slug))")
-    .eq("courses.course_number", courseNumber)
-    .eq("courses.faculties.slug", facultySlug)
+    .select("id,group_code,display_name,course_id")
+    .in("course_id", courseIds)
     .order("group_code");
-  if (groupsError) return res.status(500).json({ error: "Unable to load course groups" });
+  if (groupsError) {
+    console.error("Schedule API group lookup failed:", groupsError.message);
+    return res.status(500).json({ error: "Unable to load course groups", detail: groupsError.message });
+  }
   if (!groups || groups.length === 0) {
-    return res.status(404).json({ error: "No groups found for course " + courseNumber });
+    return res.status(404).json({ error: "No groups found for faculty " + facultySlug + ", course " + courseNumber });
   }
 
   const ids = groups.map(group => group.id);
