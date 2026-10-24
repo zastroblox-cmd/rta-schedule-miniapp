@@ -801,7 +801,7 @@
         });
       }
       if(mode!=="faculty"&&mode!=="course"){
-        GROUPS.filter(g=>g.faculty===currentFaculty&&(mode==="group"||g.course===currentCourse)).forEach(g=>{
+        GROUPS.filter(g=>g.faculty===currentFaculty&&g.course===currentCourse).forEach(g=>{
           const b=document.createElement("button"); b.className="group-option"+(g.id===currentGroup?" selected":"");
           b.innerHTML=g.id+"<small>"+(g.status==="available"?"Расписание "+g.course+" курса":"Расписание не подключено")+"</small>";
           b.onclick=()=>{currentGroup=g.id;currentCourse=g.course;localStorage.setItem("rta_schedule_group",currentGroup);localStorage.setItem("rta_schedule_group_faculty_"+currentFaculty,currentGroup);localStorage.setItem("rta_schedule_group_course_"+currentFaculty+"_"+currentCourse,currentGroup);updateGroupLabel();document.getElementById("groupModal").classList.remove("open");render();};
