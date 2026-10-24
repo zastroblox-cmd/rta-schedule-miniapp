@@ -868,6 +868,13 @@
     }
     function lessonsForSelectedDate() {
       const date=dateForDay(selectedDay);
+      // Экономические группы не должны проваливаться в резервное юридическое расписание.
+      // Пока их отдельный набор пар не подключён, возвращаем пустой список явно.
+      if (currentGroup.startsWith("Э")) {
+        if (!window.EconomicsScheduleReady || !window.EconomicsSchedule) return [];
+        const isoDate = date.getFullYear()+"-"+String(date.getMonth()+1).padStart(2,"0")+"-"+String(date.getDate()).padStart(2,"0");
+        return window.EconomicsSchedule.getLessonsForDate(currentGroup, isoDate);
+      }
       if (currentGroup.startsWith("Ю600/О-26")) {
         if (!window.Course1ScheduleReady || !window.Course1Schedule) return [];
         const isoDate = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
@@ -984,7 +991,10 @@
         let emptyTitle = "Можно выдохнуть ☕";
         let emptyText = "На выбранную дату пар не запланировано.";
         const isThirdCourseGroup = currentGroup.endsWith("/О-2401") || currentGroup.endsWith("/О-2402") || currentGroup.endsWith("/О-2403") || currentGroup.endsWith("/О-2404");
-        if (isThirdCourseGroup && selectedDay === 2) {
+        if (currentGroup.startsWith("Э") && !window.EconomicsScheduleReady) {
+          emptyTitle = "Расписание подключается";
+          emptyText = "PDF экономического факультета получен. Перенос пар в календарь ещё не завершён — это не означает, что день свободен.";
+        } else if (isThirdCourseGroup && selectedDay === 2) {
           emptyTitle = "По плану факультета";
           emptyText = "Среда в официальном расписании отмечена как день по плану факультета. Отдельные пары здесь не указаны.";
         } else if (selectedDay === 5 && selectedWeek === "B") {
