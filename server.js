@@ -4,6 +4,8 @@ const { createClient } = require("@supabase/supabase-js");
 
 const app = express();
 app.disable("x-powered-by");
+// Render sits behind one trusted reverse proxy; use its client IP for login throttling.
+app.set("trust proxy", 1);
 app.use(express.json({ limit: "32kb" }));
 
 const PORT = Number(process.env.PORT || 3000);
@@ -476,8 +478,15 @@ app.post("/api/representative/login", async (req, res) => {
   if (!supabase || !REPRESENTATIVE_SESSION_SECRET || !REPRESENTATIVE_API_SECRET) {
     return res.status(503).json({ error: "Режим старосты ещё не настроен на сервере." });
   }
-  const ip = String(req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown").split(",")[0].trim();
+  const ip = String(req.ip || req.socket.remoteAddress || "unknown");
   const now = Date.now();
+  // Bound memory use if many distinct addresses hit the login endpoint.
+  if (representativeAttempts.size > 10000) {
+    for (const [key, value] of representativeAttempts) {
+      if (value.until <= now && value.count === 0) representativeAttempts.delete(key);
+    }
+    while (representativeAttempts.size > 10000) representativeAttempts.delete(representativeAttempts.keys().next().value);
+  }
   const attempt = representativeAttempts.get(ip) || { count: 0, until: 0 };
   if (attempt.until > now) return res.status(429).json({ error: "Слишком много попыток. Попробуй через несколько минут." });
   if (req.body && req.body.initData) {
