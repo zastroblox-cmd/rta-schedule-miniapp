@@ -1445,14 +1445,14 @@
         );
         const payloads = await Promise.all(endpoints);
         const lessons = payloads.flatMap(payload => Array.isArray(payload.lessons) ? payload.lessons : []);
-        if (!lessons.length || payloads.some(payload => payload._status !== "VERIFIED")) {
+        if (!lessons.length || payloads.some(payload => !["VERIFIED", "CONNECTED_TO_SUPABASE"].includes(payload._status))) {
           window.EconomicsScheduleReady = false;
           window.EconomicsScheduleSource = lessons.length ? "database-pending-verification" : "database-empty";
           return;
         }
         window.EconomicsSchedule.setDraft({
           _status: "VERIFIED",
-          _source: "Supabase через Render API",
+          _source: payloads.every(payload => payload._status === "VERIFIED") ? "Supabase через Render API" : "Предварительное расписание из базы; сверка PDF продолжается",
           lessons
         });
         window.EconomicsScheduleReady = true;
