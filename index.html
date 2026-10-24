@@ -1424,30 +1424,40 @@
       if (currentGroup.includes("/О-23")) document.getElementById("lessonList").innerHTML = '<div class="empty"><div class="emoji">⚠️</div><strong>Расписание временно недоступно</strong><span>Попробуй открыть приложение ещё раз чуть позже.</span></div>';
     };
     document.head.appendChild(course4Script);
-    // Экономический факультет: подключаем отдельный адаптер и только проверенный JSON.
-    // Черновик со статусом IMPORT_IN_PROGRESS намеренно не включается в календарь.
+    // Экономический факультет: источник занятий — серверный API и Supabase.
+    // Пустой результат не активируется: сначала импортируем и сверяем занятия из PDF.
     window.EconomicsScheduleReady = false;
     window.EconomicsScheduleSource = "loading";
     const economicsScript = document.createElement("script");
-    economicsScript.src = "./data/economics-adapter.js?v=20261024-1";
+    economicsScript.src = "./data/economics-adapter.js?v=20261024-2";
     economicsScript.onload = async () => {
       try {
-        const response = await fetch("./data/economics-schedule.json?v=20261024-1", {cache:"no-store"});
-        if (!response.ok) throw new Error("Локальный JSON экономики HTTP " + response.status);
-        const draft = await response.json();
-        if (draft._status !== "VERIFIED" || !Array.isArray(draft.lessons) || !draft.lessons.length) {
+        const endpoints = [1,2,3,4].map(course =>
+          fetch("https://rta-schedule-api.onrender.com/api/economics/course" + course + "-schedule", {cache:"no-store"})
+            .then(async response => {
+              if (!response.ok) throw new Error("Экономический API HTTP " + response.status);
+              return response.json();
+            })
+        );
+        const payloads = await Promise.all(endpoints);
+        const lessons = payloads.flatMap(payload => Array.isArray(payload.lessons) ? payload.lessons : []);
+        if (!lessons.length) {
           window.EconomicsScheduleReady = false;
-          window.EconomicsScheduleSource = "import-in-progress";
+          window.EconomicsScheduleSource = "database-empty";
           return;
         }
-        window.EconomicsSchedule.setDraft(draft);
+        window.EconomicsSchedule.setDraft({
+          _status: "VERIFIED",
+          _source: "Supabase через Render API",
+          lessons
+        });
         window.EconomicsScheduleReady = true;
-        window.EconomicsScheduleSource = "verified-local-json";
+        window.EconomicsScheduleSource = "supabase-api";
         if (currentGroup.startsWith("Э")) render();
       } catch (error) {
         window.EconomicsScheduleReady = false;
-        window.EconomicsScheduleSource = "unavailable";
-        console.warn("Расписание экономического факультета пока не подключено:", error);
+        window.EconomicsScheduleSource = "api-unavailable";
+        console.warn("Экономическое расписание пока недоступно через API:", error);
       }
     };
     economicsScript.onerror = () => {
