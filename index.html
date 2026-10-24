@@ -1436,27 +1436,31 @@
     economicsScript.src = "./data/economics-adapter.js?v=20261024-2";
     economicsScript.onload = async () => {
       try {
-        const endpoints = [1,2,3,4].map(course =>
+        const results = await Promise.allSettled([1,2,3,4].map(course =>
           fetch("https://rta-schedule-api.onrender.com/api/economics/course" + course + "-schedule", {cache:"no-store"})
             .then(async response => {
-              if (!response.ok) throw new Error("Экономический API HTTP " + response.status);
+              if (!response.ok) throw new Error("Курс " + course + ": HTTP " + response.status);
               return response.json();
             })
-        );
-        const payloads = await Promise.all(endpoints);
+        ));
+        const payloads = results.filter(result => result.status === "fulfilled").map(result => result.value);
         const lessons = payloads.flatMap(payload => Array.isArray(payload.lessons) ? payload.lessons : []);
-        if (!lessons.length || payloads.some(payload => !["VERIFIED", "CONNECTED_TO_SUPABASE"].includes(payload._status))) {
+        const failedCourses = results.map((result,index) => result.status === "rejected" ? index + 1 : null).filter(Boolean);
+        window.EconomicsScheduleSource = failedCourses.length ? "partial-api-courses-" + failedCourses.join("-") : "supabase-api";
+        if (!lessons.length) {
           window.EconomicsScheduleReady = false;
-          window.EconomicsScheduleSource = lessons.length ? "database-pending-verification" : "database-empty";
+          window.EconomicsScheduleSource = "api-no-lessons" + (failedCourses.length ? "-courses-" + failedCourses.join("-") : "");
+          console.error("Экономический API не вернул пары.", results.map((result,index) => ({course:index+1,status:result.status,reason:result.status==="rejected"?String(result.reason):undefined,lessons:result.status==="fulfilled"&&Array.isArray(result.value.lessons)?result.value.lessons.length:0})));
           return;
         }
+        const invalidPayloads = payloads.filter(payload => !["VERIFIED", "CONNECTED_TO_SUPABASE"].includes(payload._status));
+        if (invalidPayloads.length) console.warn("Часть ответов экономического API имеет неожиданный статус.", invalidPayloads.map(payload => payload._status));
         window.EconomicsSchedule.setDraft({
           _status: "VERIFIED",
-          _source: payloads.every(payload => payload._status === "VERIFIED") ? "Supabase через Render API" : "Предварительное расписание из базы; сверка PDF продолжается",
+          _source: "Предварительные данные из Supabase API; сверка PDF продолжается",
           lessons
         });
         window.EconomicsScheduleReady = true;
-        window.EconomicsScheduleSource = "supabase-api";
         if (currentGroup.startsWith("Э")) render();
       } catch (error) {
         window.EconomicsScheduleReady = false;
