@@ -563,7 +563,7 @@ app.post("/api/representative/change", async (req, res) => {
   if (!supabase || !REPRESENTATIVE_API_SECRET) return res.status(503).json({ error: "Редактирование не настроено." });
   const body = req.body || {};
   const groupId = Number(body.group_id);
-  const access = getRepresentativeAccess(req, groupId);
+  const access = await getRepresentativeAccess(req, groupId);
   if (!access.ok) return res.status(access.status).json({ error: access.error });
   if (!validDateString(String(body.entry && body.entry.schedule_date || ""))) return res.status(400).json({ error: "Укажи корректную дату." });
   const { data, error } = await supabase.rpc("representative_apply_change", {
@@ -585,7 +585,7 @@ app.get("/api/representative/history", async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
   if (!supabase || !REPRESENTATIVE_API_SECRET) return res.status(503).json({ error: "История недоступна." });
   const groupId = Number(req.query.group_id);
-  const access = getRepresentativeAccess(req, groupId);
+  const access = await getRepresentativeAccess(req, groupId);
   if (!access.ok) return res.status(access.status).json({ error: access.error });
   if (!Number.isSafeInteger(groupId) || groupId < 1) return res.status(400).json({ error: "Неверная группа." });
   const { data, error } = await supabase.rpc("representative_get_history", { p_secret: REPRESENTATIVE_API_SECRET, p_group_id: groupId, p_limit: 30 });
@@ -603,7 +603,7 @@ app.post("/api/representative/restore", async (req, res) => {
   const body = req.body || {};
   const groupId = Number(body.group_id);
   const historyId = Number(body.history_id);
-  const access = getRepresentativeAccess(req, groupId);
+  const access = await getRepresentativeAccess(req, groupId);
   if (!access.ok) return res.status(access.status).json({ error: access.error });
   if (!Number.isSafeInteger(groupId) || groupId < 1 || !Number.isSafeInteger(historyId) || historyId < 1) return res.status(400).json({ error: "Неверная запись истории." });
   const { data, error } = await supabase.rpc("representative_restore_history", {
