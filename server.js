@@ -264,10 +264,21 @@ async function exportCourseSchedule(courseNumber, res, facultySlug = "law") {
   if (entriesError) return res.status(500).json({ error: "Unable to load course schedule" });
 
   const groupById = new Map(groups.map(group => [group.id, group]));
-  const lessons = (entries || []).map(row => toMiniAppLesson({
+  let lessons = (entries || []).map(row => toMiniAppLesson({
     ...row,
     group_code: groupById.get(row.group_id)?.group_code
   }));
+
+  // Economics adapter uses explicit A/B week labels, unlike the legacy law adapter.
+  if (facultySlug === "economics") {
+    lessons = lessons.map(lesson => {
+      const result = { ...lesson };
+      if (result.parity === "нечётная неделя") result.week = "Б";
+      if (result.parity === "чётная неделя") result.week = "А";
+      delete result.parity;
+      return result;
+    });
+  }
 
   res.setHeader("Cache-Control", "no-store");
   return res.json({
