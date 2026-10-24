@@ -774,18 +774,29 @@
         });
       }
       if(mode!=="faculty"&&mode!=="group"){
-        [...new Set(GROUPS.filter(g=>g.faculty===currentFaculty).map(g=>g.course))].sort((a,b)=>a-b).forEach(course=>{
-          const b=document.createElement("button"); b.className="course-option"+(course===currentCourse?" selected":""); b.type="button"; b.textContent=course+" курс";
-          b.onclick=()=>{
-            if(course!==currentCourse){
-              localStorage.setItem("rta_schedule_group_faculty_"+currentFaculty,currentGroup);
-              const remembered=localStorage.getItem("rta_schedule_group_course_"+currentFaculty+"_"+course);
-              const next=GROUPS.find(g=>g.id===remembered&&g.course===course&&g.faculty===currentFaculty)||GROUPS.find(g=>g.course===course&&g.faculty===currentFaculty);
-              if(next){currentCourse=course;currentGroup=next.id;localStorage.setItem("rta_schedule_course",String(course));localStorage.setItem("rta_schedule_group",currentGroup);localStorage.setItem("rta_schedule_group_course_"+currentFaculty+"_"+course,currentGroup);updateGroupLabel();render();}
-            }
-            if(mode==="course"){document.getElementById("groupModal").classList.remove("open");return;}
-            renderGroupPicker(mode);
-          };
+        const facultyCourses=currentFaculty==="economics"?[1,2,3,4,5]:[...new Set(GROUPS.filter(g=>g.faculty===currentFaculty).map(g=>g.course))].sort((a,b)=>a-b);
+        facultyCourses.forEach(course=>{
+          const groupsForCourse=GROUPS.filter(g=>g.faculty===currentFaculty&&g.course===course);
+          const b=document.createElement("button"); b.className="course-option"+(course===currentCourse?" selected":""); b.type="button";
+          b.textContent=course+" курс";
+          if(!groupsForCourse.length){
+            b.disabled=true;
+            b.title="Расписание и группы этого курса ещё не загружены";
+            b.textContent=course+" курс · скоро";
+            b.style.opacity=".5";
+            b.style.cursor="not-allowed";
+          } else {
+            b.onclick=()=>{
+              if(course!==currentCourse){
+                localStorage.setItem("rta_schedule_group_faculty_"+currentFaculty,currentGroup);
+                const remembered=localStorage.getItem("rta_schedule_group_course_"+currentFaculty+"_"+course);
+                const next=GROUPS.find(g=>g.id===remembered&&g.course===course&&g.faculty===currentFaculty)||GROUPS.find(g=>g.course===course&&g.faculty===currentFaculty);
+                if(next){currentCourse=course;currentGroup=next.id;localStorage.setItem("rta_schedule_course",String(course));localStorage.setItem("rta_schedule_group",currentGroup);localStorage.setItem("rta_schedule_group_course_"+currentFaculty+"_"+course,currentGroup);updateGroupLabel();render();}
+              }
+              if(mode==="course"){document.getElementById("groupModal").classList.remove("open");return;}
+              renderGroupPicker(mode);
+            };
+          }
           courses.appendChild(b);
         });
       }
@@ -1242,7 +1253,7 @@
     updateGroupLabel();
     render();
     // При первом запуске сразу предлагаем выбрать курс и группу; повторно окно не открывается после сохранения выбора.
-    if (!hasSavedGroup) openGroupModal();
+    if (!hasSavedGroup) openGroupModal("faculty");
     // Загружаем расписание 2-го курса с сервера. При ошибке остаётся прежняя логика index.html.
     window.Course2ScheduleReady = false;
     window.Course2ScheduleSource = "loading";
