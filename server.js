@@ -443,12 +443,19 @@ function safeStringEqual(a, b) {
   const bb = Buffer.from(String(b || ""), "utf8");
   return aa.length === bb.length && aa.length > 0 && crypto.timingSafeEqual(aa, bb);
 }
-function getRepresentativeAccess(req, groupId) {
+async function getRepresentativeAccess(req, groupId) {
   const token = verifyRepresentativeToken(req);
   if (!token) return { ok: false, status: 401, error: "Сессия старосты истекла. Войди снова." };
   if (token.role === "owner") return { ok: true, actor: "Владелец", role: "owner" };
   if (token.role !== "representative" || Number(token.groupId) !== Number(groupId)) {
     return { ok: false, status: 403, error: "Этот пароль не даёт доступ к выбранной группе." };
+  }
+  if (!supabase || !REPRESENTATIVE_API_SECRET) return { ok: false, status: 503, error: "Не удалось проверить актуальность доступа." };
+  const { data: accessRow, error } = await supabase.rpc("representative_access_get", { p_secret: REPRESENTATIVE_API_SECRET, p_group_id: groupId });
+  if (error) return { ok: false, status: 503, error: "Не удалось проверить актуальность доступа." };
+  if (accessRow && accessRow.enabled === false) return { ok: false, status: 403, error: "Доступ старосты отключён владельцем." };
+  if (accessRow && accessRow.updated_at && (!Number.isFinite(Number(token.iat)) || Number(token.iat) < new Date(accessRow.updated_at).getTime())) {
+    return { ok: false, status: 401, error: "Настройки доступа изменились. Войди заново с новым паролем." };
   }
   return { ok: true, actor: "Староста " + String(token.groupCode || ""), role: "representative" };
 }
@@ -523,7 +530,7 @@ app.post("/api/representative/login", async (req, res) => {
   }
   representativeAttempts.delete(ip);
   return res.json({
-    token: signRepresentativeToken({ role: "representative", groupId: group.id, groupCode: group.group_code, exp: now + 8 * 60 * 60 * 1000 }),
+    token: signRepresentativeToken({ role: "representative", groupId: group.id, groupCode: group.group_code, iat: now, exp: now + 8 * 60 * 60 * 1000 }),
     role: "representative", groupId: group.id, groupCode: group.group_code, expiresIn: 28800
   });
 });
@@ -533,7 +540,7 @@ app.get("/api/representative/schedule", async (req, res) => {
   if (!supabase) return res.status(503).json({ error: "База данных не настроена." });
   const groupId = Number(req.query.group_id);
   const dateString = String(req.query.date || "");
-  const access = getRepresentativeAccess(req, groupId);
+  const access = await getRepresentativeAccess(req, groupId);
   if (!access.ok) return res.status(access.status).json({ error: access.error });
   if (!Number.isSafeInteger(groupId) || groupId < 1 || !validDateString(dateString)) return res.status(400).json({ error: "Неверная группа или дата." });
   const date = new Date(dateString + "T12:00:00Z");
