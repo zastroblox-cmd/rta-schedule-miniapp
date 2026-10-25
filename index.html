@@ -60,6 +60,11 @@
     .course-switch { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:0 0 12px; }
     .course-option { padding:11px 10px; border-radius:12px; border:1px solid #ffffff18; background:#1b2432; color:#aebbd0; font-weight:700; }
     .course-option.selected { border-color:#4f8cff; background:#1b2b47; color:#f2f5fb; }
+    .direction-switch { display:grid; gap:8px; margin:0 0 12px; }
+    .direction-option { width:100%; text-align:left; padding:13px 14px; border-radius:13px; border:1px solid #ffffff18; background:linear-gradient(120deg,#1b2432,#171f2c); color:#f2f5fb; font-weight:750; }
+    .direction-option.selected { border-color:#4f8cff; background:linear-gradient(120deg,#203657,#172132); }
+    .direction-option small { display:block; margin-top:5px; color:#8995a8; font-size:11px; font-weight:500; line-height:1.4; }
+    .direction-option:disabled { opacity:.72; cursor:default; }
     .group-options { display:grid; gap:8px; }
     .group-option { width:100%; text-align:left; padding:14px; border-radius:13px; border:1px solid #ffffff18; background:#1b2432; color:#f2f5fb; }
     .group-option.selected { border-color:#4f8cff; background:#1b2b47; }
@@ -478,6 +483,7 @@
       <h3 id="groupModalTitle">Выбери направление</h3>
       <p id="groupModalHelp">Выбор факультета, курса и группы сохранится на этом устройстве.</p>
       <div class="course-switch" id="facultyOptions" aria-label="Выбор факультета"></div>
+      <div class="direction-switch" id="directionOptions" aria-label="Выбор направления" style="display:none"></div>
       <div class="course-switch" id="courseOptions" aria-label="Выбор курса"></div>
       <div class="group-options" id="groupOptions"></div>
       <button class="close-group" id="closeGroupModal">Закрыть</button>
@@ -752,12 +758,19 @@
       const title=document.getElementById("groupModalTitle");
       const help=document.getElementById("groupModalHelp");
       const facultyWrap=document.getElementById("facultyOptions");
+      const directions=document.getElementById("directionOptions");
       const courses=document.getElementById("courseOptions");
       const groupWrap=document.getElementById("groupOptions");
-      title.textContent=mode==="faculty"?"Выбери факультет":mode==="course"?"Выбери курс":mode==="group"?"Выбери группу":"Выбери факультет, курс и группу";
-      help.textContent=mode==="faculty"?"Выбор факультета сразу откроет последнее выбранное расписание этого факультета.":mode==="course"?"Показываются курсы выбранного факультета.":"Сначала выбери факультет и курс — ниже появятся только группы этого курса.";
-      facultyWrap.innerHTML=""; courses.innerHTML=""; groupWrap.innerHTML="";
+      const isEconomics=currentFaculty==="economics";
+      title.textContent=mode==="faculty"?"Выбери факультет":mode==="course"?"Выбери курс":mode==="group"?"Выбери группу":"Выбери факультет, направление, курс и группу";
+      help.textContent=isEconomics
+        ?"Сначала выбери направление, затем курс и группу. Выбор сохранится на этом устройстве."
+        :mode==="faculty"?"Выбор факультета сразу откроет последнее выбранное расписание этого факультета."
+        :mode==="course"?"Показываются курсы выбранного факультета."
+        :"Сначала выбери факультет и курс — ниже появятся только группы этого курса.";
+      facultyWrap.innerHTML=""; directions.innerHTML=""; courses.innerHTML=""; groupWrap.innerHTML="";
       facultyWrap.style.display=mode==="faculty"||mode==="both"?"grid":"none";
+      directions.style.display=isEconomics&&mode!=="faculty"?"grid":"none";
       courses.style.display=mode==="group"||mode==="faculty"?"none":"grid";
       groupWrap.style.display=mode==="faculty"||mode==="course"?"none":"grid";
       if(mode==="faculty"||mode==="both"){
@@ -771,6 +784,25 @@
             renderGroupPicker(mode);
           };
           facultyWrap.appendChild(b);
+        });
+      }
+      if(isEconomics&&mode!=="faculty"){
+        const options=[
+          {id:"economics",title:"📊 Экономика",sub:"Экономический факультет · 4 курса",active:true},
+          {id:"applied-informatics",title:"💻 Прикладная информатика",sub:"Отдельное направление экономического факультета · группы и расписание ещё нужно загрузить",active:false}
+        ];
+        options.forEach(option=>{
+          const b=document.createElement("button"); b.type="button";
+          b.className="direction-option"+(option.active?" selected":"");
+          b.innerHTML=option.title+"<small>"+option.sub+"</small>";
+          if(!option.active){
+            b.onclick=()=>{ 
+              groupWrap.innerHTML='<div class="empty"><div class="emoji">💻</div><strong>Прикладная информатика</strong><span>Направление добавлено. Чтобы показать реальные пары, нужно загрузить его группы и расписание из PDF.</span></div>';
+            };
+          } else {
+            b.onclick=()=>renderGroupPicker(mode);
+          }
+          directions.appendChild(b);
         });
       }
       if(mode!=="faculty"&&mode!=="group"){
@@ -803,7 +835,7 @@
       if(mode!=="faculty"&&mode!=="course"){
         GROUPS.filter(g=>g.faculty===currentFaculty&&g.course===currentCourse).forEach(g=>{
           const b=document.createElement("button"); b.className="group-option"+(g.id===currentGroup?" selected":"");
-          b.innerHTML=g.id+"<small>"+(g.status==="available"?"Расписание "+g.course+" курса подключено":"Расписание ещё переносится из PDF")+"</small>";
+          b.innerHTML=g.id+"<small>"+(g.status==="available"?"Расписание "+g.course+" курса подключено":"Экономика · расписание переносится из PDF")+"</small>";
           b.onclick=()=>{currentGroup=g.id;currentCourse=g.course;localStorage.setItem("rta_schedule_group",currentGroup);localStorage.setItem("rta_schedule_group_faculty_"+currentFaculty,currentGroup);localStorage.setItem("rta_schedule_group_course_"+currentFaculty+"_"+currentCourse,currentGroup);updateGroupLabel();document.getElementById("groupModal").classList.remove("open");render();};
           groupWrap.appendChild(b);
         });
