@@ -1498,7 +1498,7 @@
     window.EconomicsScheduleReady = false;
     window.EconomicsScheduleSource = "loading";
     const economicsScript = document.createElement("script");
-    economicsScript.src = "./data/economics-adapter.js?v=20261025-all-directions";
+    economicsScript.src = "./data/economics-adapter.js?v=20261025-live-normalize";
     economicsScript.onload = async () => {
       try {
         const requests = [
@@ -1513,7 +1513,21 @@
           })
         ));
         const payloads = results.filter(result => result.status === "fulfilled").map(result => result.value);
-        const lessons = payloads.flatMap(payload => Array.isArray(payload.lessons) ? payload.lessons : []);
+        const lessons = payloads.flatMap(payload => Array.isArray(payload.lessons) ? payload.lessons.map(row => ({
+          ...row,
+          group: row.group || row.group_code || "",
+          day: Number(row.day ?? (Number.isFinite(Number(row.weekday)) ? Number(row.weekday) - 1 : NaN)),
+          start: String(row.start || row.starts_at || "").slice(0,5),
+          end: String(row.end || row.ends_at || "").slice(0,5),
+          title: row.title || row.subject || "",
+          type: row.type || row.lesson_type || "Занятие",
+          week: row.week || (row.parity === "нечётная неделя" ? "Б" : row.parity === "чётная неделя" ? "А" : undefined),
+          dates: Array.isArray(row.dates) ? row.dates : (row.schedule_date ? [String(row.schedule_date).slice(8,10)+"."+String(row.schedule_date).slice(5,7)] : undefined),
+          excluded_dates: Array.isArray(row.excluded_dates) ? row.excluded_dates : [],
+          dates_from: row.dates_from || row.valid_from || "",
+          dates_until: row.dates_until || row.valid_to || "",
+          note: row.note || row.notes || ""
+        })) : []);
         const failedCourses = results.map((result,index) => result.status === "rejected" ? requests[index].direction+"-"+requests[index].course : null).filter(Boolean);
         window.EconomicsScheduleSource = failedCourses.length ? "partial-api-courses-" + failedCourses.join("-") : "supabase-api";
         if (!lessons.length) {
