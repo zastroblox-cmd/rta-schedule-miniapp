@@ -711,7 +711,11 @@
       {id:"ПИ601/О-2601", course:1, faculty:"economics", direction:"applied-informatics", status:"available"},
       {id:"ПИ601/О-2501", course:2, faculty:"economics", direction:"applied-informatics", status:"available"},
       {id:"ПИ601/О-2401", course:3, faculty:"economics", direction:"applied-informatics", status:"available"},
-      {id:"ПИ601/О-2301", course:4, faculty:"economics", direction:"applied-informatics", status:"available"}
+      {id:"ПИ601/О-2301", course:4, faculty:"economics", direction:"applied-informatics", status:"available"},
+      {id:"М601/О-2601", course:1, faculty:"economics", direction:"management", status:"available"},
+      {id:"М601/О-2501", course:2, faculty:"economics", direction:"management", status:"available"},
+      {id:"М601/О-2401", course:3, faculty:"economics", direction:"management", status:"available"},
+      {id:"М601/О-2301", course:4, faculty:"economics", direction:"management", status:"available"}
     ];
     const FACULTIES = [
       {id:"law", name:"Юридический факультет", short:"Юридический", icon:"⚖️"},
@@ -770,7 +774,7 @@
       const isEconomics=currentFaculty==="economics";
       title.textContent=mode==="faculty"?"Выбери факультет":mode==="direction"?"Экономический факультет":mode==="course"?"Выбери курс":mode==="group"?"Выбери группу":"Выбери факультет, направление, курс и группу";
       help.textContent=mode==="direction"
-        ?"Выбери направление: экономика или прикладная информатика."
+        ?"Выбери направление: экономика, прикладная информатика или менеджмент."
         :isEconomics
           ?"Сначала выбери направление, затем курс и группу. Выбор сохранится на этом устройстве."
           :mode==="faculty"?"Выбери факультет. Для экономического появится выбор направления."
@@ -800,7 +804,8 @@
       if(isEconomics&&mode==="direction"){
         const options=[
           {id:"economics",title:"📊 Экономика",sub:"Экономический факультет · 4 курса"},
-          {id:"applied-informatics",title:"💻 Прикладная информатика",sub:"Экономический факультет · 4 курса"}
+          {id:"applied-informatics",title:"💻 Прикладная информатика",sub:"Экономический факультет · 4 курса"},
+          {id:"management",title:"📋 Менеджмент",sub:"Экономический факультет · 4 курса"}
         ];
         options.forEach(option=>{
           const b=document.createElement("button"); b.type="button";
@@ -1498,7 +1503,8 @@
       try {
         const requests = [
           ...[1,2,3,4].map(course => ({course, direction:"economics", url:"https://rta-schedule-api.onrender.com/api/economics/course"+course+"-schedule"})),
-          ...[1,2,3,4].map(course => ({course, direction:"applied-informatics", url:"https://rta-schedule-api.onrender.com/api/economics/applied-informatics/course"+course+"-schedule"}))
+          ...[1,2,3,4].map(course => ({course, direction:"applied-informatics", url:"https://rta-schedule-api.onrender.com/api/economics/applied-informatics/course"+course+"-schedule"})),
+          ...[1,2,3,4].map(course => ({course, direction:"management", url:"https://rta-schedule-api.onrender.com/api/economics/management/course"+course+"-schedule"}))
         ];
         const results = await Promise.allSettled(requests.map(request =>
           fetch(request.url, {cache:"no-store"}).then(async response => {
