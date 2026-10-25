@@ -1524,7 +1524,7 @@
       window.EconomicsScheduleReady = false;
       window.EconomicsScheduleSource = "adapter-error";
       console.error("Не удалось загрузить адаптер экономического факультета.");
-      if (currentGroup.startsWith("Э")) render();
+      if (currentGroup.startsWith("Э") || currentGroup.startsWith("ПИ")) render();
     };
     document.head.appendChild(economicsScript);
     // Обновляем статусы пар, пока Mini App открыт; при смене даты обновляем календарную основу.
