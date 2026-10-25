@@ -817,7 +817,8 @@
               localStorage.setItem("rta_schedule_group_faculty_economics",currentGroup);
               updateGroupLabel();render();
             }
-            renderGroupPicker(mode==="direction"?"both":mode);
+            if(mode==="direction"){document.getElementById("groupModal").classList.remove("open");return;}
+            renderGroupPicker(mode);
           };
           directions.appendChild(b);
         });
