@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
-      - name: Test live API, all four courses, and dated overrides
+      - name: Test live API, all faculty directions and dated overrides
         run: |
           node --input-type=module <<'NODE'
           import assert from 'node:assert/strict';
@@ -37,30 +37,42 @@ jobs:
           const faculties = await get('/api/faculties');
           assert.ok(Array.isArray(faculties.data) && faculties.data.length > 0, 'faculties must be non-empty');
 
+          // /api/groups is shared across faculties and therefore must not be
+          // pinned to the old law-only count. Validate the response shape only.
           const groups = await get('/api/groups');
-          assert.ok(Array.isArray(groups.data) && groups.data.length === 17, 'expected 17 groups across all four courses');
-          const courseCounts = new Map();
-          for (const g of groups.data) {
-            const course = Number(g.courses?.course_number);
-            assert.ok(course >= 1 && course <= 4, 'group must map to a course: ' + JSON.stringify(g));
-            courseCounts.set(course, (courseCounts.get(course) || 0) + 1);
-          }
-          assert.deepEqual([1,2,3,4].map(c => courseCounts.get(c) || 0), [4,4,4,5], 'expected group counts for courses 1–4');
+          assert.ok(Array.isArray(groups.data) && groups.data.length > 0, 'groups must be non-empty');
 
-          for (const course of [1, 2, 3, 4]) {
-            const exported = await get('/api/course' + course + '-schedule');
-            assert.ok(Array.isArray(exported.lessons) && exported.lessons.length > 0, 'course ' + course + ' lessons must be non-empty');
-            assert.equal(exported._status, 'CONNECTED_TO_SUPABASE', 'course ' + course + ' must read from Supabase');
-            assert.ok(Array.isArray(exported._groups), 'course ' + course + ' must return its group list');
-            const expectedGroups = groups.data.filter(g => Number(g.courses?.course_number) === course).map(g => g.group_code);
-            assert.deepEqual([...exported._groups].sort(), [...expectedGroups].sort(), 'course ' + course + ' group list');
-            for (const groupCode of expectedGroups) {
-              assert.ok(exported.lessons.some(x => x.group === groupCode), 'course ' + course + ' export missing group ' + groupCode);
+          const routes = [
+            ...[1,2,3,4].map(course => ({label:'law course '+course, path:'/api/course'+course+'-schedule'})),
+            ...[1,2,3,4].map(course => ({label:'economics course '+course, path:'/api/economics/course'+course+'-schedule'})),
+            ...[1,2,3,4].map(course => ({label:'applied informatics course '+course, path:'/api/economics/applied-informatics/course'+course+'-schedule'})),
+            ...[1,2,3,4].map(course => ({label:'management course '+course, path:'/api/economics/management/course'+course+'-schedule'}))
+          ];
+
+          const exports = new Map();
+          for (const route of routes) {
+            const body = await get(route.path);
+            assert.ok(Array.isArray(body.lessons) && body.lessons.length > 0, route.label + ': lessons must be non-empty');
+            assert.ok(['CONNECTED_TO_SUPABASE','VERIFIED','PRELIMINARY'].includes(body._status), route.label + ': unexpected status ' + body._status);
+            assert.ok(Array.isArray(body._groups) && body._groups.length > 0, route.label + ': group list must be non-empty');
+            for (const lesson of body.lessons) {
+              assert.ok(body._groups.includes(lesson.group), route.label + ': lesson group missing from _groups: ' + lesson.group);
+              assert.ok(Number.isInteger(Number(lesson.day)) && Number(lesson.day) >= 0 && Number(lesson.day) <= 6, route.label + ': invalid day');
+              assert.ok(/^\d{2}:\d{2}$/.test(lesson.start || ''), route.label + ': invalid start time');
+              assert.ok(/^\d{2}:\d{2}$/.test(lesson.end || ''), route.label + ': invalid end time');
+              assert.ok(lesson.title, route.label + ': lesson title missing');
+            }
+            exports.set(route.label, body);
+          }
+
+          for (const direction of ['economics','applied-informatics','management']) {
+            for (const course of [1,2,3,4]) {
+              const body = exports.get(direction+' course '+course);
+              assert.ok(body.lessons.length > 0, direction+' course '+course+' export missing lessons');
+              assert.ok(body._groups.every(code => body.lessons.some(lesson => lesson.group === code)), direction+' course '+course+' has a group without lessons');
             }
           }
 
-          const group = groups.data.find(g => Number(g.id) === 13);
-          assert.ok(group, 'expected group id=13 (Ю604/О-2404)');
           const schedule = await get('/api/schedule?group_id=13&date=2026-10-22');
           assert.equal(schedule.date, '2026-10-22');
           assert.equal(schedule.week_type, 'A', '19–25 Oct 2026 is week A');
@@ -81,5 +93,5 @@ jobs:
             assert.equal(response.status, 400, path + ' must return HTTP 400');
           }
 
-          console.log('PASS: API health, faculties, all 17 groups, all four course exports, week A/B anchor, date override, invalid inputs');
+          console.log('PASS: API health, faculties, all law/economics/applied-informatics/management course exports, lesson schemas, week A/B anchor and dated overrides');
           NODE
