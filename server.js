@@ -343,6 +343,11 @@ app.get("/api/economics/applied-informatics/course2-schedule", (_req, res) => ex
 app.get("/api/economics/applied-informatics/course3-schedule", (_req, res) => exportCourseSchedule(3, res, "economics", "applied-informatics"));
 app.get("/api/economics/applied-informatics/course4-schedule", (_req, res) => exportCourseSchedule(4, res, "economics", "applied-informatics"));
 
+app.get("/api/economics/management/course1-schedule", (_req, res) => exportCourseSchedule(1, res, "economics", "management"));
+app.get("/api/economics/management/course2-schedule", (_req, res) => exportCourseSchedule(2, res, "economics", "management"));
+app.get("/api/economics/management/course3-schedule", (_req, res) => exportCourseSchedule(3, res, "economics", "management"));
+app.get("/api/economics/management/course4-schedule", (_req, res) => exportCourseSchedule(4, res, "economics", "management"));
+
 // Course 4 uses the same faculty-scoped database export as courses 1–3.
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || process.env.BOT_TOKEN;
