@@ -707,7 +707,11 @@
       {id:"Э602/О-2403", course:3, faculty:"economics", status:"pending"},
       {id:"Э601/О-2301", course:4, faculty:"economics", status:"pending"},
       {id:"Э601/О-2302", course:4, faculty:"economics", status:"pending"},
-      {id:"Э602/О-2303", course:4, faculty:"economics", status:"pending"}
+      {id:"Э602/О-2303", course:4, faculty:"economics", direction:"economics", status:"pending"},
+      {id:"ПИ601/О-2601", course:1, faculty:"economics", direction:"applied-informatics", status:"available"},
+      {id:"ПИ601/О-2501", course:2, faculty:"economics", direction:"applied-informatics", status:"available"},
+      {id:"ПИ601/О-2401", course:3, faculty:"economics", direction:"applied-informatics", status:"available"},
+      {id:"ПИ601/О-2301", course:4, faculty:"economics", direction:"applied-informatics", status:"available"}
     ];
     const FACULTIES = [
       {id:"law", name:"Юридический факультет", short:"Юридический", icon:"⚖️"},
@@ -718,7 +722,9 @@
     const savedGroup = localStorage.getItem("rta_schedule_group") || DEFAULT_GROUP;
     let currentGroup = GROUPS.some(g=>g.id===savedGroup) ? savedGroup : DEFAULT_GROUP;
     let currentFaculty = GROUPS.find(g=>g.id===currentGroup)?.faculty || localStorage.getItem("rta_schedule_faculty") || "law";
+    let currentDirection = GROUPS.find(g=>g.id===currentGroup)?.direction || (currentFaculty==="economics" ? (localStorage.getItem("rta_schedule_direction") || "economics") : "law");
     let currentCourse = Number(localStorage.getItem("rta_schedule_course")) || (GROUPS.find(g=>g.id===currentGroup)?.course || 2);
+    localStorage.setItem("rta_schedule_direction",currentDirection);
     if (!GROUPS.some(g=>g.id===currentGroup && g.course===currentCourse && g.faculty===currentFaculty)) {
       currentGroup = GROUPS.find(g=>g.faculty===currentFaculty)?.id || DEFAULT_GROUP;
       currentCourse = GROUPS.find(g=>g.id===currentGroup)?.course || 2;
@@ -732,7 +738,7 @@
     function groupLabel(g){ const faculty=FACULTIES.find(f=>f.id===g.faculty); return `${g.id} · ${g.course} курс · ${faculty?faculty.short:"ОФО"}`; }
     function updateGroupLabel(){
       const g=GROUPS.find(x=>x.id===currentGroup)||GROUPS.find(x=>x.id===DEFAULT_GROUP);
-      currentFaculty=g.faculty; currentCourse=g.course;
+      currentFaculty=g.faculty; currentCourse=g.course; currentDirection=g.direction || (g.faculty==="economics"?"economics":"law"); localStorage.setItem("rta_schedule_direction",currentDirection);
       localStorage.setItem("rta_schedule_faculty",currentFaculty);
       localStorage.setItem("rta_schedule_course",String(currentCourse));
       document.getElementById("groupName").textContent=groupLabel(g);
@@ -748,7 +754,7 @@
       const rememberedGroup=GROUPS.find(g=>g.id===remembered&&g.faculty===facultyId);
       const next=rememberedGroup||GROUPS.find(g=>g.faculty===facultyId);
       if(!next) return;
-      currentGroup=next.id; currentCourse=next.course;
+      currentGroup=next.id; currentCourse=next.course; currentDirection=next.direction || (next.faculty==="economics"?"economics":"law"); localStorage.setItem("rta_schedule_direction",currentDirection);
       localStorage.setItem("rta_schedule_group",currentGroup);
       localStorage.setItem("rta_schedule_faculty",currentFaculty);
       localStorage.setItem("rta_schedule_course",String(currentCourse));
@@ -788,27 +794,27 @@
       }
       if(isEconomics&&mode!=="faculty"){
         const options=[
-          {id:"economics",title:"📊 Экономика",sub:"Экономический факультет · 4 курса",active:true},
-          {id:"applied-informatics",title:"💻 Прикладная информатика",sub:"Отдельное направление экономического факультета · группы и расписание ещё нужно загрузить",active:false}
+          {id:"economics",title:"📊 Экономика",sub:"Экономический факультет · 4 курса"},
+          {id:"applied-informatics",title:"💻 Прикладная информатика",sub:"Экономический факультет · 4 курса"}
         ];
         options.forEach(option=>{
           const b=document.createElement("button"); b.type="button";
-          b.className="direction-option"+(option.active?" selected":"");
+          b.className="direction-option"+(option.id===currentDirection?" selected":"");
           b.innerHTML=option.title+"<small>"+option.sub+"</small>";
-          if(!option.active){
-            b.onclick=()=>{ 
-              groupWrap.innerHTML='<div class="empty"><div class="emoji">💻</div><strong>Прикладная информатика</strong><span>Направление добавлено. Чтобы показать реальные пары, нужно загрузить его группы и расписание из PDF.</span></div>';
-            };
-          } else {
-            b.onclick=()=>renderGroupPicker(mode);
-          }
+          b.onclick=()=>{
+            currentDirection=option.id; localStorage.setItem("rta_schedule_direction",currentDirection);
+            const candidates=GROUPS.filter(g=>g.faculty==="economics"&&(g.direction||"economics")===currentDirection);
+            const next=candidates.find(g=>g.course===currentCourse)||candidates[0];
+            if(next){currentGroup=next.id;currentCourse=next.course;localStorage.setItem("rta_schedule_group",currentGroup);localStorage.setItem("rta_schedule_course",String(currentCourse));updateGroupLabel();render();}
+            renderGroupPicker(mode);
+          };
           directions.appendChild(b);
         });
       }
       if(mode!=="faculty"&&mode!=="group"){
-        const facultyCourses=currentFaculty==="economics"?[1,2,3,4,5]:[...new Set(GROUPS.filter(g=>g.faculty===currentFaculty).map(g=>g.course))].sort((a,b)=>a-b);
+        const facultyCourses=[...new Set(GROUPS.filter(g=>g.faculty===currentFaculty&&(currentFaculty!=="economics"||(g.direction||"economics")===currentDirection)).map(g=>g.course))].sort((a,b)=>a-b);
         facultyCourses.forEach(course=>{
-          const groupsForCourse=GROUPS.filter(g=>g.faculty===currentFaculty&&g.course===course);
+          const groupsForCourse=GROUPS.filter(g=>g.faculty===currentFaculty&&g.course===course&&(currentFaculty!=="economics"||(g.direction||"economics")===currentDirection));
           const b=document.createElement("button"); b.className="course-option"+(course===currentCourse?" selected":""); b.type="button";
           b.textContent=course+" курс";
           if(!groupsForCourse.length){
@@ -822,7 +828,7 @@
               if(course!==currentCourse){
                 localStorage.setItem("rta_schedule_group_faculty_"+currentFaculty,currentGroup);
                 const remembered=localStorage.getItem("rta_schedule_group_course_"+currentFaculty+"_"+course);
-                const next=GROUPS.find(g=>g.id===remembered&&g.course===course&&g.faculty===currentFaculty)||GROUPS.find(g=>g.course===course&&g.faculty===currentFaculty);
+                const next=GROUPS.find(g=>g.id===remembered&&g.course===course&&g.faculty===currentFaculty&&(currentFaculty!=="economics"||(g.direction||"economics")===currentDirection))||GROUPS.find(g=>g.course===course&&g.faculty===currentFaculty&&(currentFaculty!=="economics"||(g.direction||"economics")===currentDirection));
                 if(next){currentCourse=course;currentGroup=next.id;localStorage.setItem("rta_schedule_course",String(course));localStorage.setItem("rta_schedule_group",currentGroup);localStorage.setItem("rta_schedule_group_course_"+currentFaculty+"_"+course,currentGroup);updateGroupLabel();render();}
               }
               if(mode==="course"){document.getElementById("groupModal").classList.remove("open");return;}
@@ -833,10 +839,10 @@
         });
       }
       if(mode!=="faculty"&&mode!=="course"){
-        GROUPS.filter(g=>g.faculty===currentFaculty&&g.course===currentCourse).forEach(g=>{
+        GROUPS.filter(g=>g.faculty===currentFaculty&&g.course===currentCourse&&(currentFaculty!=="economics"||(g.direction||"economics")===currentDirection)).forEach(g=>{
           const b=document.createElement("button"); b.className="group-option"+(g.id===currentGroup?" selected":"");
           b.innerHTML=g.id+"<small>"+(g.status==="available"?"Расписание "+g.course+" курса подключено":"Экономика · расписание переносится из PDF")+"</small>";
-          b.onclick=()=>{currentGroup=g.id;currentCourse=g.course;localStorage.setItem("rta_schedule_group",currentGroup);localStorage.setItem("rta_schedule_group_faculty_"+currentFaculty,currentGroup);localStorage.setItem("rta_schedule_group_course_"+currentFaculty+"_"+currentCourse,currentGroup);updateGroupLabel();document.getElementById("groupModal").classList.remove("open");render();};
+          b.onclick=()=>{currentGroup=g.id;currentCourse=g.course;currentDirection=g.direction||(g.faculty==="economics"?"economics":"law");localStorage.setItem("rta_schedule_direction",currentDirection);localStorage.setItem("rta_schedule_group",currentGroup);localStorage.setItem("rta_schedule_group_faculty_"+currentFaculty,currentGroup);localStorage.setItem("rta_schedule_group_course_"+currentFaculty+"_"+currentCourse,currentGroup);updateGroupLabel();document.getElementById("groupModal").classList.remove("open");render();};
           groupWrap.appendChild(b);
         });
       }
@@ -902,7 +908,7 @@
       const date=dateForDay(selectedDay);
       // Экономические группы не должны проваливаться в резервное юридическое расписание.
       // Пока их отдельный набор пар не подключён, возвращаем пустой список явно.
-      if (currentGroup.startsWith("Э")) {
+      if (currentGroup.startsWith("Э") || currentGroup.startsWith("ПИ")) {
         if (!window.EconomicsScheduleReady || !window.EconomicsSchedule) return [];
         const isoDate = date.getFullYear()+"-"+String(date.getMonth()+1).padStart(2,"0")+"-"+String(date.getDate()).padStart(2,"0");
         return window.EconomicsSchedule.getLessonsForDate(currentGroup, isoDate);
@@ -1023,7 +1029,7 @@
         let emptyTitle = "Можно выдохнуть ☕";
         let emptyText = "На выбранную дату пар не запланировано.";
         const isThirdCourseGroup = currentGroup.endsWith("/О-2401") || currentGroup.endsWith("/О-2402") || currentGroup.endsWith("/О-2403") || currentGroup.endsWith("/О-2404");
-        if (currentGroup.startsWith("Э") && !window.EconomicsScheduleReady) {
+        if ((currentGroup.startsWith("Э") || currentGroup.startsWith("ПИ")) && !window.EconomicsScheduleReady) {
           emptyTitle = "Расписание подключается";
           const source = window.EconomicsScheduleSource || "unknown";
           emptyTitle = "Не удалось загрузить расписание";
@@ -1478,16 +1484,19 @@
     economicsScript.src = "./data/economics-adapter.js?v=20261024-2";
     economicsScript.onload = async () => {
       try {
-        const results = await Promise.allSettled([1,2,3,4].map(course =>
-          fetch("https://rta-schedule-api.onrender.com/api/economics/course" + course + "-schedule", {cache:"no-store"})
-            .then(async response => {
-              if (!response.ok) throw new Error("Курс " + course + ": HTTP " + response.status);
-              return response.json();
-            })
+        const requests = [
+          ...[1,2,3,4].map(course => ({course, direction:"economics", url:"https://rta-schedule-api.onrender.com/api/economics/course"+course+"-schedule"})),
+          ...[1,2,3,4].map(course => ({course, direction:"applied-informatics", url:"https://rta-schedule-api.onrender.com/api/economics/applied-informatics/course"+course+"-schedule"}))
+        ];
+        const results = await Promise.allSettled(requests.map(request =>
+          fetch(request.url, {cache:"no-store"}).then(async response => {
+            if (!response.ok) throw new Error("Направление "+request.direction+", курс "+request.course+": HTTP " + response.status);
+            return response.json();
+          })
         ));
         const payloads = results.filter(result => result.status === "fulfilled").map(result => result.value);
         const lessons = payloads.flatMap(payload => Array.isArray(payload.lessons) ? payload.lessons : []);
-        const failedCourses = results.map((result,index) => result.status === "rejected" ? index + 1 : null).filter(Boolean);
+        const failedCourses = results.map((result,index) => result.status === "rejected" ? requests[index].direction+"-"+requests[index].course : null).filter(Boolean);
         window.EconomicsScheduleSource = failedCourses.length ? "partial-api-courses-" + failedCourses.join("-") : "supabase-api";
         if (!lessons.length) {
           window.EconomicsScheduleReady = false;
@@ -1503,12 +1512,12 @@
           lessons
         });
         window.EconomicsScheduleReady = true;
-        if (currentGroup.startsWith("Э")) render();
+        if (currentGroup.startsWith("Э") || currentGroup.startsWith("ПИ")) render();
       } catch (error) {
         window.EconomicsScheduleReady = false;
         window.EconomicsScheduleSource = "api-unavailable-" + String(error && error.message || error).slice(0,100).replace(/[^a-zA-Z0-9 _:-]/g,"");
         console.error("Экономическое расписание пока недоступно через API:", error);
-        if (currentGroup.startsWith("Э")) render();
+        if (currentGroup.startsWith("Э") || currentGroup.startsWith("ПИ")) render();
       }
     };
     economicsScript.onerror = () => {
