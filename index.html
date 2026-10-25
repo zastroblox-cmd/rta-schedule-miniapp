@@ -778,7 +778,7 @@
           :"Сначала выбери факультет и курс — ниже появятся только группы этого курса.";
       facultyWrap.innerHTML=""; directions.innerHTML=""; courses.innerHTML=""; groupWrap.innerHTML="";
       facultyWrap.style.display=mode==="faculty"||mode==="both"?"grid":"none";
-      directions.style.display=isEconomics&&(mode==="direction"||mode!=="faculty")?"grid":"none";
+      directions.style.display=isEconomics&&mode==="direction"?"grid":"none";
       courses.style.display=mode==="group"||mode==="faculty"||mode==="direction"?"none":"grid";
       groupWrap.style.display=mode==="faculty"||mode==="course"||mode==="direction"?"none":"grid";
       if(mode==="faculty"||mode==="both"){
@@ -797,7 +797,7 @@
           facultyWrap.appendChild(b);
         });
       }
-      if(isEconomics&&mode!=="faculty"){
+      if(isEconomics&&mode==="direction"){
         const options=[
           {id:"economics",title:"📊 Экономика",sub:"Экономический факультет · 4 курса"},
           {id:"applied-informatics",title:"💻 Прикладная информатика",sub:"Экономический факультет · 4 курса"}
