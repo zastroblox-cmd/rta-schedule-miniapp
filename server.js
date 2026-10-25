@@ -115,7 +115,7 @@ app.get("/api/faculties", async (_req, res) => {
 app.get("/api/groups", async (_req, res) => {
   if (!supabase) return res.status(503).json({ error: "Database is not configured" });
   const { data, error } = await supabase.from("student_groups")
-    .select("id,group_code,display_name,course_id,courses(course_number,faculty_id,faculties(name,slug))")
+    .select("id,group_code,display_name,course_id,courses(course_number,faculty_id,direction,faculties(name,slug))")
     .order("display_name");
   if (error) return res.status(500).json({ error: "Unable to load groups" });
   res.json({ data });
