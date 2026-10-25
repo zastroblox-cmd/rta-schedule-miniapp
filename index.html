@@ -883,9 +883,9 @@
         });
       }
       if(mode!=="faculty"&&mode!=="group"){
-        const facultyCourses=[...new Set(GROUPS.filter(g=>g.faculty===currentFaculty&&(currentFaculty!=="economics"||(g.direction||"economics")===currentDirection)).map(g=>g.course))].sort((a,b)=>a-b);
+        const facultyCourses=[...new Set(GROUPS.filter(g=>g.faculty===currentFaculty&&((currentFaculty!=="economics"&&currentFaculty!=="customs")||(g.direction||(currentFaculty==="customs"?"customs":"economics"))===currentDirection)).map(g=>g.course))].sort((a,b)=>a-b);
         facultyCourses.forEach(course=>{
-          const groupsForCourse=GROUPS.filter(g=>g.faculty===currentFaculty&&g.course===course&&(currentFaculty!=="economics"||(g.direction||"economics")===currentDirection));
+          const groupsForCourse=GROUPS.filter(g=>g.faculty===currentFaculty&&g.course===course&&((currentFaculty!=="economics"&&currentFaculty!=="customs")||(g.direction||(currentFaculty==="customs"?"customs":"economics"))===currentDirection));
           const b=document.createElement("button"); b.className="course-option"+(course===currentCourse?" selected":""); b.type="button";
           b.textContent=course+" курс";
           if(!groupsForCourse.length){
@@ -899,7 +899,7 @@
               if(course!==currentCourse){
                 localStorage.setItem("rta_schedule_group_faculty_"+currentFaculty,currentGroup);
                 const remembered=localStorage.getItem("rta_schedule_group_course_"+currentFaculty+"_"+course);
-                const next=GROUPS.find(g=>g.id===remembered&&g.course===course&&g.faculty===currentFaculty&&(currentFaculty!=="economics"||(g.direction||"economics")===currentDirection))||GROUPS.find(g=>g.course===course&&g.faculty===currentFaculty&&(currentFaculty!=="economics"||(g.direction||"economics")===currentDirection));
+                const next=GROUPS.find(g=>g.id===remembered&&g.course===course&&g.faculty===currentFaculty&&((currentFaculty!=="economics"&&currentFaculty!=="customs")||(g.direction||(currentFaculty==="customs"?"customs":"economics"))===currentDirection))||GROUPS.find(g=>g.course===course&&g.faculty===currentFaculty&&((currentFaculty!=="economics"&&currentFaculty!=="customs")||(g.direction||(currentFaculty==="customs"?"customs":"economics"))===currentDirection));
                 if(next){currentCourse=course;currentGroup=next.id;localStorage.setItem("rta_schedule_course",String(course));localStorage.setItem("rta_schedule_group",currentGroup);localStorage.setItem("rta_schedule_group_course_"+currentFaculty+"_"+course,currentGroup);updateGroupLabel();render();}
               }
               if(mode==="course"){document.getElementById("groupModal").classList.remove("open");return;}
@@ -910,7 +910,7 @@
         });
       }
       if(mode!=="faculty"&&mode!=="course"){
-        GROUPS.filter(g=>g.faculty===currentFaculty&&g.course===currentCourse&&(currentFaculty!=="economics"||(g.direction||"economics")===currentDirection)).forEach(g=>{
+        GROUPS.filter(g=>g.faculty===currentFaculty&&g.course===currentCourse&&((currentFaculty!=="economics"&&currentFaculty!=="customs")||(g.direction||(currentFaculty==="customs"?"customs":"economics"))===currentDirection)).forEach(g=>{
           const b=document.createElement("button"); b.className="group-option"+(g.id===currentGroup?" selected":"");
           b.innerHTML=g.id+"<small>"+(g.status==="available"?"Расписание "+g.course+" курса подключено":g.faculty==="customs"?"Расписание факультета таможенного дела загружается из PDF":"Экономика · расписание переносится из PDF")+"</small>";
           b.onclick=()=>{currentGroup=g.id;currentCourse=g.course;currentDirection=g.direction||(g.faculty==="economics"?"economics":"law");localStorage.setItem("rta_schedule_direction",currentDirection);localStorage.setItem("rta_schedule_group",currentGroup);localStorage.setItem("rta_schedule_group_faculty_"+currentFaculty,currentGroup);localStorage.setItem("rta_schedule_group_course_"+currentFaculty+"_"+currentCourse,currentGroup);updateGroupLabel();document.getElementById("groupModal").classList.remove("open");render();};
