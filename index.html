@@ -993,7 +993,17 @@
         const isThirdCourseGroup = currentGroup.endsWith("/О-2401") || currentGroup.endsWith("/О-2402") || currentGroup.endsWith("/О-2403") || currentGroup.endsWith("/О-2404");
         if (currentGroup.startsWith("Э") && !window.EconomicsScheduleReady) {
           emptyTitle = "Расписание подключается";
-          emptyText = "PDF экономического факультета получен. Перенос пар в календарь ещё не завершён — это не означает, что день свободен.";
+          const source = window.EconomicsScheduleSource || "unknown";
+          emptyTitle = "Не удалось загрузить расписание";
+          emptyText = source === "loading"
+            ? "Подключаем расписание экономики. Это не означает, что день свободен."
+            : source === "adapter-error"
+              ? "Не загрузился модуль расписания. Обнови приложение позже."
+              : source === "api-unavailable"
+                ? "Сервер расписания недоступен или вернул ошибку. День не считается свободным."
+                : source.startsWith("api-no-lessons")
+                  ? "Сервер не вернул пары. Код диагностики: " + source + ". День не считается свободным."
+                  : "Не удалось подключить данные. Код диагностики: " + source + ". День не считается свободным.";
         } else if (isThirdCourseGroup && selectedDay === 2) {
           emptyTitle = "По плану факультета";
           emptyText = "Среда в официальном расписании отмечена как день по плану факультета. Отдельные пары здесь не указаны.";
@@ -1464,14 +1474,16 @@
         if (currentGroup.startsWith("Э")) render();
       } catch (error) {
         window.EconomicsScheduleReady = false;
-        window.EconomicsScheduleSource = "api-unavailable";
-        console.warn("Экономическое расписание пока недоступно через API:", error);
+        window.EconomicsScheduleSource = "api-unavailable-" + String(error && error.message || error).slice(0,100).replace(/[^a-zA-Z0-9 _:-]/g,"");
+        console.error("Экономическое расписание пока недоступно через API:", error);
+        if (currentGroup.startsWith("Э")) render();
       }
     };
     economicsScript.onerror = () => {
       window.EconomicsScheduleReady = false;
       window.EconomicsScheduleSource = "adapter-error";
-      console.warn("Не удалось загрузить адаптер экономического факультета.");
+      console.error("Не удалось загрузить адаптер экономического факультета.");
+      if (currentGroup.startsWith("Э")) render();
     };
     document.head.appendChild(economicsScript);
     // Обновляем статусы пар, пока Mini App открыт; при смене даты обновляем календарную основу.
