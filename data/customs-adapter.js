@@ -1,4 +1,4 @@
-/* Economics faculty schedule adapter.
+/* Customs Affairs faculty schedule adapter.
  * Safety rule: only explicitly verified records are rendered. Week 12–18 Oct 2026 = Б,
  * 19–25 Oct = А; subsequent weeks alternate.
  */
@@ -83,12 +83,12 @@
       for(const row of data.lessons){
         if(!GROUPS.includes(row.group) || !Number.isInteger(Number(row.day)) ||
            !/^\d{2}:\d{2}$/.test(row.start||"") || !/^\d{2}:\d{2}$/.test(row.end||"") ||
-           !row.title) throw new Error("В экономическом расписании найдена неполная или неизвестная запись");
+           !row.title) throw new Error("В расписании таможенного дела найдена неполная или неизвестная запись");
       }
       draft=data;
     },
     getLessonsForDate,
     get loaded(){return !!draft && ["VERIFIED","PRELIMINARY","CONNECTED_TO_SUPABASE"].includes(draft._status) && draft.lessons.length>0;}
   };
-  if(typeof module!=="undefined"&&module.exports)module.exports=root.EconomicsSchedule;
+  if(typeof module!=="undefined"&&module.exports)module.exports=root.CustomsSchedule;
 })(typeof window!=="undefined"?window:globalThis);
