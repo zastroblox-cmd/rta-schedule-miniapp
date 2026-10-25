@@ -41,6 +41,9 @@ jobs:
           // pinned to the old law-only count. Validate the response shape only.
           const groups = await get('/api/groups');
           assert.ok(Array.isArray(groups.data) && groups.data.length > 0, 'groups must be non-empty');
+          assert.ok(faculties.data.some(f => f.slug === 'customs' && f.name === 'Факультет таможенного дела'), 'customs faculty must be listed');
+          const customsGroups = groups.data.filter(g => g.courses?.faculties?.slug === 'customs');
+          assert.equal(customsGroups.length, 22, 'customs faculty must have 22 groups across five courses');
 
           const routes = [
             ...[1,2,3,4].map(course => ({label:'law course '+course, path:'/api/course'+course+'-schedule'})),
@@ -48,6 +51,7 @@ jobs:
             ...[1,2,3,4].map(course => ({label:'applied informatics course '+course, path:'/api/economics/applied-informatics/course'+course+'-schedule'})),
             ...[1,2,3,4].map(course => ({label:'management course '+course, path:'/api/economics/management/course'+course+'-schedule'}))
           ];
+          const customsRoutes = [1,2,3,4,5].map(course => ({label:'customs course '+course, path:'/api/customs/course'+course+'-schedule'}));
 
           const exports = new Map();
           for (const route of routes) {
@@ -73,6 +77,20 @@ jobs:
             }
           }
 
+          for (const route of customsRoutes) {
+            const body = await get(route.path);
+            assert.ok(Array.isArray(body._groups) && body._groups.length > 0, route.label + ': group list must be non-empty');
+            assert.ok(body._groups.every(code => customsGroups.some(g => g.group_code === code)), route.label + ': group codes must belong to customs faculty');
+            assert.ok(Array.isArray(body.lessons), route.label + ': lessons must be an array even while import is being completed');
+            for (const lesson of body.lessons) {
+              assert.ok(body._groups.includes(lesson.group), route.label + ': lesson group missing from _groups');
+              assert.ok(Number.isInteger(Number(lesson.day)) && Number(lesson.day) >= 0 && Number(lesson.day) <= 6, route.label + ': invalid day');
+              assert.ok(/^\\d{2}:\\d{2}$/.test(lesson.start || ''), route.label + ': invalid start time');
+              assert.ok(/^\\d{2}:\\d{2}$/.test(lesson.end || ''), route.label + ': invalid end time');
+              assert.ok(lesson.title, route.label + ': lesson title missing');
+            }
+          }
+
           const schedule = await get('/api/schedule?group_id=13&date=2026-10-22');
           assert.equal(schedule.date, '2026-10-22');
           assert.equal(schedule.week_type, 'A', '19–25 Oct 2026 is week A');
@@ -93,5 +111,5 @@ jobs:
             assert.equal(response.status, 400, path + ' must return HTTP 400');
           }
 
-          console.log('PASS: API health, faculties, all law/economics/applied-informatics/management course exports, lesson schemas, week A/B anchor and dated overrides');
+          console.log('PASS: API health, faculties, all law/economics/applied-informatics/management course exports, customs faculty and groups, lesson schemas, week A/B anchor and dated overrides');
           NODE
