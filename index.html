@@ -279,6 +279,32 @@
     .owner-action { border:1px solid #4f8cff50; background:#203657; color:#e7efff; border-radius:10px; padding:9px 10px; font-size:11px; font-weight:700; }
     .owner-result { margin-top:10px; padding:11px; border-radius:11px; background:#4fd1a10d; border:1px solid #4fd1a126; color:#b9f2de; font-size:11px; line-height:1.6; white-space:pre-line; }
     .owner-result.warn { color:#ffd1a0; border-color:#ffb86b35; background:#ffb86b0b; }
+    .owner-scan-dashboard{display:grid;gap:11px;margin-top:12px}
+    .owner-scan-hero{padding:17px;border:1px solid #d7b45b55;border-radius:16px;background:radial-gradient(ellipse at 100% 0,#d7b45b25,transparent 52%),linear-gradient(145deg,#292316,#141821 72%)}
+    .owner-scan-kicker{color:#d9bb68;font-size:10px;font-weight:850;letter-spacing:.15em;text-transform:uppercase}
+    .owner-scan-title{margin:7px 0 5px;color:#fff0c4;font-size:19px;font-weight:850;letter-spacing:-.03em}
+    .owner-scan-subtitle{color:#b9b1a0;font-size:11px;line-height:1.5}
+    .owner-scan-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+    .owner-scan-metric{padding:12px 8px;border:1px solid #ffffff12;border-radius:13px;background:linear-gradient(145deg,#1d222c,#12161e)}
+    .owner-scan-metric strong{display:block;font-size:23px;line-height:1.1;font-variant-numeric:tabular-nums}
+    .owner-scan-metric span{display:block;margin-top:5px;color:#9ca6b6;font-size:10px}
+    .owner-scan-metric.gold strong{color:#e7c56b}.owner-scan-metric.red strong{color:#ff8585}.owner-scan-metric.amber strong{color:#ffc57e}
+    .owner-scan-section-title{display:flex;justify-content:space-between;gap:8px;color:#e9edf5;font-size:12px;font-weight:800;margin:4px 0 0}
+    .owner-scan-findings{display:grid;gap:7px}
+    .owner-scan-finding{padding:11px 12px;border:1px solid #ffffff12;border-left:3px solid #d7b45b;border-radius:11px;background:#171c25}
+    .owner-scan-finding.error{border-left-color:#ff737d}.owner-scan-finding.warning{border-left-color:#ffbd69}
+    .owner-scan-finding-head{display:flex;gap:7px;align-items:center;margin-bottom:5px}
+    .owner-scan-pill{padding:3px 6px;border-radius:6px;background:#d7b45b18;color:#e7c56b;font-size:9px;font-weight:850}
+    .owner-scan-finding.error .owner-scan-pill{background:#ff737d18;color:#ff969c}.owner-scan-finding.warning .owner-scan-pill{background:#ffbd6918;color:#ffc57e}
+    .owner-scan-area{color:#8792a4;font-size:10px}.owner-scan-message{color:#e7ebf3;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+    .owner-scan-fix{margin-top:6px;color:#9faaba;font-size:10px;line-height:1.5}
+    .owner-scan-ok{padding:13px;border:1px solid #d7b45b30;border-radius:12px;background:#d7b45b0b;color:#e9d89d;font-size:12px;line-height:1.5}
+    .owner-scan-details{border:1px solid #ffffff14;border-radius:12px;background:#11161e;overflow:hidden}
+    .owner-scan-details summary{padding:12px;color:#d5bd7a;font-size:11px;font-weight:750;cursor:pointer}
+    .owner-scan-raw{margin:0;padding:12px;border-top:1px solid #ffffff12;color:#aab5c6;white-space:pre-wrap;overflow-wrap:anywhere;font:10px/1.65 ui-monospace,monospace}
+    .owner-scan-plan-item{padding:11px 12px;margin-top:7px;border:1px solid #ffffff12;border-radius:11px;background:#171c25}
+    .owner-scan-plan-item strong{display:block;color:#e7c56b;font-size:10px;margin-bottom:5px}.owner-scan-plan-item span{display:block;color:#e7ebf3;font-size:12px;line-height:1.5}.owner-scan-plan-item small{display:block;margin-top:5px;color:#9faaba;font-size:10px;line-height:1.5}
+
     .owner-theme-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; margin-top:10px; }
     .owner-theme { border:1px solid #ffffff16; border-radius:11px; padding:9px 5px; color:#dfe8f7; background:#10151e; font-size:10px; }
     .owner-theme span { display:block; height:18px; border-radius:6px; margin-bottom:7px; }
@@ -1353,7 +1379,13 @@
         lines.push("ИТОГ: "+errors+" ошибок · "+warnings+" предупреждений · "+passed+" успешных проверок.");
         lines.push("Ограничение: проверка подтверждает доступность API и базовую структуру, но не доказывает соответствие официальным PDF.");
         ownerLastScanFindings=findings;
-        if(result)result.textContent=lines.join("\n");
+        if(result){
+          const esc=value=>String(value??"").replace(/[&<>"]/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[ch]));
+          const status=errors?"Нужна проверка":warnings?"Есть замечания":"Всё выглядит штатно";
+          const cards=findings.length?findings.map(f=>'<article class="owner-scan-finding '+(f.level==="ОШИБКА"?"error":f.level==="ПРЕДУПРЕЖДЕНИЕ"?"warning":"")+'"><div class="owner-scan-finding-head"><span class="owner-scan-pill">'+esc(f.level)+'</span><span class="owner-scan-area">'+esc(f.area)+'</span></div><div class="owner-scan-message">'+esc(f.message)+'</div><div class="owner-scan-fix">Рекомендация: '+esc(f.fix)+'</div></article>').join(""):'<div class="owner-scan-ok">Замечаний не найдено в рамках выполненных проверок. Это не заменяет сверку с официальными PDF.</div>';
+          result.classList.remove("warn");
+          result.innerHTML='<div class="owner-scan-dashboard"><div class="owner-scan-hero"><div class="owner-scan-kicker">♛ OWNER · SYSTEM AUDIT</div><div class="owner-scan-title">'+status+'</div><div class="owner-scan-subtitle">'+esc(new Date().toLocaleString("ru-RU"))+' · Группа: '+esc(typeof currentGroup!=="undefined"?currentGroup:"не определена")+' · Дата: '+esc(selected instanceof Date&&!Number.isNaN(selected.getTime())?selected.toLocaleDateString("ru-RU"):"не определена")+'</div></div><div class="owner-scan-metrics"><div class="owner-scan-metric red"><strong>'+errors+'</strong><span>Критические ошибки</span></div><div class="owner-scan-metric amber"><strong>'+warnings+'</strong><span>Предупреждения</span></div><div class="owner-scan-metric gold"><strong>'+passed+'</strong><span>Успешные проверки</span></div></div><div class="owner-scan-section-title"><span>Результаты проверки</span><span>'+findings.length+' замеч.</span></div><div class="owner-scan-findings">'+cards+'</div><details class="owner-scan-details"><summary>Показать полный технический отчёт</summary><pre class="owner-scan-raw">'+esc(lines.join("\n"))+'</pre></details></div>';
+        }
         ownerQuery("#ownerScanPlanResult").textContent="Диагностика завершена. Нажми «Подготовить план исправлений», чтобы получить список действий без изменения базы.";
         planButton.disabled=findings.length===0;
         if(typeof toast==="function")toast(errors?"Проверка завершена: найдены ошибки":warnings?"Проверка завершена: есть предупреждения":"Проверка завершена");
