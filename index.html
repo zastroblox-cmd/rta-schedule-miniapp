@@ -1555,7 +1555,7 @@
           dayView.classList.add("swipe-settling");
           dayView.style.transform = "translate3d(" + (direction > 0 ? "-105%" : "105%") + ",0,0) scale(.985)";
           dayView.style.opacity = ".35";
-          window.setTimeout(() => moveSelectedDay(direction), 115);
+          window.setTimeout(() => moveSelectedDay(direction), 255);
         } else if (horizontal) {
           dayView.classList.remove("swipe-dragging");
           dayView.classList.add("swipe-settling");
