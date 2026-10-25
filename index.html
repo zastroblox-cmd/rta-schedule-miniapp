@@ -90,17 +90,10 @@
     .next-copy small { color:var(--muted); font-size:12px; }
     .countdown { color:#b7c9e8; font-size:12px; text-align:right; white-space:nowrap; }
     .lesson-list { display:flex; flex-direction:column; gap:10px; }
-    /* Нежное перелистывание расписания: движение следует за пальцем */
-    #dayView { touch-action: pan-y; will-change: transform, opacity; }
-    #dayView.swipe-dragging { transition:none !important; }
-    #dayView.swipe-settling { transition:transform .32s cubic-bezier(.22,.75,.25,1), opacity .32s ease; }
-    #dayView.swipe-enter-next { animation: dayPageEnterNext .34s cubic-bezier(.22,.75,.25,1) both; }
-    #dayView.swipe-enter-prev { animation: dayPageEnterPrev .34s cubic-bezier(.22,.75,.25,1) both; }
-    @keyframes dayPageEnterNext { from { opacity:.65; transform:translateX(34px) scale(.992); } to { opacity:1; transform:translateX(0) scale(1); } }
-    @keyframes dayPageEnterPrev { from { opacity:.65; transform:translateX(-34px) scale(.992); } to { opacity:1; transform:translateX(0) scale(1); } }
+    /* Плавное перелистывание страниц расписания */
+    #dayView { touch-action: pan-y; will-change: transform, opacity; transform-origin: center center; }
     @media (prefers-reduced-motion: reduce) {
-      #dayView.swipe-enter-next, #dayView.swipe-enter-prev { animation-duration:.01ms; }
-      #dayView.swipe-settling { transition-duration:.01ms; }
+      #dayView { will-change:auto; }
     }
     .lesson { display:grid; grid-template-columns:53px 3px minmax(0,1fr); gap:12px; align-items:stretch; padding:15px 13px; border:1px solid var(--line); background:var(--panel); border-radius:17px; }
     .time { padding-top:2px; font-size:13px; line-height:1.5; font-weight:750; font-variant-numeric:tabular-nums; }
@@ -1492,29 +1485,22 @@
     document.getElementById("prevWeek").onclick=()=>{weekOffset--;render();};
     document.getElementById("nextWeek").onclick=()=>{weekOffset++;render();};
     document.getElementById("todayWeek").onclick=()=>{weekOffset=0;selectedDay=mondayOffset;render();};
-    // Настоящее перелистывание: страница следует за пальцем и мягко доворачивается после отпускания.
+    // Перелистывание через Web Animations API — анимация не зависит от CSS-классов и кеша стилей.
     function moveSelectedDay(direction) {
       if (selectedTab !== "schedule") return;
       if (direction > 0) {
-        if (selectedDay >= 6) { weekOffset++; selectedDay = 0; }
-        else selectedDay++;
+        if (selectedDay >= 6) { weekOffset++; selectedDay = 0; } else selectedDay++;
       } else {
-        if (selectedDay <= 0) { weekOffset--; selectedDay = 6; }
-        else selectedDay--;
+        if (selectedDay <= 0) { weekOffset--; selectedDay = 6; } else selectedDay--;
       }
-      const dayView = document.getElementById("dayView");
-      dayView.classList.remove("swipe-dragging", "swipe-settling", "swipe-enter-next", "swipe-enter-prev");
-      dayView.style.transform = "";
-      dayView.style.opacity = "";
       render();
-      dayView.offsetWidth;
-      dayView.classList.add(direction > 0 ? "swipe-enter-next" : "swipe-enter-prev");
     }
     (() => {
       const dayView = document.getElementById("dayView");
-      let startX = 0, startY = 0, lastX = 0, tracking = false, horizontal = false;
-      const resetStyles = () => {
-        dayView.classList.remove("swipe-dragging", "swipe-settling");
+      let startX = 0, startY = 0, lastX = 0, tracking = false, horizontal = false, activeAnimation = null;
+      const ease = "cubic-bezier(0.22, 0.72, 0.18, 1)";
+      const clearAnimation = () => {
+        if (activeAnimation) { try { activeAnimation.cancel(); } catch (_) {} activeAnimation = null; }
         dayView.style.transform = "";
         dayView.style.opacity = "";
       };
@@ -1522,53 +1508,59 @@
         if (selectedTab !== "schedule" || !event.touches || event.touches.length !== 1) {
           tracking = horizontal = false; return;
         }
+        clearAnimation();
         const t = event.touches[0];
-        startX = lastX = t.clientX;
-        startY = t.clientY;
+        startX = lastX = t.clientX; startY = t.clientY;
         tracking = true; horizontal = false;
-        dayView.classList.remove("swipe-enter-next", "swipe-enter-prev", "swipe-settling");
       }, {passive:true});
       dayView.addEventListener("touchmove", event => {
         if (!tracking || !event.touches || event.touches.length !== 1) return;
         const t = event.touches[0], dx = t.clientX - startX, dy = t.clientY - startY;
         lastX = t.clientX;
         if (!horizontal) {
-          if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
-          if (Math.abs(dy) > Math.abs(dx) * 1.15) { tracking = false; return; }
-          if (Math.abs(dx) <= Math.abs(dy) * 1.15) return;
+          if (Math.abs(dx) < 9 && Math.abs(dy) < 9) return;
+          if (Math.abs(dy) > Math.abs(dx) * 1.2) { tracking = false; return; }
+          if (Math.abs(dx) <= Math.abs(dy) * 1.2) return;
           horizontal = true;
-          dayView.classList.add("swipe-dragging");
         }
-        const width = Math.max(dayView.clientWidth, 1);
-        const resistance = Math.min(Math.abs(dx), width * .85);
-        const eased = Math.sign(dx) * resistance * .78;
-        dayView.style.transform = "translate3d(" + eased + "px,0,0) scale(" + (1 - Math.min(Math.abs(dx)/width, .04) * .018) + ")";
-        dayView.style.opacity = String(1 - Math.min(Math.abs(dx)/width, .45) * .22);
-      }, {passive:true});
-      const finishSwipe = cancelled => {
+        const width = Math.max(dayView.getBoundingClientRect().width, 1);
+        const dragX = Math.sign(dx) * Math.min(Math.abs(dx), width * .92) * .88;
+        dayView.style.transform = "translate3d(" + dragX + "px,0,0) scale(" + (1 - Math.min(Math.abs(dx)/width, .03) * .35) + ")";
+        dayView.style.opacity = String(1 - Math.min(Math.abs(dx)/width, .6) * .35);
+      },{passive:true});
+      const finish = cancelled => {
         if (!tracking) return;
         tracking = false;
-        const dx = lastX - startX;
-        if (horizontal && !cancelled && Math.abs(dx) >= Math.max(62, dayView.clientWidth * .18)) {
+        const dx = lastX - startX, width = Math.max(dayView.getBoundingClientRect().width, 1);
+        const shouldTurn = horizontal && !cancelled && Math.abs(dx) >= Math.max(54, width * .16);
+        if (shouldTurn) {
           const direction = dx < 0 ? 1 : -1;
-          dayView.classList.remove("swipe-dragging");
-          dayView.classList.add("swipe-settling");
-          dayView.style.transform = "translate3d(" + (direction > 0 ? "-105%" : "105%") + ",0,0) scale(.985)";
-          dayView.style.opacity = ".35";
-          window.setTimeout(() => moveSelectedDay(direction), 255);
+          const outX = direction > 0 ? -width * 1.12 : width * 1.12;
+          activeAnimation = dayView.animate([
+            { transform: dayView.style.transform || "translate3d(0,0,0)", opacity: Number(dayView.style.opacity || 1) },
+            { transform: "translate3d(" + outX + "px,0,0) scale(.975)", opacity: .18 }
+          ], {duration:560, easing:ease, fill:"forwards"});
+          activeAnimation.onfinish = () => {
+            activeAnimation = null;
+            dayView.style.transform = ""; dayView.style.opacity = "";
+            moveSelectedDay(direction);
+            const fromX = direction > 0 ? width * .36 : -width * .36;
+            activeAnimation = dayView.animate([
+              { transform: "translate3d(" + fromX + "px,0,0) scale(.985)", opacity: .25, filter:"blur(1.5px)" },
+              { transform: "translate3d(0,0,0) scale(1)", opacity: 1, filter:"blur(0px)" }
+            ], {duration:620, easing:ease, fill:"both"});
+            activeAnimation.onfinish = () => { activeAnimation = null; dayView.style.transform = ""; dayView.style.opacity = ""; dayView.style.filter = ""; };
+          };
         } else if (horizontal) {
-          dayView.classList.remove("swipe-dragging");
-          dayView.classList.add("swipe-settling");
-          dayView.style.transform = "translate3d(0,0,0) scale(1)";
-          dayView.style.opacity = "1";
-          window.setTimeout(resetStyles, 340);
+          activeAnimation = dayView.animate([
+            { transform: dayView.style.transform || "translate3d(0,0,0)", opacity: Number(dayView.style.opacity || 1) },
+            { transform:"translate3d(0,0,0) scale(1)", opacity:1 }
+          ], {duration:520, easing:ease, fill:"forwards"});
+          activeAnimation.onfinish = () => { activeAnimation = null; dayView.style.transform = ""; dayView.style.opacity = ""; };
         }
       };
-      dayView.addEventListener("touchend", () => finishSwipe(false), {passive:true});
-      dayView.addEventListener("touchcancel", () => finishSwipe(true), {passive:true});
-      dayView.addEventListener("animationend", event => {
-        if (event.target === dayView) dayView.classList.remove("swipe-enter-next", "swipe-enter-prev");
-      });
+      dayView.addEventListener("touchend", () => finish(false), {passive:true});
+      dayView.addEventListener("touchcancel", () => finish(true), {passive:true});
     })();
     updateGroupLabel();
     render();
