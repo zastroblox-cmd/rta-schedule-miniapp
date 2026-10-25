@@ -37,7 +37,7 @@
        d<new Date(2026,8,1,12) || d>new Date(2026,11,31,12)) return [];
     const day=(d.getDay()+6)%7, dm=stamp(d), week=parity(d);
     let rows=draft.lessons.filter(x=>x.group===group && Number(x.day)===day &&
-      (!x.week || x.week===week) &&
+      (!(x.week || (x.parity === "нечётная неделя" ? "Б" : x.parity === "чётная неделя" ? "А" : "")) || (x.week || (x.parity === "нечётная неделя" ? "Б" : x.parity === "чётная неделя" ? "А" : ""))===week) &&
       (!Array.isArray(x.dates) || x.dates.includes(dm)) &&
       (!Array.isArray(x.excluded_dates) || !x.excluded_dates.includes(dm)) &&
       (!x.dates_from || d>=dateBoundary(x.dates_from,d.getFullYear(),false)) &&
