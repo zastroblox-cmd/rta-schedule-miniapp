@@ -734,10 +734,10 @@
       {id:"Э601/О-2301", course:4, faculty:"economics", status:"available"},
       {id:"Э601/О-2302", course:4, faculty:"economics", status:"available"},
       {id:"Э602/О-2303", course:4, faculty:"economics", direction:"economics", status:"available"},
-      {id:"ПИ601/О-2601", course:1, faculty:"economics", direction:"applied-informatics", status:"available"},
-      {id:"ПИ601/О-2501", course:2, faculty:"economics", direction:"applied-informatics", status:"available"},
-      {id:"ПИ601/О-2401", course:3, faculty:"economics", direction:"applied-informatics", status:"available"},
-      {id:"ПИ601/О-2301", course:4, faculty:"economics", direction:"applied-informatics", status:"available"},
+      {id:"ПИ601/О-2601", course:1, faculty:"customs", direction:"applied-informatics", status:"available"},
+      {id:"ПИ601/О-2501", course:2, faculty:"customs", direction:"applied-informatics", status:"available"},
+      {id:"ПИ601/О-2401", course:3, faculty:"customs", direction:"applied-informatics", status:"available"},
+      {id:"ПИ601/О-2301", course:4, faculty:"customs", direction:"applied-informatics", status:"available"},
       {id:"М601/О-2601", course:1, faculty:"economics", direction:"management", status:"available"},
       {id:"М601/О-2501", course:2, faculty:"economics", direction:"management", status:"available"},
       {id:"М601/О-2401", course:3, faculty:"economics", direction:"management", status:"available"},
@@ -775,7 +775,7 @@
     const savedGroup = localStorage.getItem("rta_schedule_group") || DEFAULT_GROUP;
     let currentGroup = GROUPS.some(g=>g.id===savedGroup) ? savedGroup : DEFAULT_GROUP;
     let currentFaculty = GROUPS.find(g=>g.id===currentGroup)?.faculty || localStorage.getItem("rta_schedule_faculty") || "law";
-    let currentDirection = GROUPS.find(g=>g.id===currentGroup)?.direction || (currentFaculty==="economics" ? "economics" : "law");
+    let currentDirection = GROUPS.find(g=>g.id===currentGroup)?.direction || (currentFaculty==="economics" ? "economics" : currentFaculty==="customs" ? "customs" : "law");
     let currentCourse = Number(localStorage.getItem("rta_schedule_course")) || (GROUPS.find(g=>g.id===currentGroup)?.course || 2);
     localStorage.setItem("rta_schedule_direction",currentDirection);
     if (!GROUPS.some(g=>g.id===currentGroup && g.course===currentCourse && g.faculty===currentFaculty)) {
@@ -820,18 +820,18 @@
       const directions=document.getElementById("directionOptions");
       const courses=document.getElementById("courseOptions");
       const groupWrap=document.getElementById("groupOptions");
-      const isEconomics=currentFaculty==="economics";
-      title.textContent=mode==="faculty"?"Выбери факультет":mode==="direction"?"Экономический факультет":mode==="course"?"Выбери курс":mode==="group"?"Выбери группу":"Выбери факультет, направление, курс и группу";
+      const isDirectionFaculty=currentFaculty==="economics"||currentFaculty==="customs";
+      title.textContent=mode==="faculty"?"Выбери факультет":mode==="direction"?(currentFaculty==="customs"?"Факультет таможенного дела":"Экономический факультет"):mode==="course"?"Выбери курс":mode==="group"?"Выбери группу":"Выбери факультет, направление, курс и группу";
       help.textContent=mode==="direction"
-        ?"Выбери направление: экономика, прикладная информатика или менеджмент."
-        :isEconomics
+        ?(currentFaculty==="customs"?"Выбери направление: таможенное дело или прикладная информатика.":"Выбери направление: экономика, прикладная информатика или менеджмент.")
+         :isDirectionFaculty
           ?"Сначала выбери направление, затем курс и группу. Выбор сохранится на этом устройстве."
           :mode==="faculty"?"Выбери факультет. Для экономического появится выбор направления."
           :mode==="course"?"Показываются курсы выбранного факультета."
           :"Сначала выбери факультет и курс — ниже появятся только группы этого курса.";
       facultyWrap.innerHTML=""; directions.innerHTML=""; courses.innerHTML=""; groupWrap.innerHTML="";
       facultyWrap.style.display=mode==="faculty"||mode==="both"?"grid":"none";
-      directions.style.display=isEconomics&&mode==="direction"?"grid":"none";
+      directions.style.display=isDirectionFaculty&&mode==="direction"?"grid":"none";
       courses.style.display=mode==="group"||mode==="faculty"||mode==="direction"?"none":"grid";
       groupWrap.style.display=mode==="faculty"||mode==="course"||mode==="direction"?"none":"grid";
       if(mode==="faculty"||mode==="both"){
@@ -842,7 +842,7 @@
           b.onclick=()=>{
             if(f.id!==currentFaculty) switchFaculty(f.id);
             if(mode==="faculty"){
-              if(f.id==="economics"){renderGroupPicker("direction");return;}
+              if(f.id==="economics"||f.id==="customs"){renderGroupPicker("direction");return;}
               document.getElementById("groupModal").classList.remove("open");return;
             }
             renderGroupPicker(mode);
@@ -852,9 +852,14 @@
       }
       if(isEconomics&&mode==="direction"){
         const options=[
-          {id:"economics",title:"📊 Экономика",sub:"Экономический факультет · 4 курса"},
-          {id:"applied-informatics",title:"💻 Прикладная информатика",sub:"Экономический факультет · 4 курса"},
-          {id:"management",title:"📋 Менеджмент",sub:"Экономический факультет · 4 курса"}
+          ...(currentFaculty==="customs"?[
+            {id:"customs",title:"🛃 Таможенное дело",sub:"Факультет таможенного дела · 5 курсов"},
+            {id:"applied-informatics",title:"💻 Прикладная информатика",sub:"Факультет таможенного дела · 4 курса"}
+          ]:[
+            {id:"economics",title:"📊 Экономика",sub:"Экономический факультет · 4 курса"},
+            {id:"applied-informatics",title:"💻 Прикладная информатика",sub:"Перенесено на факультет таможенного дела · 4 курса"},
+            {id:"management",title:"📋 Менеджмент",sub:"Экономический факультет · 4 курса"}
+          ])
         ];
         options.forEach(option=>{
           const b=document.createElement("button"); b.type="button";
@@ -862,7 +867,7 @@
           b.innerHTML=option.title+"<small>"+option.sub+"</small>";
           b.onclick=()=>{
             currentDirection=option.id; localStorage.setItem("rta_schedule_direction",currentDirection);
-            const candidates=GROUPS.filter(g=>g.faculty==="economics"&&(g.direction||"economics")===currentDirection);
+            const candidates=GROUPS.filter(g=>g.faculty===currentFaculty&&(g.direction|| (currentFaculty==="customs"?"customs":"economics"))===currentDirection);
             const next=candidates.find(g=>g.course===currentCourse)||candidates[0];
             if(next){
               currentGroup=next.id;currentCourse=next.course;
@@ -974,7 +979,7 @@
       const date=dateForDay(selectedDay);
       // Экономические группы не должны проваливаться в резервное юридическое расписание.
       // Пока их отдельный набор пар не подключён, возвращаем пустой список явно.
-      if (currentFaculty==="customs" || currentGroup.startsWith("Тс")) {
+      if (currentGroup.startsWith("Тс")) {
         if (!window.CustomsScheduleReady || !window.CustomsSchedule) return [];
         const isoDate = date.getFullYear()+"-"+String(date.getMonth()+1).padStart(2,"0")+"-"+String(date.getDate()).padStart(2,"0");
         return window.CustomsSchedule.getLessonsForDate(currentGroup, isoDate);
