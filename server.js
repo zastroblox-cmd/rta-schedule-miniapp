@@ -219,7 +219,7 @@ function toMiniAppLesson(row) {
     start: String(row.starts_at || "").slice(0, 5),
     end: String(row.ends_at || "").slice(0, 5),
     title: row.subject || "",
-    type: row.lesson_type || "Занятие",
+    type: row.lesson_type || "Тип уточняется",
     teacher: row.teacher || "",
     room: row.room || "Уточняется накануне",
   };
