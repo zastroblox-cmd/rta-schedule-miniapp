@@ -243,7 +243,7 @@ function toMiniAppLesson(row) {
 }
 
 
-async function exportCourseSchedule(courseNumber, res, facultySlug = "law") {
+async function exportCourseSchedule(courseNumber, res, facultySlug = "law", direction = null) {
   if (!supabase) return res.status(503).json({ error: "Database is not configured" });
 
   // Resolve faculty -> course -> groups in separate queries. Nested PostgREST
@@ -259,11 +259,13 @@ async function exportCourseSchedule(courseNumber, res, facultySlug = "law") {
   }
   if (!faculty) return res.status(404).json({ error: "Faculty not found: " + facultySlug });
 
-  const { data: courses, error: coursesError } = await supabase
+  let coursesQuery = supabase
     .from("courses")
-    .select("id,course_number,faculty_id")
+    .select("id,course_number,faculty_id,direction")
     .eq("faculty_id", faculty.id)
     .eq("course_number", courseNumber);
+  if (direction) coursesQuery = coursesQuery.eq("direction", direction);
+  const { data: courses, error: coursesError } = await coursesQuery;
   if (coursesError) {
     console.error("Schedule API course lookup failed:", coursesError.message);
     return res.status(500).json({ error: "Unable to load course", detail: coursesError.message });
@@ -335,6 +337,11 @@ app.get("/api/economics/course1-schedule", (_req, res) => exportCourseSchedule(1
 app.get("/api/economics/course2-schedule", (_req, res) => exportCourseSchedule(2, res, "economics"));
 app.get("/api/economics/course3-schedule", (_req, res) => exportCourseSchedule(3, res, "economics"));
 app.get("/api/economics/course4-schedule", (_req, res) => exportCourseSchedule(4, res, "economics"));
+
+app.get("/api/economics/applied-informatics/course1-schedule", (_req, res) => exportCourseSchedule(1, res, "economics", "applied-informatics"));
+app.get("/api/economics/applied-informatics/course2-schedule", (_req, res) => exportCourseSchedule(2, res, "economics", "applied-informatics"));
+app.get("/api/economics/applied-informatics/course3-schedule", (_req, res) => exportCourseSchedule(3, res, "economics", "applied-informatics"));
+app.get("/api/economics/applied-informatics/course4-schedule", (_req, res) => exportCourseSchedule(4, res, "economics", "applied-informatics"));
 
 // Course 4 uses the same faculty-scoped database export as courses 1–3.
 
