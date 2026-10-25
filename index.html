@@ -826,7 +826,7 @@
         ?(currentFaculty==="customs"?"Выбери направление: таможенное дело или прикладная информатика.":"Выбери направление: экономика, прикладная информатика или менеджмент.")
          :isDirectionFaculty
           ?"Сначала выбери направление, затем курс и группу. Выбор сохранится на этом устройстве."
-          :mode==="faculty"?"Выбери факультет. Для экономического появится выбор направления."
+          :mode==="faculty"?"Выбери факультет. Для экономического и таможенного появится выбор направления."
           :mode==="course"?"Показываются курсы выбранного факультета."
           :"Сначала выбери факультет и курс — ниже появятся только группы этого курса.";
       facultyWrap.innerHTML=""; directions.innerHTML=""; courses.innerHTML=""; groupWrap.innerHTML="";
@@ -850,7 +850,7 @@
           facultyWrap.appendChild(b);
         });
       }
-      if(isEconomics&&mode==="direction"){
+      if(isDirectionFaculty&&mode==="direction"){
         const options=[
           ...(currentFaculty==="customs"?[
             {id:"customs",title:"🛃 Таможенное дело",sub:"Факультет таможенного дела · 5 курсов"},
