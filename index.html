@@ -768,17 +768,19 @@
       const courses=document.getElementById("courseOptions");
       const groupWrap=document.getElementById("groupOptions");
       const isEconomics=currentFaculty==="economics";
-      title.textContent=mode==="faculty"?"Выбери факультет":mode==="course"?"Выбери курс":mode==="group"?"Выбери группу":"Выбери факультет, направление, курс и группу";
-      help.textContent=isEconomics
-        ?"Сначала выбери направление, затем курс и группу. Выбор сохранится на этом устройстве."
-        :mode==="faculty"?"Выбор факультета сразу откроет последнее выбранное расписание этого факультета."
-        :mode==="course"?"Показываются курсы выбранного факультета."
-        :"Сначала выбери факультет и курс — ниже появятся только группы этого курса.";
+      title.textContent=mode==="faculty"?"Выбери факультет":mode==="direction"?"Экономический факультет":mode==="course"?"Выбери курс":mode==="group"?"Выбери группу":"Выбери факультет, направление, курс и группу";
+      help.textContent=mode==="direction"
+        ?"Выбери направление: экономика или прикладная информатика."
+        :isEconomics
+          ?"Сначала выбери направление, затем курс и группу. Выбор сохранится на этом устройстве."
+          :mode==="faculty"?"Выбери факультет. Для экономического появится выбор направления."
+          :mode==="course"?"Показываются курсы выбранного факультета."
+          :"Сначала выбери факультет и курс — ниже появятся только группы этого курса.";
       facultyWrap.innerHTML=""; directions.innerHTML=""; courses.innerHTML=""; groupWrap.innerHTML="";
       facultyWrap.style.display=mode==="faculty"||mode==="both"?"grid":"none";
-      directions.style.display=isEconomics&&mode!=="faculty"?"grid":"none";
-      courses.style.display=mode==="group"||mode==="faculty"?"none":"grid";
-      groupWrap.style.display=mode==="faculty"||mode==="course"?"none":"grid";
+      directions.style.display=isEconomics&&(mode==="direction"||mode!=="faculty")?"grid":"none";
+      courses.style.display=mode==="group"||mode==="faculty"||mode==="direction"?"none":"grid";
+      groupWrap.style.display=mode==="faculty"||mode==="course"||mode==="direction"?"none":"grid";
       if(mode==="faculty"||mode==="both"){
         FACULTIES.forEach(f=>{
           const b=document.createElement("button"); b.type="button";
@@ -786,7 +788,10 @@
           b.textContent=f.icon+" "+f.name;
           b.onclick=()=>{
             if(f.id!==currentFaculty) switchFaculty(f.id);
-            if(mode==="faculty"){document.getElementById("groupModal").classList.remove("open");return;}
+            if(mode==="faculty"){
+              if(f.id==="economics"){renderGroupPicker("direction");return;}
+              document.getElementById("groupModal").classList.remove("open");return;
+            }
             renderGroupPicker(mode);
           };
           facultyWrap.appendChild(b);
@@ -805,8 +810,14 @@
             currentDirection=option.id; localStorage.setItem("rta_schedule_direction",currentDirection);
             const candidates=GROUPS.filter(g=>g.faculty==="economics"&&(g.direction||"economics")===currentDirection);
             const next=candidates.find(g=>g.course===currentCourse)||candidates[0];
-            if(next){currentGroup=next.id;currentCourse=next.course;localStorage.setItem("rta_schedule_group",currentGroup);localStorage.setItem("rta_schedule_course",String(currentCourse));updateGroupLabel();render();}
-            renderGroupPicker(mode);
+            if(next){
+              currentGroup=next.id;currentCourse=next.course;
+              localStorage.setItem("rta_schedule_group",currentGroup);
+              localStorage.setItem("rta_schedule_course",String(currentCourse));
+              localStorage.setItem("rta_schedule_group_faculty_economics",currentGroup);
+              updateGroupLabel();render();
+            }
+            renderGroupPicker(mode==="direction"?"both":mode);
           };
           directions.appendChild(b);
         });
