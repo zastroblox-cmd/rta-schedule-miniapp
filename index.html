@@ -716,10 +716,33 @@
       {id:"М601/О-2501", course:2, faculty:"economics", direction:"management", status:"available"},
       {id:"М601/О-2401", course:3, faculty:"economics", direction:"management", status:"available"},
       {id:"М601/О-2301", course:4, faculty:"economics", direction:"management", status:"available"}
+      {id:"Тс00/О-2601", course:1, faculty:"customs", status:"pending"},
+      {id:"Тс00/О-2602", course:1, faculty:"customs", status:"pending"},
+      {id:"Тс00/О-2603", course:1, faculty:"customs", status:"pending"},
+      {id:"Тс00/О-2501", course:2, faculty:"customs", status:"pending"},
+      {id:"Тс00/О-2502", course:2, faculty:"customs", status:"pending"},
+      {id:"Тс00/О-2503", course:2, faculty:"customs", status:"pending"},
+      {id:"Тс00/О-2504", course:2, faculty:"customs", status:"pending"},
+      {id:"Тс00/О-2401", course:3, faculty:"customs", status:"pending"},
+      {id:"Тс00/О-2402", course:3, faculty:"customs", status:"pending"},
+      {id:"Тс00/О-2403", course:3, faculty:"customs", status:"pending"},
+      {id:"Тс00/О-2404", course:3, faculty:"customs", status:"pending"},
+      {id:"Тс00/О-2405", course:3, faculty:"customs", status:"pending"},
+      {id:"Тс01/О-2301", course:4, faculty:"customs", status:"pending"},
+      {id:"Тс01/О-2302", course:4, faculty:"customs", status:"pending"},
+      {id:"Тс06/О-2303", course:4, faculty:"customs", status:"pending"},
+      {id:"Тс05/О-2304", course:4, faculty:"customs", status:"pending"},
+      {id:"Тс09/О-2305", course:4, faculty:"customs", status:"pending"},
+      {id:"Тс01/О-2201", course:5, faculty:"customs", status:"pending"},
+      {id:"Тс01/О-2202", course:5, faculty:"customs", status:"pending"},
+      {id:"Тс06/О-2203", course:5, faculty:"customs", status:"pending"},
+      {id:"Тс05/О-2204", course:5, faculty:"customs", status:"pending"},
+      {id:"Тс09/О-2205", course:5, faculty:"customs", status:"pending"},
     ];
     const FACULTIES = [
       {id:"law", name:"Юридический факультет", short:"Юридический", icon:"⚖️"},
-      {id:"economics", name:"Экономический факультет", short:"Экономический", icon:"📊"}
+      {id:"economics", name:"Экономический факультет", short:"Экономический", icon:"📊"},
+      {id:"customs", name:"Факультет таможенного дела", short:"Таможенное дело", icon:"🛃"}
     ];
     const DEFAULT_GROUP = "Ю603/О-2503";
     const hasSavedGroup = Boolean(localStorage.getItem("rta_schedule_group"));
@@ -858,7 +881,7 @@
       if(mode!=="faculty"&&mode!=="course"){
         GROUPS.filter(g=>g.faculty===currentFaculty&&g.course===currentCourse&&(currentFaculty!=="economics"||(g.direction||"economics")===currentDirection)).forEach(g=>{
           const b=document.createElement("button"); b.className="group-option"+(g.id===currentGroup?" selected":"");
-          b.innerHTML=g.id+"<small>"+(g.status==="available"?"Расписание "+g.course+" курса подключено":"Экономика · расписание переносится из PDF")+"</small>";
+          b.innerHTML=g.id+"<small>"+(g.status==="available"?"Расписание "+g.course+" курса подключено":g.faculty==="customs"?"Расписание факультета таможенного дела загружается из PDF":"Экономика · расписание переносится из PDF")+"</small>";
           b.onclick=()=>{currentGroup=g.id;currentCourse=g.course;currentDirection=g.direction||(g.faculty==="economics"?"economics":"law");localStorage.setItem("rta_schedule_direction",currentDirection);localStorage.setItem("rta_schedule_group",currentGroup);localStorage.setItem("rta_schedule_group_faculty_"+currentFaculty,currentGroup);localStorage.setItem("rta_schedule_group_course_"+currentFaculty+"_"+currentCourse,currentGroup);updateGroupLabel();document.getElementById("groupModal").classList.remove("open");render();};
           groupWrap.appendChild(b);
         });
@@ -925,7 +948,7 @@
       const date=dateForDay(selectedDay);
       // Экономические группы не должны проваливаться в резервное юридическое расписание.
       // Пока их отдельный набор пар не подключён, возвращаем пустой список явно.
-      if (currentGroup.startsWith("Э") || currentGroup.startsWith("ПИ") || currentGroup.startsWith("М601/")) {
+      if (currentGroup.startsWith("Э") || currentGroup.startsWith("ПИ") || currentGroup.startsWith("М601/") || currentFaculty==="customs") {
         if (!window.EconomicsScheduleReady || !window.EconomicsSchedule) return [];
         const isoDate = date.getFullYear()+"-"+String(date.getMonth()+1).padStart(2,"0")+"-"+String(date.getDate()).padStart(2,"0");
         return window.EconomicsSchedule.getLessonsForDate(currentGroup, isoDate);
@@ -1559,6 +1582,45 @@
       if (currentGroup.startsWith("Э") || currentGroup.startsWith("ПИ") || currentGroup.startsWith("М601/")) render();
     };
     document.head.appendChild(economicsScript);
+    // Факультет таможенного дела: отдельные курсы и группы, данные из Supabase.
+    window.CustomsScheduleReady = false;
+    window.CustomsScheduleSource = "loading";
+    const customsScript = document.createElement("script");
+    customsScript.src = "./data/customs-adapter.js?v=20261025-customs-v1";
+    customsScript.onload = async () => {
+      try {
+        const requests = [1,2,3,4,5].map(course => ({course,url:"https://rta-schedule-api.onrender.com/api/customs/course"+course+"-schedule"}));
+        const results = await Promise.allSettled(requests.map(request => fetch(request.url,{cache:"no-store"}).then(async response => {
+          if (!response.ok) throw new Error("Курс "+request.course+": HTTP "+response.status);
+          return response.json();
+        })));
+        const payloads = results.filter(result=>result.status==="fulfilled").map(result=>result.value);
+        const lessons = payloads.flatMap(payload => Array.isArray(payload.lessons) ? payload.lessons.map(row => ({
+          ...row, group:row.group||row.group_code||"",
+          day:Number(row.day ?? (Number.isFinite(Number(row.weekday))?Number(row.weekday)-1:NaN)),
+          start:String(row.start||row.starts_at||"").slice(0,5),
+          end:String(row.end||row.ends_at||"").slice(0,5),
+          title:row.title||row.subject||"", type:row.type||row.lesson_type||"Занятие",
+          week:row.week||(row.parity==="нечётная неделя"?"Б":row.parity==="чётная неделя"?"А":undefined),
+          dates:Array.isArray(row.dates)?row.dates:(row.schedule_date?[String(row.schedule_date).slice(8,10)+"."+String(row.schedule_date).slice(5,7)]:undefined),
+          excluded_dates:Array.isArray(row.excluded_dates)?row.excluded_dates:[],
+          dates_from:row.dates_from||row.valid_from||"", dates_until:row.dates_until||row.valid_to||"",
+          note:row.note||row.notes||""
+        })) : []);
+        const failed=results.map((r,i)=>r.status==="rejected"?requests[i].course:null).filter(Boolean);
+        window.CustomsScheduleSource=failed.length?"partial-api-courses-"+failed.join("-"):"supabase-api";
+        if(!lessons.length){window.CustomsScheduleSource="api-no-lessons";return;}
+        window.CustomsSchedule.setDraft({_status:"PRELIMINARY",_source:"Официальные PDF факультета таможенного дела",lessons});
+        window.CustomsScheduleReady=true;
+        if(currentFaculty==="customs") render();
+      } catch(error) {
+        window.CustomsScheduleSource="api-unavailable";
+        console.error("Не удалось загрузить расписание факультета таможенного дела:",error);
+        if(currentFaculty==="customs") render();
+      }
+    };
+    customsScript.onerror=()=>{window.CustomsScheduleSource="adapter-error";if(currentFaculty==="customs")render();};
+    document.head.appendChild(customsScript);
     // Обновляем статусы пар, пока Mini App открыт; при смене даты обновляем календарную основу.
     setInterval(() => {
       const updated = new Date();
