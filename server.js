@@ -333,10 +333,10 @@ app.get("/api/course2-schedule", (_req, res) => exportCourseSchedule(2, res, "la
 app.get("/api/course3-schedule", (_req, res) => exportCourseSchedule(3, res, "law"));
 app.get("/api/course4-schedule", (_req, res) => exportCourseSchedule(4, res, "law"));
 
-app.get("/api/economics/course1-schedule", (_req, res) => exportCourseSchedule(1, res, "economics"));
-app.get("/api/economics/course2-schedule", (_req, res) => exportCourseSchedule(2, res, "economics"));
-app.get("/api/economics/course3-schedule", (_req, res) => exportCourseSchedule(3, res, "economics"));
-app.get("/api/economics/course4-schedule", (_req, res) => exportCourseSchedule(4, res, "economics"));
+app.get("/api/economics/course1-schedule", (_req, res) => exportCourseSchedule(1, res, "economics", "economics"));
+app.get("/api/economics/course2-schedule", (_req, res) => exportCourseSchedule(2, res, "economics", "economics"));
+app.get("/api/economics/course3-schedule", (_req, res) => exportCourseSchedule(3, res, "economics", "economics"));
+app.get("/api/economics/course4-schedule", (_req, res) => exportCourseSchedule(4, res, "economics", "economics"));
 
 app.get("/api/economics/applied-informatics/course1-schedule", (_req, res) => exportCourseSchedule(1, res, "economics", "applied-informatics"));
 app.get("/api/economics/applied-informatics/course2-schedule", (_req, res) => exportCourseSchedule(2, res, "economics", "applied-informatics"));
