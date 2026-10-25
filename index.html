@@ -948,7 +948,12 @@
       const date=dateForDay(selectedDay);
       // Экономические группы не должны проваливаться в резервное юридическое расписание.
       // Пока их отдельный набор пар не подключён, возвращаем пустой список явно.
-      if (currentGroup.startsWith("Э") || currentGroup.startsWith("ПИ") || currentGroup.startsWith("М601/") || currentFaculty==="customs") {
+      if (currentFaculty==="customs" || currentGroup.startsWith("Тс")) {
+        if (!window.CustomsScheduleReady || !window.CustomsSchedule) return [];
+        const isoDate = date.getFullYear()+"-"+String(date.getMonth()+1).padStart(2,"0")+"-"+String(date.getDate()).padStart(2,"0");
+        return window.CustomsSchedule.getLessonsForDate(currentGroup, isoDate);
+      }
+      if (currentGroup.startsWith("Э") || currentGroup.startsWith("ПИ") || currentGroup.startsWith("М601/")) {
         if (!window.EconomicsScheduleReady || !window.EconomicsSchedule) return [];
         const isoDate = date.getFullYear()+"-"+String(date.getMonth()+1).padStart(2,"0")+"-"+String(date.getDate()).padStart(2,"0");
         return window.EconomicsSchedule.getLessonsForDate(currentGroup, isoDate);
