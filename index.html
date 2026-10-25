@@ -500,7 +500,7 @@
         <button class="owner-tab active" data-owner-tab="scanner">⌁ Сканер</button><button class="owner-tab" data-owner-tab="studio">◈ Студия</button><button class="owner-tab" data-owner-tab="stats">✧ Статистика</button><button class="owner-tab" data-owner-tab="admin">⚙ Управление</button><button class="owner-tab" data-owner-tab="map">⌘ Карта</button>
       </nav>
       <section class="owner-page active" id="owner-page-scanner">
-        <div class="owner-card"><h3>Сканер расписания</h3><p class="owner-muted">Это техническая диагностика, а не сверка с PDF. Нажми кнопку — сканер проверит выбранный день: названия пар, время, пересечения и состояние загрузки курсов. Расписание он не меняет.</p><button class="owner-action" id="ownerRunScan" style="width:100%;margin-top:12px">▶ Запустить проверку</button><div class="owner-result" id="ownerScanResult">Пока проверка не запускалась. Выбери в приложении группу и дату, затем нажми «Запустить проверку».</div></div>
+        <div class="owner-card"><h3>Сканер расписания</h3><p class="owner-muted">Комплексная диагностика: API, доступность базы через сервер, полнота курсов и групп, качество записей и выбранный день. Проверка ничего не меняет в расписании.</p><button class="owner-action" id="ownerRunScan" style="width:100%;margin-top:12px">⌁ Проверить всё</button><button class="owner-action" id="ownerScanPlan" style="width:100%;margin-top:8px" disabled>Подготовить план исправлений</button><div class="owner-result" id="ownerScanResult" aria-live="polite">Проверка ещё не запускалась. Полный проход проверяет доступные API и структуру расписаний. Изменения данных выполняются только отдельно и после подтверждения.</div><div class="owner-result" id="ownerScanPlanResult" aria-live="polite">План исправлений появится после диагностики. Автоматическая запись в базу отключена до появления проверенного серверного механизма с журналом изменений.</div></div>
         <div class="owner-card"><h3>Контроль источников</h3><div class="owner-line"><div><strong>1-й курс</strong><small>Загрузка JSON и адаптера</small></div><span id="ownerC1">…</span></div><div class="owner-line"><div><strong>2-й курс</strong><small>Загрузка данных курса</small></div><span id="ownerC2">…</span></div><div class="owner-line"><div><strong>3-й курс</strong><small>Загрузка данных курса</small></div><span id="ownerC3">…</span></div><div class="owner-line"><div><strong>4-й курс</strong><small>Загрузка JSON и адаптера</small></div><span id="ownerC4">…</span></div><p class="owner-muted">Для встроенных расписаний 2-го курса диагностика проверяет данные выбранного дня. Статус загрузки не подтверждает официальную корректность источника.</p></div>
       </section>
       <section class="owner-page" id="owner-page-studio">
@@ -1276,27 +1276,96 @@
       [["glass","ownerGlass"],["motion","ownerMotion"],["glow","ownerGlow"],["accentGlow","ownerAccentGlow"]].forEach(([key,id])=>ownerQuery("#"+id).addEventListener("change",e=>{write(key,e.target.checked);noteCustomization();}));
       ownerQuery("#ownerReset").addEventListener("click",()=>{["theme","accent","opacity","radius","density","glass","motion","glow","accentGlow"].forEach(k=>{try{localStorage.removeItem("rta_owner_"+k);}catch(e){}});write("customizations",read("customizations",0)+1);applyPrefs();toast("Настройки студии сброшены.");});
       function refreshStatuses(){ownerQuery("#ownerC1").textContent=window.Course1ScheduleReady?"✓ Загружен":"… Загружается";ownerQuery("#ownerC2").textContent=window.Course2ScheduleReady?"✓ Загружен":"… Загружается";ownerQuery("#ownerC3").textContent=window.Course3ScheduleReady?"✓ Загружен":"… Загружается";ownerQuery("#ownerC4").textContent=window.Course4ScheduleReady?"✓ Загружен":"… Загружается";}
-      ownerQuery("#ownerRunScan").addEventListener("click",()=>{
-        const result=ownerQuery("#ownerScanResult");
-        const lines=["Проверка: "+new Date().toLocaleString("ru-RU")];
-        let issues=0,lessons=[];
-        try{lessons=typeof lessonsForSelectedDate==="function"?lessonsForSelectedDate():[];}catch(e){issues++;lines.push("Не удалось прочитать выбранный день: "+String(e&&e.message||e));}
-        if(!Array.isArray(lessons)){lessons=[];issues++;lines.push("Данные дня имеют неожиданный формат.");}
+      let ownerLastScanFindings=[];
+      const ownerScanEndpoints=[
+        ...[1,2,3,4].map(course=>({label:"Юридический факультет · курс "+course,url:"https://rta-schedule-api.onrender.com/api/course"+course+"-schedule"})),
+        ...[1,2,3,4].map(course=>({label:"Экономический факультет · курс "+course,url:"https://rta-schedule-api.onrender.com/api/economics/course"+course+"-schedule"})),
+        ...[1,2,3,4].map(course=>({label:"Прикладная информатика · курс "+course,url:"https://rta-schedule-api.onrender.com/api/economics/applied-informatics/course"+course+"-schedule"})),
+        ...[1,2,3,4].map(course=>({label:"Менеджмент · курс "+course,url:"https://rta-schedule-api.onrender.com/api/economics/management/course"+course+"-schedule"})),
+        ...[1,2,3,4,5].map(course=>({label:"Таможенный факультет · курс "+course,url:"https://rta-schedule-api.onrender.com/api/customs/course"+course+"-schedule"}))
+      ];
+      const ownerTimeMinutes=value=>{const m=String(value||"").match(/^([01]\\d|2[0-3]):([0-5]\\d)$/);return m?Number(m[1])*60+Number(m[2]):NaN;};
+      ownerQuery("#ownerRunScan").addEventListener("click",async()=>{
+        const result=ownerQuery("#ownerScanResult"),button=ownerQuery("#ownerRunScan"),planButton=ownerQuery("#ownerScanPlan");
+        button.disabled=true;button.textContent="Проверяем…";planButton.disabled=true;
+        const lines=["ДИАГНОСТИКА РАСПИСАНИЯ","Время: "+new Date().toLocaleString("ru-RU")];
+        const findings=[];let errors=0,warnings=0,passed=0;
+        const add=(level,area,message,fix)=>{findings.push({level,area,message,fix});if(level==="ОШИБКА")errors++;else if(level==="ПРЕДУПРЕЖДЕНИЕ")warnings++;};
         const selected=typeof dateForDay==="function"?dateForDay(selectedDay):new Date();
-        lines.push("Группа: "+(typeof currentGroup!=="undefined"?currentGroup:"не определена"));
+        lines.push("Выбранная группа: "+(typeof currentGroup!=="undefined"?currentGroup:"не определена"));
         lines.push("Дата: "+(selected instanceof Date&&!Number.isNaN(selected.getTime())?selected.toLocaleDateString("ru-RU"):"не определена"));
-        lines.push("Пар на выбранную дату: "+lessons.length);
-        if(lessons.length===0) lines.push("ВНИМАНИЕ: список пуст. Это может означать выходной, неперенесённые пары или недоступный источник.");
-        const validTime=/^([01]\d|2[0-3]):[0-5]\d$/;
-        lessons.forEach((l,i)=>{if(!l||!validTime.test(l.start||"")||!validTime.test(l.end||"")){issues++;lines.push("Ошибка времени в записи №"+(i+1));}else if(l.end<=l.start){issues++;lines.push("Окончание не позже начала: "+(l.title||"без названия"));}if(!l||!String(l.title||"").trim()){issues++;lines.push("Пустое название пары №"+(i+1));}});
-        for(let i=0;i<lessons.length;i++)for(let j=i+1;j<lessons.length;j++){if(lessons[i]?.start&&lessons[i]?.end&&lessons[j]?.start&&lessons[j]?.end&&lessons[i].start<lessons[j].end&&lessons[j].start<lessons[i].end){issues++;lines.push("Возможное пересечение: "+(lessons[i].title||"без названия")+" / "+(lessons[j].title||"без названия"));}}
+        lines.push("");
+        lines.push("1. API И ДОСТУПНОСТЬ СЕРВЕРА");
+        try{
+          const health=await fetch("https://rta-schedule-api.onrender.com/health",{cache:"no-store"});
+          if(!health.ok){add("ОШИБКА","API","/health вернул HTTP "+health.status,"Проверить состояние Render и логи сервиса.");lines.push("✕ Сервер: HTTP "+health.status);}
+          else{const body=await health.json().catch(()=>({}));passed++;lines.push("✓ Сервер отвечает"+(body.status?" · "+body.status:"")+".");}
+        }catch(e){add("ОШИБКА","API","Не удалось связаться с /health: "+String(e&&e.message||e),"Проверить Render, сеть и CORS.");lines.push("✕ Сервер недоступен: "+String(e&&e.message||e));}
+        try{
+          const groupsResponse=await fetch("https://rta-schedule-api.onrender.com/api/groups",{cache:"no-store"});
+          if(!groupsResponse.ok){add("ОШИБКА","БАЗА/API","Список групп вернул HTTP "+groupsResponse.status,"Проверить подключение Supabase и endpoint /api/groups.");lines.push("✕ Каталог групп: HTTP "+groupsResponse.status);}
+          else{const body=await groupsResponse.json();const groups=Array.isArray(body)?body:(Array.isArray(body.data)?body.data:null);if(!groups){add("ПРЕДУПРЕЖДЕНИЕ","БАЗА/API","Ответ каталога групп не содержит ожидаемый массив.","Проверить формат ответа API.");lines.push("! Каталог групп: неожиданный формат.");}else{passed++;lines.push("✓ Каталог групп доступен: записей "+groups.length+".");if(!groups.length)add("ОШИБКА","БАЗА/API","Каталог групп пуст.","Проверить таблицу student_groups и доступ API.");}}
+        }catch(e){add("ОШИБКА","БАЗА/API","Не удалось получить каталог групп: "+String(e&&e.message||e),"Проверить API и соединение с базой.");lines.push("✕ Каталог групп недоступен.");}
+        lines.push("");
+        lines.push("2. ПОЛНОТА РАСПИСАНИЙ ПО КУРСАМ");
+        const endpointResults=await Promise.all(ownerScanEndpoints.map(async item=>{
+          try{
+            const response=await fetch(item.url,{cache:"no-store"});
+            if(!response.ok)return {...item,ok:false,problem:"HTTP "+response.status};
+            const body=await response.json();
+            const lessons=Array.isArray(body)?body:(Array.isArray(body.lessons)?body.lessons:(Array.isArray(body.data)?body.data:null));
+            if(!lessons)return {...item,ok:false,problem:"неожиданный формат ответа"};
+            if(!lessons.length)return {...item,ok:false,problem:"пустой список занятий"};
+            const groupKeys=new Set(lessons.map(x=>x.group_code||x.groupCode||x.group||x.group_id||x.groupId).filter(x=>x!=null).map(String));
+            return {...item,ok:true,count:lessons.length,groupCount:groupKeys.size};
+          }catch(e){return {...item,ok:false,problem:String(e&&e.message||e)};}
+        }));
+        endpointResults.forEach(x=>{
+          if(x.ok){passed++;lines.push("✓ "+x.label+": "+x.count+" записей"+(x.groupCount?" · групп в ответе: "+x.groupCount:"")+".");}
+          else{add(x.problem==="пустой список занятий"?"ОШИБКА":"ПРЕДУПРЕЖДЕНИЕ",x.label,x.problem,"Проверить соответствующий endpoint, данные курса и подключение к Supabase.");lines.push("✕ "+x.label+": "+x.problem+".");}
+        });
+        lines.push("");
+        lines.push("3. ВЫБРАННЫЙ ДЕНЬ И КАЧЕСТВО ЗАПИСЕЙ");
+        let lessons=[];
+        try{lessons=typeof lessonsForSelectedDate==="function"?lessonsForSelectedDate():[];}catch(e){add("ОШИБКА","ВЫБРАННЫЙ ДЕНЬ","Не удалось прочитать выбранный день: "+String(e&&e.message||e),"Проверить адаптер расписания и текущую группу.");}
+        if(!Array.isArray(lessons)){lessons=[];add("ОШИБКА","ВЫБРАННЫЙ ДЕНЬ","Данные дня имеют неожиданный формат.","Проверить функцию lessonsForSelectedDate.");}
+        lines.push("Занятий на выбранную дату: "+lessons.length+".");
+        if(!lessons.length)add("ПРЕДУПРЕЖДЕНИЕ","ВЫБРАННЫЙ ДЕНЬ","В выбранный день нет занятий; это может быть выходной или неполные данные.","Сверить этот день с официальным расписанием, прежде чем добавлять пары.");
+        const validTime=/^([01]\\d|2[0-3]):[0-5]\\d$/;
+        lessons.forEach((lesson,i)=>{
+          const label=String(lesson&&lesson.title||"запись №"+(i+1));
+          if(!lesson||!validTime.test(lesson.start||"")||!validTime.test(lesson.end||""))add("ОШИБКА","ВРЕМЯ",label+": некорректное время.","Исправлять время только после сверки с исходным документом.");
+          else if(ownerTimeMinutes(lesson.end)<=ownerTimeMinutes(lesson.start))add("ОШИБКА","ВРЕМЯ",label+": окончание не позже начала.","Сверить начало и окончание с официальным расписанием.");
+          if(!String(lesson&&lesson.title||"").trim())add("ОШИБКА","НАЗВАНИЕ","У записи №"+(i+1)+" пустое название.","Восстановить название по исходному PDF.");
+          if(!String(lesson&&lesson.teacher||"").trim())add("ПРЕДУПРЕЖДЕНИЕ","ПРЕПОДАВАТЕЛЬ",label+": преподаватель не указан.","Проверить PDF или официальную ведомость; не подставлять имя автоматически.");
+          const type=String(lesson&& (lesson.type||lesson.lesson_type||lesson.lessonType)||"").toLowerCase();
+          if(!type||/^(занятие|пара|урок)$/.test(type))add("ПРЕДУПРЕЖДЕНИЕ","ТИП ЗАНЯТИЯ",label+": не указан конкретный тип (лекция, П/з и т. п.).","Уточнить тип по источнику.");
+        });
+        for(let i=0;i<lessons.length;i++)for(let j=i+1;j<lessons.length;j++){
+          const a=lessons[i],b=lessons[j];if(a&&b&&validTime.test(a.start||"")&&validTime.test(a.end||"")&&validTime.test(b.start||"")&&validTime.test(b.end||"")&&ownerTimeMinutes(a.start)<ownerTimeMinutes(b.end)&&ownerTimeMinutes(b.start)<ownerTimeMinutes(a.end))
+            add("ОШИБКА","ПЕРЕСЕЧЕНИЕ",String(a.title||"Пара "+(i+1))+" пересекается с "+String(b.title||"парой "+(j+1))+".","Сверить время обеих пар с источником; сканер не изменяет расписание автоматически.");
+        }
         refreshStatuses();
-        lines.push("Состояние источников:");
-        [["Юридический курс 1",window.Course1ScheduleReady,window.Course1ScheduleSource],["Юридический курс 2",window.Course2ScheduleReady,window.Course2ScheduleSource],["Юридический курс 3",window.Course3ScheduleReady,window.Course3ScheduleSource],["Юридический курс 4",window.Course4ScheduleReady,window.Course4ScheduleSource],["Экономический факультет",window.EconomicsScheduleReady,window.EconomicsScheduleSource],["Таможенный факультет",window.CustomsScheduleReady,window.CustomsScheduleSource]].forEach(([name,ready,source])=>lines.push(name+": "+(ready?"загружен":"не загружен")+" · "+(source||"источник не указан")));
-        lines.push(issues?"Замечаний по формату/пересечениям: "+issues:"Ошибок формата и пересечений в доступном списке не найдено.");
-        lines.push("Важно: сканер проверяет только загруженный список на выбранный день, не сверяет пары с PDF.");
-        if(result) result.textContent=lines.join("\n");
-        if(typeof toast==="function") toast(issues?"Сканирование завершено: есть замечания":"Сканирование завершено");
+        lines.push("");
+        lines.push("4. СТАТУСЫ АДАПТЕРОВ (это не замена сетевой проверке)");
+        [["Юридический курс 1",window.Course1ScheduleReady,window.Course1ScheduleSource],["Юридический курс 2",window.Course2ScheduleReady,window.Course2ScheduleSource],["Юридический курс 3",window.Course3ScheduleReady,window.Course3ScheduleSource],["Юридический курс 4",window.Course4ScheduleReady,window.Course4ScheduleSource],["Экономика",window.EconomicsScheduleReady,window.EconomicsScheduleSource],["Таможенное дело",window.CustomsScheduleReady,window.CustomsScheduleSource]].forEach(([name,ready,source])=>{lines.push((ready?"✓ ":"! ")+name+": "+(ready?"загружен":"не загружен")+" · "+(source||"источник не указан"));if(!ready)add("ПРЕДУПРЕЖДЕНИЕ","АДАПТЕР",name+" не отмечен как загруженный ("+(source||"источник не указан")+").","Проверить загрузку адаптера и консоль ошибок браузера.");});
+        lines.push("");
+        lines.push("ИТОГ: "+errors+" ошибок · "+warnings+" предупреждений · "+passed+" успешных проверок.");
+        lines.push("Ограничение: проверка подтверждает доступность API и базовую структуру, но не доказывает соответствие официальным PDF.");
+        ownerLastScanFindings=findings;
+        if(result)result.textContent=lines.join("\\n");
+        ownerQuery("#ownerScanPlanResult").textContent="Диагностика завершена. Нажми «Подготовить план исправлений», чтобы получить список действий без изменения базы.";
+        planButton.disabled=findings.length===0;
+        if(typeof toast==="function")toast(errors?"Проверка завершена: найдены ошибки":warnings?"Проверка завершена: есть предупреждения":"Проверка завершена");
+        button.disabled=false;button.textContent="⌁ Проверить всё";
+      });
+      ownerQuery("#ownerScanPlan").addEventListener("click",()=>{
+        if(!ownerLastScanFindings.length){ownerQuery("#ownerScanPlanResult").textContent="Нет найденных замечаний для плана.";return;}
+        const grouped={};ownerLastScanFindings.forEach(f=>{const key=f.level+" · "+f.area;(grouped[key]||(grouped[key]=[])).push(f);});
+        const lines=["ПЛАН ИСПРАВЛЕНИЙ — ПРЕДВАРИТЕЛЬНЫЙ, БЕЗ ЗАПИСИ В БАЗУ","Перед любым изменением сверь данные с официальным источником."];
+        Object.keys(grouped).forEach(key=>{lines.push("");lines.push(key);grouped[key].forEach((f,i)=>{lines.push((i+1)+". "+f.message);lines.push("   Действие: "+f.fix);});});
+        lines.push("");lines.push("Ничего не изменено. Исправление записей в базе требует отдельного серверного механизма с правами владельца, подтверждением и журналом изменений.");
+        if(typeof window.confirm==="function"&&window.confirm("Сформировать предварительный план исправлений? Данные расписания не будут изменены."))ownerQuery("#ownerScanPlanResult").textContent=lines.join("\\n");
       });
       ownerQuery("#ownerLoadRepAccess").addEventListener("click",()=>void loadOwnerRepAccess());
       ownerQuery("#ownerRepGroup").addEventListener("change",()=>{const select=ownerQuery("#ownerRepGroup"),item=ownerRepAccessCache.find(x=>String(x.id)===select.value);if(item){ownerQuery("#ownerRepEnabled").checked=Boolean(item.enabled);ownerQuery("#ownerRepPassword").value="";}});
