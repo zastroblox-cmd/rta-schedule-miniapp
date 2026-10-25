@@ -90,6 +90,15 @@
     .next-copy small { color:var(--muted); font-size:12px; }
     .countdown { color:#b7c9e8; font-size:12px; text-align:right; white-space:nowrap; }
     .lesson-list { display:flex; flex-direction:column; gap:10px; }
+    /* Мягкая смена дня при горизонтальном свайпе */
+    #dayView { touch-action: pan-y; }
+    #dayView.day-swipe-next { animation: daySwipeInFromRight .26s cubic-bezier(.22,.75,.25,1) both; }
+    #dayView.day-swipe-prev { animation: daySwipeInFromLeft .26s cubic-bezier(.22,.75,.25,1) both; }
+    @keyframes daySwipeInFromRight { from { opacity:.55; transform:translateX(24px); } to { opacity:1; transform:translateX(0); } }
+    @keyframes daySwipeInFromLeft { from { opacity:.55; transform:translateX(-24px); } to { opacity:1; transform:translateX(0); } }
+    @media (prefers-reduced-motion: reduce) {
+      #dayView.day-swipe-next, #dayView.day-swipe-prev { animation-duration:.01ms; }
+    }
     .lesson { display:grid; grid-template-columns:53px 3px minmax(0,1fr); gap:12px; align-items:stretch; padding:15px 13px; border:1px solid var(--line); background:var(--panel); border-radius:17px; }
     .time { padding-top:2px; font-size:13px; line-height:1.5; font-weight:750; font-variant-numeric:tabular-nums; }
     .time small { display:block; color:var(--muted); font-weight:500; font-size:10px; }
@@ -1480,6 +1489,44 @@
     document.getElementById("prevWeek").onclick=()=>{weekOffset--;render();};
     document.getElementById("nextWeek").onclick=()=>{weekOffset++;render();};
     document.getElementById("todayWeek").onclick=()=>{weekOffset=0;selectedDay=mondayOffset;render();};
+    // Горизонтальный свайп меняет выбранный день; вертикальный жест остаётся обычной прокруткой.
+    function moveSelectedDay(direction) {
+      if (selectedTab !== "schedule") return;
+      if (direction > 0) {
+        if (selectedDay >= 6) { weekOffset++; selectedDay = 0; }
+        else selectedDay++;
+      } else {
+        if (selectedDay <= 0) { weekOffset--; selectedDay = 6; }
+        else selectedDay--;
+      }
+      const dayView = document.getElementById("dayView");
+      dayView.classList.remove("day-swipe-next", "day-swipe-prev");
+      render();
+      dayView.offsetWidth; // перезапускаем CSS-анимацию при быстрых повторных свайпах
+      dayView.classList.add(direction > 0 ? "day-swipe-next" : "day-swipe-prev");
+    }
+    (() => {
+      const dayView = document.getElementById("dayView");
+      let touchStartX = 0, touchStartY = 0;
+      dayView.addEventListener("touchstart", event => {
+        if (!event.touches || event.touches.length !== 1) { touchStartX = touchStartY = 0; return; }
+        touchStartX = event.touches[0].clientX;
+        touchStartY = event.touches[0].clientY;
+      }, {passive:true});
+      dayView.addEventListener("touchend", event => {
+        if (!touchStartX && !touchStartY) return;
+        const touch = event.changedTouches && event.changedTouches[0];
+        if (!touch) return;
+        const dx = touch.clientX - touchStartX;
+        const dy = touch.clientY - touchStartY;
+        touchStartX = touchStartY = 0;
+        if (Math.abs(dx) < 55 || Math.abs(dx) < Math.abs(dy) * 1.25) return;
+        moveSelectedDay(dx < 0 ? 1 : -1);
+      }, {passive:true});
+      dayView.addEventListener("animationend", event => {
+        if (event.target === dayView) dayView.classList.remove("day-swipe-next", "day-swipe-prev");
+      });
+    })();
     updateGroupLabel();
     render();
     // При первом запуске сразу предлагаем выбрать курс и группу; повторно окно не открывается после сохранения выбора.
