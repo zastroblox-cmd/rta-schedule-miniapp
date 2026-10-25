@@ -920,7 +920,7 @@
       const date=dateForDay(selectedDay);
       // Экономические группы не должны проваливаться в резервное юридическое расписание.
       // Пока их отдельный набор пар не подключён, возвращаем пустой список явно.
-      if (currentGroup.startsWith("Э") || currentGroup.startsWith("ПИ")) {
+      if (currentGroup.startsWith("Э") || currentGroup.startsWith("ПИ") || currentGroup.startsWith("М601/")) {
         if (!window.EconomicsScheduleReady || !window.EconomicsSchedule) return [];
         const isoDate = date.getFullYear()+"-"+String(date.getMonth()+1).padStart(2,"0")+"-"+String(date.getDate()).padStart(2,"0");
         return window.EconomicsSchedule.getLessonsForDate(currentGroup, isoDate);
@@ -1041,7 +1041,7 @@
         let emptyTitle = "Можно выдохнуть ☕";
         let emptyText = "На выбранную дату пар не запланировано.";
         const isThirdCourseGroup = currentGroup.endsWith("/О-2401") || currentGroup.endsWith("/О-2402") || currentGroup.endsWith("/О-2403") || currentGroup.endsWith("/О-2404");
-        if ((currentGroup.startsWith("Э") || currentGroup.startsWith("ПИ")) && !window.EconomicsScheduleReady) {
+        if ((currentGroup.startsWith("Э") || currentGroup.startsWith("ПИ") || currentGroup.startsWith("М601/")) && !window.EconomicsScheduleReady) {
           emptyTitle = "Расписание подключается";
           const source = window.EconomicsScheduleSource || "unknown";
           emptyTitle = "Не удалось загрузить расписание";
@@ -1524,19 +1524,19 @@
           lessons
         });
         window.EconomicsScheduleReady = true;
-        if (currentGroup.startsWith("Э") || currentGroup.startsWith("ПИ")) render();
+        if (currentGroup.startsWith("Э") || currentGroup.startsWith("ПИ") || currentGroup.startsWith("М601/")) render();
       } catch (error) {
         window.EconomicsScheduleReady = false;
         window.EconomicsScheduleSource = "api-unavailable-" + String(error && error.message || error).slice(0,100).replace(/[^a-zA-Z0-9 _:-]/g,"");
         console.error("Экономическое расписание пока недоступно через API:", error);
-        if (currentGroup.startsWith("Э") || currentGroup.startsWith("ПИ")) render();
+        if (currentGroup.startsWith("Э") || currentGroup.startsWith("ПИ") || currentGroup.startsWith("М601/")) render();
       }
     };
     economicsScript.onerror = () => {
       window.EconomicsScheduleReady = false;
       window.EconomicsScheduleSource = "adapter-error";
       console.error("Не удалось загрузить адаптер экономического факультета.");
-      if (currentGroup.startsWith("Э") || currentGroup.startsWith("ПИ")) render();
+      if (currentGroup.startsWith("Э") || currentGroup.startsWith("ПИ") || currentGroup.startsWith("М601/")) render();
     };
     document.head.appendChild(economicsScript);
     // Обновляем статусы пар, пока Mini App открыт; при смене даты обновляем календарную основу.
