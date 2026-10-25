@@ -1284,7 +1284,7 @@
         ...[1,2,3,4].map(course=>({label:"Менеджмент · курс "+course,url:"https://rta-schedule-api.onrender.com/api/economics/management/course"+course+"-schedule"})),
         ...[1,2,3,4,5].map(course=>({label:"Таможенный факультет · курс "+course,url:"https://rta-schedule-api.onrender.com/api/customs/course"+course+"-schedule"}))
       ];
-      const ownerTimeMinutes=value=>{const m=String(value||"").match(/^([01]\\d|2[0-3]):([0-5]\\d)$/);return m?Number(m[1])*60+Number(m[2]):NaN;};
+      const ownerTimeMinutes=value=>{const m=String(value||"").match(/^([01]\d|2[0-3]):([0-5]\d)$/);return m?Number(m[1])*60+Number(m[2]):NaN;};
       ownerQuery("#ownerRunScan").addEventListener("click",async()=>{
         const result=ownerQuery("#ownerScanResult"),button=ownerQuery("#ownerRunScan"),planButton=ownerQuery("#ownerScanPlan");
         button.disabled=true;button.textContent="Проверяем…";planButton.disabled=true;
@@ -1331,7 +1331,7 @@
         if(!Array.isArray(lessons)){lessons=[];add("ОШИБКА","ВЫБРАННЫЙ ДЕНЬ","Данные дня имеют неожиданный формат.","Проверить функцию lessonsForSelectedDate.");}
         lines.push("Занятий на выбранную дату: "+lessons.length+".");
         if(!lessons.length)add("ПРЕДУПРЕЖДЕНИЕ","ВЫБРАННЫЙ ДЕНЬ","В выбранный день нет занятий; это может быть выходной или неполные данные.","Сверить этот день с официальным расписанием, прежде чем добавлять пары.");
-        const validTime=/^([01]\\d|2[0-3]):[0-5]\\d$/;
+        const validTime=/^([01]\d|2[0-3]):[0-5]\d$/;
         lessons.forEach((lesson,i)=>{
           const label=String(lesson&&lesson.title||"запись №"+(i+1));
           if(!lesson||!validTime.test(lesson.start||"")||!validTime.test(lesson.end||""))add("ОШИБКА","ВРЕМЯ",label+": некорректное время.","Исправлять время только после сверки с исходным документом.");
@@ -1353,7 +1353,7 @@
         lines.push("ИТОГ: "+errors+" ошибок · "+warnings+" предупреждений · "+passed+" успешных проверок.");
         lines.push("Ограничение: проверка подтверждает доступность API и базовую структуру, но не доказывает соответствие официальным PDF.");
         ownerLastScanFindings=findings;
-        if(result)result.textContent=lines.join("\\n");
+        if(result)result.textContent=lines.join("\n");
         ownerQuery("#ownerScanPlanResult").textContent="Диагностика завершена. Нажми «Подготовить план исправлений», чтобы получить список действий без изменения базы.";
         planButton.disabled=findings.length===0;
         if(typeof toast==="function")toast(errors?"Проверка завершена: найдены ошибки":warnings?"Проверка завершена: есть предупреждения":"Проверка завершена");
@@ -1365,7 +1365,7 @@
         const lines=["ПЛАН ИСПРАВЛЕНИЙ — ПРЕДВАРИТЕЛЬНЫЙ, БЕЗ ЗАПИСИ В БАЗУ","Перед любым изменением сверь данные с официальным источником."];
         Object.keys(grouped).forEach(key=>{lines.push("");lines.push(key);grouped[key].forEach((f,i)=>{lines.push((i+1)+". "+f.message);lines.push("   Действие: "+f.fix);});});
         lines.push("");lines.push("Ничего не изменено. Исправление записей в базе требует отдельного серверного механизма с правами владельца, подтверждением и журналом изменений.");
-        if(typeof window.confirm==="function"&&window.confirm("Сформировать предварительный план исправлений? Данные расписания не будут изменены."))ownerQuery("#ownerScanPlanResult").textContent=lines.join("\\n");
+        if(typeof window.confirm==="function"&&window.confirm("Сформировать предварительный план исправлений? Данные расписания не будут изменены."))ownerQuery("#ownerScanPlanResult").textContent=lines.join("\n");
       });
       ownerQuery("#ownerLoadRepAccess").addEventListener("click",()=>void loadOwnerRepAccess());
       ownerQuery("#ownerRepGroup").addEventListener("change",()=>{const select=ownerQuery("#ownerRepGroup"),item=ownerRepAccessCache.find(x=>String(x.id)===select.value);if(item){ownerQuery("#ownerRepEnabled").checked=Boolean(item.enabled);ownerQuery("#ownerRepPassword").value="";}});
