@@ -65,7 +65,7 @@ jobs:
             exports.set(route.label, body);
           }
 
-          for (const direction of ['economics','applied-informatics','management']) {
+          for (const direction of ['economics','applied informatics','management']) {
             for (const course of [1,2,3,4]) {
               const body = exports.get(direction+' course '+course);
               assert.ok(body.lessons.length > 0, direction+' course '+course+' export missing lessons');
