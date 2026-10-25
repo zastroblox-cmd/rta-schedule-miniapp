@@ -1074,7 +1074,17 @@
         let emptyTitle = "Можно выдохнуть ☕";
         let emptyText = "На выбранную дату пар не запланировано.";
         const isThirdCourseGroup = currentGroup.endsWith("/О-2401") || currentGroup.endsWith("/О-2402") || currentGroup.endsWith("/О-2403") || currentGroup.endsWith("/О-2404");
-        if ((currentGroup.startsWith("Э") || currentGroup.startsWith("ПИ") || currentGroup.startsWith("М601/")) && !window.EconomicsScheduleReady) {
+        if (currentFaculty==="customs" && !window.CustomsScheduleReady) {
+          emptyTitle = "Расписание загружается";
+          const source = window.CustomsScheduleSource || "loading";
+          emptyText = source === "loading"
+            ? "Подключаем расписание факультета таможенного дела. Этот день пока нельзя считать свободным."
+            : source === "adapter-error"
+              ? "Не загрузился модуль расписания. Попробуй открыть приложение позже."
+              : source === "api-no-lessons"
+                ? "Занятия ещё не перенесены в базу. Этот день пока нельзя считать свободным."
+                : "Сервер расписания недоступен. Этот день пока нельзя считать свободным.";
+        } else if ((currentGroup.startsWith("Э") || currentGroup.startsWith("ПИ") || currentGroup.startsWith("М601/")) && !window.EconomicsScheduleReady) {
           emptyTitle = "Расписание подключается";
           const source = window.EconomicsScheduleSource || "unknown";
           emptyTitle = "Не удалось загрузить расписание";
