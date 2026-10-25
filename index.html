@@ -1277,15 +1277,26 @@
       ownerQuery("#ownerReset").addEventListener("click",()=>{["theme","accent","opacity","radius","density","glass","motion","glow","accentGlow"].forEach(k=>{try{localStorage.removeItem("rta_owner_"+k);}catch(e){}});write("customizations",read("customizations",0)+1);applyPrefs();toast("Настройки студии сброшены.");});
       function refreshStatuses(){ownerQuery("#ownerC1").textContent=window.Course1ScheduleReady?"✓ Загружен":"… Загружается";ownerQuery("#ownerC2").textContent=window.Course2ScheduleReady?"✓ Загружен":"… Загружается";ownerQuery("#ownerC3").textContent=window.Course3ScheduleReady?"✓ Загружен":"… Загружается";ownerQuery("#ownerC4").textContent=window.Course4ScheduleReady?"✓ Загружен":"… Загружается";}
       ownerQuery("#ownerRunScan").addEventListener("click",()=>{
-        let lines=[],issues=0,lessons=[];
-        try{lessons=typeof lessonsForSelectedDate==="function"?lessonsForSelectedDate():[];}catch(e){issues++;lines.push("Не удалось прочитать выбранный день: "+e.message);}
+        const result=ownerQuery("#ownerScanResult");
+        const lines=["Проверка: "+new Date().toLocaleString("ru-RU")];
+        let issues=0,lessons=[];
+        try{lessons=typeof lessonsForSelectedDate==="function"?lessonsForSelectedDate():[];}catch(e){issues++;lines.push("Не удалось прочитать выбранный день: "+String(e&&e.message||e));}
         if(!Array.isArray(lessons)){lessons=[];issues++;lines.push("Данные дня имеют неожиданный формат.");}
-        lines.push("Группа: "+(typeof currentGroup!=="undefined"?currentGroup:"не определена"));lines.push("Пар на выбранную дату: "+lessons.length);
+        const selected=typeof dateForDay==="function"?dateForDay(selectedDay):new Date();
+        lines.push("Группа: "+(typeof currentGroup!=="undefined"?currentGroup:"не определена"));
+        lines.push("Дата: "+(selected instanceof Date&&!Number.isNaN(selected.getTime())?selected.toLocaleDateString("ru-RU"):"не определена"));
+        lines.push("Пар на выбранную дату: "+lessons.length);
+        if(lessons.length===0) lines.push("ВНИМАНИЕ: список пуст. Это может означать выходной, неперенесённые пары или недоступный источник.");
         const validTime=/^([01]\d|2[0-3]):[0-5]\d$/;
-        lessons.forEach((l,i)=>{if(!l||!validTime.test(l.start||"")||!validTime.test(l.end||"")){issues++;lines.push("Ошибка времени в записи №"+(i+1));}else if(l.end<=l.start){issues++;lines.push("Окончание раньше начала: "+(l.title||"без названия"));}if(!l||!String(l.title||"").trim()){issues++;lines.push("Пустое название пары №"+(i+1));}});
-        for(let i=0;i<lessons.length;i++)for(let j=i+1;j<lessons.length;j++){if(lessons[i]?.start&&lessons[i]?.end&&lessons[j]?.start&&lessons[j]?.end&&lessons[i].start<lessons[j].end&&lessons[j].start<lessons[i].end){issues++;lines.push("Возможное пересечение: "+lessons[i].title+" / "+lessons[j].title);}}
-        refreshStatuses();lines.push("Источники всех курсов:");[[1,window.Course1ScheduleReady,window.Course1ScheduleSource],[2,window.Course2ScheduleReady,window.Course2ScheduleSource],[3,window.Course3ScheduleReady,window.Course3ScheduleSource],[4,window.Course4ScheduleReady,window.Course4ScheduleSource]].forEach(([n,ready,source])=>lines.push("Курс "+n+": "+(ready?"готов":"не готов")+" · "+(source||"источник не указан")));
-        lines.push(issues?"Найдено замечаний: "+issues:"Ошибок формата в доступном списке не найдено.");lines.push("Это техническая проверка, не сверка с официальным PDF.");
+        lessons.forEach((l,i)=>{if(!l||!validTime.test(l.start||"")||!validTime.test(l.end||"")){issues++;lines.push("Ошибка времени в записи №"+(i+1));}else if(l.end<=l.start){issues++;lines.push("Окончание не позже начала: "+(l.title||"без названия"));}if(!l||!String(l.title||"").trim()){issues++;lines.push("Пустое название пары №"+(i+1));}});
+        for(let i=0;i<lessons.length;i++)for(let j=i+1;j<lessons.length;j++){if(lessons[i]?.start&&lessons[i]?.end&&lessons[j]?.start&&lessons[j]?.end&&lessons[i].start<lessons[j].end&&lessons[j].start<lessons[i].end){issues++;lines.push("Возможное пересечение: "+(lessons[i].title||"без названия")+" / "+(lessons[j].title||"без названия"));}}
+        refreshStatuses();
+        lines.push("Состояние источников:");
+        [["Юридический курс 1",window.Course1ScheduleReady,window.Course1ScheduleSource],["Юридический курс 2",window.Course2ScheduleReady,window.Course2ScheduleSource],["Юридический курс 3",window.Course3ScheduleReady,window.Course3ScheduleSource],["Юридический курс 4",window.Course4ScheduleReady,window.Course4ScheduleSource],["Экономический факультет",window.EconomicsScheduleReady,window.EconomicsScheduleSource],["Таможенный факультет",window.CustomsScheduleReady,window.CustomsScheduleSource]].forEach(([name,ready,source])=>lines.push(name+": "+(ready?"загружен":"не загружен")+" · "+(source||"источник не указан")));
+        lines.push(issues?"Замечаний по формату/пересечениям: "+issues:"Ошибок формата и пересечений в доступном списке не найдено.");
+        lines.push("Важно: сканер проверяет только загруженный список на выбранный день, не сверяет пары с PDF.");
+        if(result) result.textContent=lines.join("\n");
+        if(typeof toast==="function") toast(issues?"Сканирование завершено: есть замечания":"Сканирование завершено");
       });
       ownerQuery("#ownerLoadRepAccess").addEventListener("click",()=>void loadOwnerRepAccess());
       ownerQuery("#ownerRepGroup").addEventListener("change",()=>{const select=ownerQuery("#ownerRepGroup"),item=ownerRepAccessCache.find(x=>String(x.id)===select.value);if(item){ownerQuery("#ownerRepEnabled").checked=Boolean(item.enabled);ownerQuery("#ownerRepPassword").value="";}});
