@@ -1505,7 +1505,7 @@
       viewport.appendChild(dayView);
       dayView.style.width = "100%";
       dayView.style.flex = "0 0 100%";
-      let startX=0,startY=0,lastX=0,tracking=false,horizontal=false,neighbor=null,baseDay=0,baseWeek=0;
+      let startX=0,startY=0,lastX=0,tracking=false,horizontal=false,neighbor=null,baseDay=0,baseWeek=0,swipeAnimations=[];
       const ease="cubic-bezier(0.22,0.72,0.18,1)";
       const setX=(node,x)=>{node.style.transform="translate3d("+x+"px,0,0)";};
       function buildNeighbor(direction) {
@@ -1523,8 +1523,9 @@
         render();
       }
       function cleanup(){
-        // Cancel WAAPI effects first: fill:forwards can leave stale transforms behind.
-        dayView.getAnimations().forEach(animation=>animation.cancel());
+        // Cancel only animations created by this swipe, not unrelated UI animations.
+        swipeAnimations.forEach(animation=>animation.cancel());
+        swipeAnimations=[];
         if(neighbor){
           neighbor.getAnimations().forEach(animation=>animation.cancel());
           neighbor.remove();
@@ -1576,10 +1577,12 @@
         const neighborTransform=neighbor.style.transform||"translate3d(0,0,0)";
         const a=dayView.animate([{transform:currentTransform},{transform:"translate3d("+targetCurrent+"px,0,0)"}],{duration:turn?220:180,easing:ease,fill:"forwards"});
         const b=neighbor.animate([{transform:neighborTransform},{transform:"translate3d("+targetNeighbor+"px,0,0)"}],{duration:turn?220:180,easing:ease,fill:"forwards"});
+        swipeAnimations=[a,b];
         Promise.all([a.finished.catch(()=>{}),b.finished.catch(()=>{})]).then(()=>{
           // Remove animation effects before render() changes the live day DOM.
           a.cancel();
           b.cancel();
+          swipeAnimations=[];
           if(turn){selectedDay=baseDay;weekOffset=baseWeek;moveSelectedDay(direction);}
           cleanup();
         });
