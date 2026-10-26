@@ -207,6 +207,50 @@ app.get("/api/schedule", async (req, res) => {
 });
 
 
+// Public, read-only overlay for changes made by class representatives.
+// The base timetable can stay on its verified local source while dated edits
+// from Supabase are reflected immediately in the regular schedule.
+app.get("/api/schedule-changes", async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  if (!supabase) return res.status(503).json({ error: "Database is not configured" });
+  const groupCode = String(req.query.group_code || "").trim();
+  const dateString = String(req.query.date || "");
+  if (!groupCode || groupCode.length > 80 || !validDateString(dateString)) {
+    return res.status(400).json({ error: "group_code and a valid date are required" });
+  }
+  const { data: group, error: groupError } = await supabase
+    .from("student_groups").select("id,group_code").eq("group_code", groupCode).maybeSingle();
+  if (groupError) return res.status(500).json({ error: "Unable to resolve group" });
+  if (!group) return res.status(404).json({ error: "Group not found" });
+  const date = new Date(dateString + "T12:00:00Z");
+  const weekday = date.getUTCDay() || 7;
+  const [overrideResult, recurringResult] = await Promise.all([
+    supabase.from("schedule_entries")
+      .select("id,starts_at,ends_at,subject,teacher,room,lesson_type,notes,entry_kind,schedule_date")
+      .eq("group_id", group.id).eq("entry_kind", "date_override")
+      .eq("schedule_date", dateString).order("starts_at"),
+    supabase.from("schedule_entries")
+      .select("id,starts_at,ends_at,excluded_dates,valid_from,valid_to,week_type")
+      .eq("group_id", group.id).eq("entry_kind", "recurring").eq("weekday", weekday)
+      .or("week_type.is.null,week_type.eq." + getWeekType(dateString)).order("starts_at")
+  ]);
+  if (overrideResult.error || recurringResult.error) {
+    return res.status(500).json({ error: "Unable to load schedule changes" });
+  }
+  const excluded = (recurringResult.data || []).filter(row =>
+    (!row.valid_from || row.valid_from <= dateString) &&
+    (!row.valid_to || row.valid_to >= dateString) &&
+    (row.excluded_dates || []).includes(dateString)
+  ).map(row => ({ starts_at: row.starts_at, ends_at: row.ends_at }));
+  return res.json({
+    group_code: group.group_code,
+    date: dateString,
+    excluded,
+    overrides: overrideResult.data || []
+  });
+});
+
+
 function dateToDM(value) {
   if (!value) return "";
   const parts = String(value).slice(0, 10).split("-");
