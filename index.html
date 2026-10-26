@@ -873,7 +873,7 @@
             currentStream=option.id;localStorage.setItem("rta_schedule_customs_stream",String(currentStream));
             const next=GROUPS.find(g=>g.faculty==="customs"&&(g.direction||"customs")==="customs"&&(Number(g.stream)||1)===currentStream);
             if(next){currentDirection="customs";currentGroup=next.id;currentCourse=next.course;localStorage.setItem("rta_schedule_group",currentGroup);localStorage.setItem("rta_schedule_course",String(currentCourse));localStorage.setItem("rta_schedule_direction",currentDirection);}
-            renderGroupPicker("direction");
+            renderGroupPicker("selection");
           };
           directions.appendChild(b);
         });
@@ -900,8 +900,12 @@
               currentGroup=next.id;currentCourse=next.course;
               localStorage.setItem("rta_schedule_group",currentGroup);
               localStorage.setItem("rta_schedule_course",String(currentCourse));
-              localStorage.setItem("rta_schedule_group_faculty_economics",currentGroup);
+              if(currentFaculty==="economics") localStorage.setItem("rta_schedule_group_faculty_economics",currentGroup);
               updateGroupLabel();render();
+            }
+            if(mode==="direction"&&currentFaculty==="customs"){
+              if(currentDirection==="customs"){renderGroupPicker("stream");return;}
+              renderGroupPicker("selection");return;
             }
             if(mode==="direction"){document.getElementById("groupModal").classList.remove("open");return;}
             renderGroupPicker(mode);
