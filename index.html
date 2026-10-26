@@ -1632,6 +1632,9 @@
     render();
     // При первом запуске сразу предлагаем выбрать курс и группу; повторно окно не открывается после сохранения выбора.
     if (!hasSavedGroup) openGroupModal("faculty");
+    // Единый источник расписания — общий сервер Supabase для всех факультетов и курсов.
+    // Локальные данные остаются только резервом на случай временной недоступности API.
+    window.USE_SERVER_LAW_SCHEDULES = true;
     // Загружаем расписание 2-го курса с сервера. При ошибке остаётся прежняя логика index.html.
     window.Course2ScheduleReady = false;
     window.Course2ScheduleSource = "loading";
