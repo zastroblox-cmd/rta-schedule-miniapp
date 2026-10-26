@@ -980,7 +980,7 @@
         el.appendChild(b);
       }
     }
-    function lessonsForSelectedDate() {
+    function baseLessonsForSelectedDate() {
       const date=dateForDay(selectedDay);
       // Экономические группы не должны проваливаться в резервное юридическое расписание.
       // Пока их отдельный набор пар не подключён, возвращаем пустой список явно.
@@ -1099,6 +1099,44 @@
         lessons.push(...dated);
       }
       return lessons.sort((a,b)=>a.start.localeCompare(b.start));
+    }
+    // Подмешиваем серверные изменения старосты поверх проверенного основного расписания.
+    const representativeChangeCache = new Map();
+    const representativeChangeRequests = new Set();
+    function lessonsForSelectedDate() {
+      const date = dateForDay(selectedDay);
+      const isoDate = date.getFullYear()+"-"+String(date.getMonth()+1).padStart(2,"0")+"-"+String(date.getDate()).padStart(2,"0");
+      const key = currentGroup+"|"+isoDate;
+      const base = baseLessonsForSelectedDate();
+      if (!representativeChangeCache.has(key) && !representativeChangeRequests.has(key) && currentGroup) {
+        representativeChangeRequests.add(key);
+        fetch("https://rta-schedule-api.onrender.com/api/schedule-changes?group_code="+encodeURIComponent(currentGroup)+"&date="+encodeURIComponent(isoDate), {cache:"no-store"})
+          .then(async response => {
+            const data = await response.json().catch(()=>({}));
+            if (!response.ok) throw new Error(data.error || "Schedule changes unavailable");
+            representativeChangeCache.set(key, data);
+            if (currentGroup+"|"+(dateForDay(selectedDay).getFullYear()+"-"+String(dateForDay(selectedDay).getMonth()+1).padStart(2,"0")+"-"+String(dateForDay(selectedDay).getDate()).padStart(2,"0")) === key) render();
+            else if (selectedTab === "week") renderWeekOverview();
+          })
+          .catch(error => console.warn("Не удалось обновить изменения старосты:", error))
+          .finally(() => representativeChangeRequests.delete(key));
+      }
+      const changes = representativeChangeCache.get(key);
+      if (!changes) return base;
+      const slot = item => String(item.start || item.starts_at || "").slice(0,5)+"|"+String(item.end || item.ends_at || "").slice(0,5);
+      const excluded = new Set((changes.excluded || []).map(slot));
+      const overrides = (changes.overrides || []).map(item => ({
+        start:String(item.starts_at || "").slice(0,5), end:String(item.ends_at || "").slice(0,5),
+        title:item.subject || "", type:item.lesson_type || "Занятие",
+        room:item.room || "Уточняется накануне", teacher:item.teacher || "",
+        color:(item.lesson_type || "").includes("Физкультура") ? "green" : "blue",
+        note:item.notes || "", representativeOverride:true
+      }));
+      const overrideSlots = new Set(overrides.map(slot));
+      return [
+        ...base.filter(item => !excluded.has(slot(item)) && !overrideSlots.has(slot(item))),
+        ...overrides
+      ].sort((a,b)=>a.start.localeCompare(b.start));
     }
     function renderLessons() {
       const lessons = lessonsForSelectedDate();
