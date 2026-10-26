@@ -856,7 +856,7 @@
           b.onclick=()=>{
             if(f.id!==currentFaculty) switchFaculty(f.id);
             if(mode==="faculty"){
-              if(f.id==="customs"){renderGroupPicker("stream");return;}
+              if(f.id==="customs"){renderGroupPicker("direction");return;}
                if(f.id==="economics"){renderGroupPicker("direction");return;}
               document.getElementById("groupModal").classList.remove("open");return;
             }
