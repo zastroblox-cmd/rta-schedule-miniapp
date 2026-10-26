@@ -747,28 +747,35 @@
       {id:"М601/О-2501", course:2, faculty:"economics", direction:"management", status:"available"},
       {id:"М601/О-2401", course:3, faculty:"economics", direction:"management", status:"available"},
       {id:"М601/О-2301", course:4, faculty:"economics", direction:"management", status:"available"},
-      {id:"Тс00/О-2601", course:1, faculty:"customs", status:"pending"},
-      {id:"Тс00/О-2602", course:1, faculty:"customs", status:"pending"},
-      {id:"Тс00/О-2603", course:1, faculty:"customs", status:"pending"},
-      {id:"Тс00/О-2501", course:2, faculty:"customs", status:"pending"},
-      {id:"Тс00/О-2502", course:2, faculty:"customs", status:"pending"},
-      {id:"Тс00/О-2503", course:2, faculty:"customs", status:"pending"},
-      {id:"Тс00/О-2504", course:2, faculty:"customs", status:"pending"},
-      {id:"Тс00/О-2401", course:3, faculty:"customs", status:"pending"},
-      {id:"Тс00/О-2402", course:3, faculty:"customs", status:"pending"},
-      {id:"Тс00/О-2403", course:3, faculty:"customs", status:"pending"},
-      {id:"Тс00/О-2404", course:3, faculty:"customs", status:"pending"},
-      {id:"Тс00/О-2405", course:3, faculty:"customs", status:"pending"},
-      {id:"Тс01/О-2301", course:4, faculty:"customs", status:"pending"},
-      {id:"Тс01/О-2302", course:4, faculty:"customs", status:"pending"},
-      {id:"Тс06/О-2303", course:4, faculty:"customs", status:"pending"},
-      {id:"Тс05/О-2304", course:4, faculty:"customs", status:"pending"},
-      {id:"Тс09/О-2305", course:4, faculty:"customs", status:"pending"},
-      {id:"Тс01/О-2201", course:5, faculty:"customs", status:"pending"},
-      {id:"Тс01/О-2202", course:5, faculty:"customs", status:"pending"},
-      {id:"Тс06/О-2203", course:5, faculty:"customs", status:"pending"},
-      {id:"Тс05/О-2204", course:5, faculty:"customs", status:"pending"},
-      {id:"Тс09/О-2205", course:5, faculty:"customs", status:"pending"},
+      {id:"Тс00/О-2601", course:1, faculty:"customs", direction:"customs", stream:1, status:"available"},
+      {id:"Тс00/О-2602", course:1, faculty:"customs", direction:"customs", stream:1, status:"available"},
+      {id:"Тс00/О-2603", course:1, faculty:"customs", direction:"customs", stream:1, status:"available"},
+      {id:"Тс00/О-2604", course:1, faculty:"customs", direction:"customs", stream:2, status:"available"},
+      {id:"Тс00/О-2605", course:1, faculty:"customs", direction:"customs", stream:2, status:"available"},
+      {id:"Тс00/О-2606", course:1, faculty:"customs", direction:"customs", stream:2, status:"available"},
+      {id:"Тс00/О-2501", course:2, faculty:"customs", direction:"customs", stream:1, status:"available"},
+      {id:"Тс00/О-2502", course:2, faculty:"customs", direction:"customs", stream:1, status:"available"},
+      {id:"Тс00/О-2503", course:2, faculty:"customs", direction:"customs", stream:1, status:"available"},
+      {id:"Тс00/О-2504", course:2, faculty:"customs", direction:"customs", stream:1, status:"available"},
+      {id:"Тс00/О-2505", course:2, faculty:"customs", direction:"customs", stream:2, status:"available"},
+      {id:"Тс00/О-2506", course:2, faculty:"customs", direction:"customs", stream:2, status:"available"},
+      {id:"Тс00/О-2507", course:2, faculty:"customs", direction:"customs", stream:2, status:"available"},
+      {id:"Тс00/О-2508", course:2, faculty:"customs", direction:"customs", stream:2, status:"available"},
+      {id:"Тс00/О-2401", course:3, faculty:"customs", direction:"customs", stream:1, status:"pending"},
+      {id:"Тс00/О-2402", course:3, faculty:"customs", direction:"customs", stream:1, status:"pending"},
+      {id:"Тс00/О-2403", course:3, faculty:"customs", direction:"customs", stream:1, status:"pending"},
+      {id:"Тс00/О-2404", course:3, faculty:"customs", direction:"customs", stream:1, status:"pending"},
+      {id:"Тс00/О-2405", course:3, faculty:"customs", direction:"customs", stream:1, status:"pending"},
+      {id:"Тс01/О-2301", course:4, faculty:"customs", direction:"customs", stream:1, status:"pending"},
+      {id:"Тс01/О-2302", course:4, faculty:"customs", direction:"customs", stream:1, status:"pending"},
+      {id:"Тс06/О-2303", course:4, faculty:"customs", direction:"customs", stream:1, status:"pending"},
+      {id:"Тс05/О-2304", course:4, faculty:"customs", direction:"customs", stream:1, status:"pending"},
+      {id:"Тс09/О-2305", course:4, faculty:"customs", direction:"customs", stream:1, status:"pending"},
+      {id:"Тс01/О-2201", course:5, faculty:"customs", direction:"customs", stream:1, status:"pending"},
+      {id:"Тс01/О-2202", course:5, faculty:"customs", direction:"customs", stream:1, status:"pending"},
+      {id:"Тс06/О-2203", course:5, faculty:"customs", direction:"customs", stream:1, status:"pending"},
+      {id:"Тс05/О-2204", course:5, faculty:"customs", direction:"customs", stream:1, status:"pending"},
+      {id:"Тс09/О-2205", course:5, faculty:"customs", direction:"customs", stream:1, status:"pending"},
     ];
     const FACULTIES = [
       {id:"law", name:"Юридический факультет", short:"Юридический", icon:"⚖️"},
@@ -781,6 +788,8 @@
     let currentGroup = GROUPS.some(g=>g.id===savedGroup) ? savedGroup : DEFAULT_GROUP;
     let currentFaculty = GROUPS.find(g=>g.id===currentGroup)?.faculty || localStorage.getItem("rta_schedule_faculty") || "law";
     let currentDirection = GROUPS.find(g=>g.id===currentGroup)?.direction || (currentFaculty==="economics" ? "economics" : currentFaculty==="customs" ? "customs" : "law");
+    let currentStream = Number(localStorage.getItem("rta_schedule_customs_stream")) || GROUPS.find(g=>g.id===currentGroup)?.stream || 1;
+    const matchesCurrentStream = g => currentFaculty!=="customs" || currentDirection!=="customs" || (Number(g.stream)||1)===currentStream;
     let currentCourse = Number(localStorage.getItem("rta_schedule_course")) || (GROUPS.find(g=>g.id===currentGroup)?.course || 2);
     localStorage.setItem("rta_schedule_direction",currentDirection);
     if (!GROUPS.some(g=>g.id===currentGroup && g.course===currentCourse && g.faculty===currentFaculty)) {
@@ -810,7 +819,7 @@
       currentFaculty=facultyId;
       const remembered=localStorage.getItem("rta_schedule_group_faculty_"+facultyId);
       const rememberedGroup=GROUPS.find(g=>g.id===remembered&&g.faculty===facultyId);
-      const next=rememberedGroup||GROUPS.find(g=>g.faculty===facultyId);
+      const next=rememberedGroup||GROUPS.find(g=>g.faculty===facultyId&&((facultyId!=="customs")||(Number(g.stream)||1)===currentStream));
       if(!next) return;
       currentGroup=next.id; currentCourse=next.course; currentDirection=next.direction || (next.faculty==="economics"?"economics":"law"); localStorage.setItem("rta_schedule_direction",currentDirection);
       localStorage.setItem("rta_schedule_group",currentGroup);
@@ -826,7 +835,7 @@
       const courses=document.getElementById("courseOptions");
       const groupWrap=document.getElementById("groupOptions");
       const isDirectionFaculty=currentFaculty==="economics"||currentFaculty==="customs";
-      title.textContent=mode==="faculty"?"Выбери факультет":mode==="direction"?(currentFaculty==="customs"?"Факультет таможенного дела":"Экономический факультет"):mode==="course"?"Выбери курс":mode==="group"?"Выбери группу":"Выбери факультет, направление, курс и группу";
+      title.textContent=mode==="faculty"?"Выбери факультет":mode==="stream"?"Факультет таможенного дела":mode==="direction"?(currentFaculty==="customs"?"Факультет таможенного дела":"Экономический факультет"):mode==="course"?"Выбери курс":mode==="group"?"Выбери группу":"Выбери факультет, направление, курс и группу";
       help.textContent=mode==="direction"
         ?(currentFaculty==="customs"?"Выбери направление: таможенное дело или прикладная информатика.":"Выбери направление: экономика, прикладная информатика или менеджмент.")
          :isDirectionFaculty
@@ -836,7 +845,7 @@
           :"Сначала выбери факультет и курс — ниже появятся только группы этого курса.";
       facultyWrap.innerHTML=""; directions.innerHTML=""; courses.innerHTML=""; groupWrap.innerHTML="";
       facultyWrap.style.display=mode==="faculty"||mode==="both"?"grid":"none";
-      directions.style.display=isDirectionFaculty&&mode==="direction"?"grid":"none";
+      directions.style.display=isDirectionFaculty&&(mode==="direction"||mode==="stream")?"grid":"none";
       courses.style.display=mode==="group"||mode==="faculty"||mode==="direction"?"none":"grid";
       groupWrap.style.display=mode==="faculty"||mode==="course"||mode==="direction"?"none":"grid";
       if(mode==="faculty"||mode==="both"){
@@ -847,12 +856,26 @@
           b.onclick=()=>{
             if(f.id!==currentFaculty) switchFaculty(f.id);
             if(mode==="faculty"){
-              if(f.id==="economics"||f.id==="customs"){renderGroupPicker("direction");return;}
+              if(f.id==="customs"){renderGroupPicker("stream");return;}
+               if(f.id==="economics"){renderGroupPicker("direction");return;}
               document.getElementById("groupModal").classList.remove("open");return;
             }
             renderGroupPicker(mode);
           };
           facultyWrap.appendChild(b);
+        });
+      }
+      if(currentFaculty==="customs"&&mode==="stream"){
+        [{id:1,title:"1-й поток",sub:"Группы 2601–2603, 2501–2504 и старшие курсы"},{id:2,title:"2-й поток",sub:"Группы 2604–2606 и 2505–2508"}].forEach(option=>{
+          const b=document.createElement("button");b.type="button";b.className="direction-option"+(option.id===currentStream?" selected":"");
+          b.innerHTML=option.title+"<small>"+option.sub+"</small>";
+          b.onclick=()=>{
+            currentStream=option.id;localStorage.setItem("rta_schedule_customs_stream",String(currentStream));
+            const next=GROUPS.find(g=>g.faculty==="customs"&&(g.direction||"customs")==="customs"&&(Number(g.stream)||1)===currentStream);
+            if(next){currentDirection="customs";currentGroup=next.id;currentCourse=next.course;localStorage.setItem("rta_schedule_group",currentGroup);localStorage.setItem("rta_schedule_course",String(currentCourse));localStorage.setItem("rta_schedule_direction",currentDirection);}
+            renderGroupPicker("direction");
+          };
+          directions.appendChild(b);
         });
       }
       if(isDirectionFaculty&&mode==="direction"){
@@ -872,7 +895,7 @@
           b.innerHTML=option.title+"<small>"+option.sub+"</small>";
           b.onclick=()=>{
             currentDirection=option.id; localStorage.setItem("rta_schedule_direction",currentDirection);
-            const candidates=GROUPS.filter(g=>g.faculty===currentFaculty&&(g.direction|| (currentFaculty==="customs"?"customs":"economics"))===currentDirection);
+            const candidates=GROUPS.filter(g=>g.faculty===currentFaculty&&(g.direction|| (currentFaculty==="customs"?"customs":"economics"))===currentDirection&&matchesCurrentStream(g));
             const next=candidates.find(g=>g.course===currentCourse)||candidates[0];
             if(next){
               currentGroup=next.id;currentCourse=next.course;
@@ -888,9 +911,9 @@
         });
       }
       if(mode!=="faculty"&&mode!=="group"){
-        const facultyCourses=[...new Set(GROUPS.filter(g=>g.faculty===currentFaculty&&((currentFaculty!=="economics"&&currentFaculty!=="customs")||(g.direction||(currentFaculty==="customs"?"customs":"economics"))===currentDirection)).map(g=>g.course))].sort((a,b)=>a-b);
+        const facultyCourses=[...new Set(GROUPS.filter(g=>g.faculty===currentFaculty&&((currentFaculty!=="economics"&&currentFaculty!=="customs")||(g.direction||(currentFaculty==="customs"?"customs":"economics"))===currentDirection)&&matchesCurrentStream(g)).map(g=>g.course))].sort((a,b)=>a-b);
         facultyCourses.forEach(course=>{
-          const groupsForCourse=GROUPS.filter(g=>g.faculty===currentFaculty&&g.course===course&&((currentFaculty!=="economics"&&currentFaculty!=="customs")||(g.direction||(currentFaculty==="customs"?"customs":"economics"))===currentDirection));
+          const groupsForCourse=GROUPS.filter(g=>g.faculty===currentFaculty&&g.course===course&&((currentFaculty!=="economics"&&currentFaculty!=="customs")||(g.direction||(currentFaculty==="customs"?"customs":"economics"))===currentDirection)&&matchesCurrentStream(g));
           const b=document.createElement("button"); b.className="course-option"+(course===currentCourse?" selected":""); b.type="button";
           b.textContent=course+" курс";
           if(!groupsForCourse.length){
@@ -904,7 +927,7 @@
               if(course!==currentCourse){
                 localStorage.setItem("rta_schedule_group_faculty_"+currentFaculty,currentGroup);
                 const remembered=localStorage.getItem("rta_schedule_group_course_"+currentFaculty+"_"+course);
-                const next=GROUPS.find(g=>g.id===remembered&&g.course===course&&g.faculty===currentFaculty&&((currentFaculty!=="economics"&&currentFaculty!=="customs")||(g.direction||(currentFaculty==="customs"?"customs":"economics"))===currentDirection))||GROUPS.find(g=>g.course===course&&g.faculty===currentFaculty&&((currentFaculty!=="economics"&&currentFaculty!=="customs")||(g.direction||(currentFaculty==="customs"?"customs":"economics"))===currentDirection));
+                const next=GROUPS.find(g=>g.id===remembered&&g.course===course&&g.faculty===currentFaculty&&((currentFaculty!=="economics"&&currentFaculty!=="customs")||(g.direction||(currentFaculty==="customs"?"customs":"economics"))===currentDirection)&&matchesCurrentStream(g))||GROUPS.find(g=>g.course===course&&g.faculty===currentFaculty&&((currentFaculty!=="economics"&&currentFaculty!=="customs")||(g.direction||(currentFaculty==="customs"?"customs":"economics"))===currentDirection)&&matchesCurrentStream(g));
                 if(next){currentCourse=course;currentGroup=next.id;localStorage.setItem("rta_schedule_course",String(course));localStorage.setItem("rta_schedule_group",currentGroup);localStorage.setItem("rta_schedule_group_course_"+currentFaculty+"_"+course,currentGroup);updateGroupLabel();render();}
               }
               if(mode==="course"){document.getElementById("groupModal").classList.remove("open");return;}
@@ -915,10 +938,10 @@
         });
       }
       if(mode!=="faculty"&&mode!=="course"){
-        GROUPS.filter(g=>g.faculty===currentFaculty&&g.course===currentCourse&&((currentFaculty!=="economics"&&currentFaculty!=="customs")||(g.direction||(currentFaculty==="customs"?"customs":"economics"))===currentDirection)).forEach(g=>{
+        GROUPS.filter(g=>g.faculty===currentFaculty&&g.course===currentCourse&&((currentFaculty!=="economics"&&currentFaculty!=="customs")||(g.direction||(currentFaculty==="customs"?"customs":"economics"))===currentDirection)&&matchesCurrentStream(g)).forEach(g=>{
           const b=document.createElement("button"); b.className="group-option"+(g.id===currentGroup?" selected":"");
           b.innerHTML=g.id+"<small>"+(g.status==="available"?"Расписание "+g.course+" курса подключено":g.faculty==="customs"?"Расписание факультета таможенного дела загружается из PDF":"Экономика · расписание переносится из PDF")+"</small>";
-          b.onclick=()=>{currentGroup=g.id;currentCourse=g.course;currentDirection=g.direction||(g.faculty==="economics"?"economics":"law");localStorage.setItem("rta_schedule_direction",currentDirection);localStorage.setItem("rta_schedule_group",currentGroup);localStorage.setItem("rta_schedule_group_faculty_"+currentFaculty,currentGroup);localStorage.setItem("rta_schedule_group_course_"+currentFaculty+"_"+currentCourse,currentGroup);updateGroupLabel();document.getElementById("groupModal").classList.remove("open");render();};
+          b.onclick=()=>{currentGroup=g.id;currentCourse=g.course;currentDirection=g.direction||(g.faculty==="economics"?"economics":"law");if(g.faculty==="customs"){currentStream=Number(g.stream)||1;localStorage.setItem("rta_schedule_customs_stream",String(currentStream));}localStorage.setItem("rta_schedule_direction",currentDirection);localStorage.setItem("rta_schedule_group",currentGroup);localStorage.setItem("rta_schedule_group_faculty_"+currentFaculty,currentGroup);localStorage.setItem("rta_schedule_group_course_"+currentFaculty+"_"+currentCourse,currentGroup);updateGroupLabel();document.getElementById("groupModal").classList.remove("open");render();};
           groupWrap.appendChild(b);
         });
       }
