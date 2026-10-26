@@ -846,8 +846,8 @@
       facultyWrap.innerHTML=""; directions.innerHTML=""; courses.innerHTML=""; groupWrap.innerHTML="";
       facultyWrap.style.display=mode==="faculty"||mode==="both"?"grid":"none";
       directions.style.display=isDirectionFaculty&&(mode==="direction"||mode==="stream")?"grid":"none";
-      courses.style.display=mode==="group"||mode==="faculty"||mode==="direction"?"none":"grid";
-      groupWrap.style.display=mode==="faculty"||mode==="course"||mode==="direction"?"none":"grid";
+      courses.style.display=mode==="group"||mode==="faculty"||mode==="direction"||mode==="stream"?"none":"grid";
+      groupWrap.style.display=mode==="faculty"||mode==="course"||mode==="direction"||mode==="stream"?"none":"grid";
       if(mode==="faculty"||mode==="both"){
         FACULTIES.forEach(f=>{
           const b=document.createElement("button"); b.type="button";
@@ -885,7 +885,6 @@
             {id:"applied-informatics",title:"💻 Прикладная информатика",sub:"Факультет таможенного дела · 4 курса"}
           ]:[
             {id:"economics",title:"📊 Экономика",sub:"Экономический факультет · 4 курса"},
-            {id:"applied-informatics",title:"💻 Прикладная информатика",sub:"Факультет таможенного дела · 4 курса"},
             {id:"management",title:"📋 Менеджмент",sub:"Экономический факультет · 4 курса"}
           ])
         ];
