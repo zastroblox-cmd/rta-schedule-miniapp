@@ -18,6 +18,14 @@ const supabase = SUPABASE_URL && SUPABASE_KEY
     })
   : null;
 
+// Small security defaults that do not interfere with Telegram's embedded Mini App.
+app.use((_req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  next();
+});
+
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   const allowed = new Set([
@@ -154,16 +162,22 @@ app.get("/api/schedule", async (req, res) => {
   const weekType = getWeekType(dateString);
   const fields = "id,group_id,entry_kind,weekday,week_type,schedule_date,starts_at,ends_at,subject,teacher,room,lesson_type,notes,excluded_dates,valid_from,valid_to";
 
-  const { data: overrides, error: overrideError } = await supabase.from("schedule_entries")
-    .select(fields).eq("group_id", groupId).eq("entry_kind", "date_override")
-    .eq("schedule_date", dateString).order("starts_at");
-  if (overrideError) return res.status(500).json({ error: "Unable to load schedule" });
-
-  const { data: recurring, error: recurringError } = await supabase.from("schedule_entries")
-    .select(fields).eq("group_id", groupId).eq("entry_kind", "recurring")
-    .eq("weekday", weekday).or(`week_type.is.null,week_type.eq.${weekType}`)
-    .order("starts_at");
-  if (recurringError) return res.status(500).json({ error: "Unable to load schedule" });
+  // Both reads are independent; run them concurrently to reduce schedule-load latency.
+  const [overrideResult, recurringResult] = await Promise.all([
+    supabase.from("schedule_entries").select(fields)
+      .eq("group_id", groupId).eq("entry_kind", "date_override")
+      .eq("schedule_date", dateString).order("starts_at"),
+    supabase.from("schedule_entries").select(fields)
+      .eq("group_id", groupId).eq("entry_kind", "recurring")
+      .eq("weekday", weekday).or(`week_type.is.null,week_type.eq.${weekType}`)
+      .order("starts_at")
+  ]);
+  if (overrideResult.error || recurringResult.error) {
+    console.error("Schedule query failed:", overrideResult.error?.message || recurringResult.error?.message);
+    return res.status(500).json({ error: "Unable to load schedule" });
+  }
+  const overrides = overrideResult.data || [];
+  const recurring = recurringResult.data || [];
 
   const recurringForDate = (recurring || []).filter(item =>
     (!item.valid_from || item.valid_from <= dateString) &&
