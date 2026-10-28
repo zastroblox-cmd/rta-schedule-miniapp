@@ -320,16 +320,17 @@ async function exportCourseSchedule(courseNumber, res, facultySlug = "law", dire
   let coursesQuery = supabase
     .from("courses")
     .select("id,course_number,faculty_id,direction")
-    .eq("faculty_id", faculty.id)
-    .eq("course_number", courseNumber);
-  if (direction) coursesQuery = coursesQuery.eq("direction", direction);
+    .eq("faculty_id", faculty.id);
+  if (courseNumber != null) coursesQuery = coursesQuery.eq("course_number", courseNumber);
+  if (Array.isArray(direction)) coursesQuery = coursesQuery.in("direction", direction);
+  else if (direction) coursesQuery = coursesQuery.eq("direction", direction);
   const { data: courses, error: coursesError } = await coursesQuery;
   if (coursesError) {
     console.error("Schedule API course lookup failed:", coursesError.message);
     return res.status(500).json({ error: "Unable to load course", detail: coursesError.message });
   }
   if (!courses || courses.length === 0) {
-    return res.status(404).json({ error: "No course found for faculty " + facultySlug + ", course " + courseNumber });
+    return res.status(404).json({ error: "No course found for faculty " + facultySlug + (courseNumber == null ? "" : ", course " + courseNumber) });
   }
 
   const courseIds = courses.map(course => course.id);
@@ -375,7 +376,7 @@ async function exportCourseSchedule(courseNumber, res, facultySlug = "law", dire
   return res.json({
     _status: "CONNECTED_TO_SUPABASE",
     _source: "Supabase schedule_entries",
-    _course: courseNumber,
+    _course: courseNumber == null ? "all" : courseNumber,
     _groups: groups.map(group => group.group_code),
     _rules: {
       weekA: "чётная неделя",
@@ -405,6 +406,7 @@ app.get("/api/economics/management/course1-schedule", (_req, res) => exportCours
 app.get("/api/economics/management/course2-schedule", (_req, res) => exportCourseSchedule(2, res, "economics", "management"));
 app.get("/api/economics/management/course3-schedule", (_req, res) => exportCourseSchedule(3, res, "economics", "management"));
 app.get("/api/economics/management/course4-schedule", (_req, res) => exportCourseSchedule(4, res, "economics", "management"));
+app.get("/api/economics/all-schedules", (_req, res) => exportCourseSchedule(null, res, "economics", ["economics", "applied-informatics", "management"]));
 
 // Customs Affairs faculty: five separate courses.
 app.get("/api/customs/course1-schedule", (_req, res) => exportCourseSchedule(1, res, "customs", "customs"));
@@ -412,6 +414,7 @@ app.get("/api/customs/course2-schedule", (_req, res) => exportCourseSchedule(2, 
 app.get("/api/customs/course3-schedule", (_req, res) => exportCourseSchedule(3, res, "customs", "customs"));
 app.get("/api/customs/course4-schedule", (_req, res) => exportCourseSchedule(4, res, "customs", "customs"));
 app.get("/api/customs/course5-schedule", (_req, res) => exportCourseSchedule(5, res, "customs", "customs"));
+app.get("/api/customs/all-schedules", (_req, res) => exportCourseSchedule(null, res, "customs", "customs"));
 
 // Course 4 uses the same faculty-scoped database export as courses 1–3.
 
