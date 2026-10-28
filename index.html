@@ -1873,10 +1873,9 @@
     economicsScript.src = "./data/economics-adapter.js?v=20261025-live-normalize";
     economicsScript.onload = async () => {
       try {
+        // One combined request loads all economics directions and courses.
         const requests = [
-          ...[1,2,3,4].map(course => ({course, direction:"economics", url:"https://rta-schedule-api.onrender.com/api/economics/course"+course+"-schedule"})),
-          ...[1,2,3,4].map(course => ({course, direction:"applied-informatics", url:"https://rta-schedule-api.onrender.com/api/economics/applied-informatics/course"+course+"-schedule"})),
-          ...[1,2,3,4].map(course => ({course, direction:"management", url:"https://rta-schedule-api.onrender.com/api/economics/management/course"+course+"-schedule"}))
+          {course:"all", direction:"all-directions", url:"https://rta-schedule-api.onrender.com/api/economics/all-schedules"}
         ];
         const results = await Promise.allSettled(requests.map(request =>
           fetch(request.url, {cache:"no-store"}).then(async response => {
@@ -1938,7 +1937,8 @@
     customsScript.src = "./data/customs-adapter.js?v=20261025-customs-v1";
     customsScript.onload = async () => {
       try {
-        const requests = [1,2,3,4,5].map(course => ({course,url:"https://rta-schedule-api.onrender.com/api/customs/course"+course+"-schedule"}));
+        // One combined request loads all customs courses in a single API round-trip.
+        const requests = [{course:"all",url:"https://rta-schedule-api.onrender.com/api/customs/all-schedules"}];
         const wait = ms => new Promise(resolve => setTimeout(resolve,ms));
         const fetchJsonWithRetry = async (url,label) => {
           let lastError;
