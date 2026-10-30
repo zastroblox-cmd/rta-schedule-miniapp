@@ -1569,7 +1569,7 @@
           const loginResponse=await fetch("https://rta-schedule-api.onrender.com/api/representative/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({initData}),cache:"no-store"});
           const loginData=await loginResponse.json();if(!loginResponse.ok||!loginData.token||loginData.role!=="owner")throw new Error("Не удалось подтвердить права владельца.");
           const headers={Authorization:"Bearer "+loginData.token};
-          const groupResponse=await fetch("https://rta-schedule-api.onrender.com/api/groups",{headers,cache:"no-store"});
+          const groupResponse=await fetch("https://rta-schedule-api.onrender.com/api/groups",{headers,cache:"default"});
           const groupData=await groupResponse.json();if(!groupResponse.ok||!Array.isArray(groupData.data))throw new Error(groupData.error||"Не удалось загрузить группы.");
           const groups=groupData.data;groupsCount.textContent=groups.length.toLocaleString("ru-RU");
           const histories=await Promise.all(groups.map(async group=>{try{const r=await fetch("https://rta-schedule-api.onrender.com/api/representative/history?group_id="+encodeURIComponent(group.id),{headers,cache:"no-store"});const d=await r.json();if(!r.ok)throw new Error(d.error||"ошибка");return (d.data||[]).map(item=>({...item,adminGroup:group.display_name||group.group_code,adminGroupCode:group.group_code}));}catch(error){return [{adminGroup:group.display_name||group.group_code,adminGroupCode:group.group_code,adminError:error.message}];}}));
