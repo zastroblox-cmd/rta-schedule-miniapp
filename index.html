@@ -1873,9 +1873,12 @@
     economicsScript.src = "./data/economics-adapter.js?v=20261025-live-normalize";
     economicsScript.onload = async () => {
       try {
-        // One combined request loads all economics directions and courses.
+        // Загружаем каждое направление и курс отдельным маршрутом.
+        // Так сбой общего агрегирующего endpoint не скрывает расписание ПИ.
         const requests = [
-          {course:"all", direction:"all-directions", url:"https://rta-schedule-api.onrender.com/api/economics/all-schedules"}
+          ...[1,2,3,4].map(course => ({course, direction:"economics", url:"https://rta-schedule-api.onrender.com/api/economics/course"+course+"-schedule"})),
+          ...[1,2,3,4].map(course => ({course, direction:"applied-informatics", url:"https://rta-schedule-api.onrender.com/api/economics/applied-informatics/course"+course+"-schedule"})),
+          ...[1,2,3,4].map(course => ({course, direction:"management", url:"https://rta-schedule-api.onrender.com/api/economics/management/course"+course+"-schedule"}))
         ];
         const results = await Promise.allSettled(requests.map(request =>
           fetch(request.url, {cache:"no-store"}).then(async response => {
