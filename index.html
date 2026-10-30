@@ -1003,6 +1003,10 @@
     let selectedTab = "schedule";
     const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
     if (tg) { tg.ready(); tg.expand(); try { tg.setHeaderColor("#0d1118"); tg.setBackgroundColor("#0d1118"); } catch(e) {} }
+    // Разогреваем бесплатный API сразу, пока Mini App строит интерфейс: Render Free может просыпаться после простоя.
+    // Запрос не блокирует первый экран и выполняется параллельно загрузке расписания.
+    fetch("https://rta-schedule-api.onrender.com/health", { method: "GET", cache: "no-store", keepalive: true })
+      .catch(() => {});
 
     function dateForDay(i) {
       const d = mondayForOffset(); d.setDate(d.getDate() + i); return d;
@@ -1873,8 +1877,8 @@
     economicsScript.src = "./data/economics-adapter.js?v=20261025-live-normalize";
     economicsScript.onload = async () => {
       try {
-        // Загружаем каждое направление и курс отдельным маршрутом.
-        // Так сбой общего агрегирующего endpoint не скрывает расписание ПИ.
+        // Запрашиваем данные параллельно; предварительный /health выше заранее будит Render.
+        // Отдельные маршруты позволяют сохранить рабочие направления при частичном сбое API.
         const requests = [
           ...[1,2,3,4].map(course => ({course, direction:"economics", url:"https://rta-schedule-api.onrender.com/api/economics/course"+course+"-schedule"})),
           ...[1,2,3,4].map(course => ({course, direction:"applied-informatics", url:"https://rta-schedule-api.onrender.com/api/economics/applied-informatics/course"+course+"-schedule"})),
