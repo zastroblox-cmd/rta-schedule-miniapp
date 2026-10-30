@@ -1877,6 +1877,20 @@
     economicsScript.src = "./data/economics-adapter.js?v=20261025-live-normalize";
     economicsScript.onload = async () => {
       try {
+        // Мгновенно показываем последний сохранённый снимок расписания, затем обновляем его с сервера.
+        // Это не блокирует интерфейс на пробуждение Render и сохраняет доступность при кратком сбое сети.
+        const economicsCacheKey = "rta-economics-schedule-v1";
+        let hasEconomicsCache = false;
+        try {
+          const cached = JSON.parse(localStorage.getItem(economicsCacheKey) || "null");
+          if (cached && Array.isArray(cached.lessons) && cached.lessons.length && Date.now() - Number(cached.savedAt || 0) < 7 * 24 * 60 * 60 * 1000) {
+            window.EconomicsSchedule.setDraft({ _status: "PRELIMINARY", _source: "Локальный кэш; обновляется в фоне", lessons: cached.lessons });
+            window.EconomicsScheduleReady = true;
+            window.EconomicsScheduleSource = "local-cache-refreshing";
+            hasEconomicsCache = true;
+            if (currentGroup.startsWith("Э") || currentGroup.startsWith("ПИ") || currentGroup.startsWith("М601/")) render();
+          }
+        } catch (cacheError) { console.warn("Кэш экономического расписания повреждён; загружаю с сервера.", cacheError); }
         // Запрашиваем данные параллельно; предварительный /health выше заранее будит Render.
         // Отдельные маршруты позволяют сохранить рабочие направления при частичном сбое API.
         const requests = [
@@ -1909,8 +1923,8 @@
         const failedCourses = results.map((result,index) => result.status === "rejected" ? requests[index].direction+"-"+requests[index].course : null).filter(Boolean);
         window.EconomicsScheduleSource = failedCourses.length ? "partial-api-courses-" + failedCourses.join("-") : "supabase-api";
         if (!lessons.length) {
-          window.EconomicsScheduleReady = false;
-          window.EconomicsScheduleSource = "api-no-lessons" + (failedCourses.length ? "-courses-" + failedCourses.join("-") : "");
+          window.EconomicsScheduleReady = hasEconomicsCache;
+          window.EconomicsScheduleSource = hasEconomicsCache ? "local-cache-api-unavailable" : "api-no-lessons" + (failedCourses.length ? "-courses-" + failedCourses.join("-") : "");
           console.error("Экономический API не вернул пары.", results.map((result,index) => ({course:index+1,status:result.status,reason:result.status==="rejected"?String(result.reason):undefined,lessons:result.status==="fulfilled"&&Array.isArray(result.value.lessons)?result.value.lessons.length:0})));
           return;
         }
@@ -1922,6 +1936,9 @@
           lessons
         });
         window.EconomicsScheduleReady = true;
+        window.EconomicsScheduleSource = failedCourses.length ? "partial-api-courses-" + failedCourses.join("-") : "supabase-api";
+        try { localStorage.setItem(economicsCacheKey, JSON.stringify({ savedAt: Date.now(), lessons })); }
+        catch (storageError) { console.warn("Не удалось сохранить кэш расписания экономики.", storageError); }
         if (currentGroup.startsWith("Э") || currentGroup.startsWith("ПИ") || currentGroup.startsWith("М601/")) render();
       } catch (error) {
         window.EconomicsScheduleReady = false;
