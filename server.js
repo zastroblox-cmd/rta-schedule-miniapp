@@ -372,7 +372,9 @@ async function exportCourseSchedule(courseNumber, res, facultySlug = "law", dire
     });
   }
 
-  res.setHeader("Cache-Control", "no-store");
+  // Расписание меняется редко; короткий HTTP-кэш снижает повторные запросы к Supabase.
+  // Обновления расписания появятся после истечения кэша максимум через минуту.
+  res.setHeader("Cache-Control", "public, max-age=30, stale-while-revalidate=60");
   return res.json({
     _status: "CONNECTED_TO_SUPABASE",
     _source: "Supabase schedule_entries",
