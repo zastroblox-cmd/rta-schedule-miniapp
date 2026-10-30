@@ -113,6 +113,7 @@ app.get("/health", (_req, res) => {
 });
 
 app.get("/api/faculties", async (_req, res) => {
+  res.setHeader("Cache-Control", "public, max-age=60, stale-while-revalidate=120");
   if (!supabase) return res.status(503).json({ error: "Database is not configured" });
   const { data, error } = await supabase.from("faculties")
     .select("id,name,slug").order("name");
@@ -121,6 +122,7 @@ app.get("/api/faculties", async (_req, res) => {
 });
 
 app.get("/api/groups", async (_req, res) => {
+  res.setHeader("Cache-Control", "public, max-age=60, stale-while-revalidate=120");
   if (!supabase) return res.status(503).json({ error: "Database is not configured" });
   const { data, error } = await supabase.from("student_groups")
     .select("id,group_code,display_name,course_id,courses(course_number,faculty_id,direction,faculties(name,slug))")
