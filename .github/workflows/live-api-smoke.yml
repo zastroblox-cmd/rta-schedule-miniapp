@@ -85,8 +85,8 @@ jobs:
             for (const lesson of body.lessons) {
               assert.ok(body._groups.includes(lesson.group), route.label + ': lesson group missing from _groups');
               assert.ok(Number.isInteger(Number(lesson.day)) && Number(lesson.day) >= 0 && Number(lesson.day) <= 6, route.label + ': invalid day');
-              assert.ok(/^\\d{2}:\\d{2}$/.test(lesson.start || ''), route.label + ': invalid start time');
-              assert.ok(/^\\d{2}:\\d{2}$/.test(lesson.end || ''), route.label + ': invalid end time');
+              assert.ok(/^\d{2}:\d{2}$/.test(lesson.start || ''), route.label + ': invalid start time');
+              assert.ok(/^\d{2}:\d{2}$/.test(lesson.end || ''), route.label + ': invalid end time');
               assert.ok(lesson.title, route.label + ': lesson title missing');
             }
           }
