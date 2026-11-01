@@ -58,7 +58,25 @@ jobs:
           for (const token of ['/api/course2-schedule','/api/analytics/track','/api/owner/analytics','2026, 9, 12']) {
             if (!html.includes(token)) throw new Error('Required app hook missing: ' + token);
           }
-          console.log('PASS: unique DOM IDs, owner-panel selectors, required schedule/analytics hooks, and inline script extraction');
+
+          // Applied Informatics belongs to Customs Affairs; guard both routing and browser cache invalidation.
+          const customsAdapter = fs.readFileSync('data/customs-adapter.js', 'utf8');
+          for (const group of ['ПИ601/О-2601','ПИ601/О-2501','ПИ601/О-2401','ПИ601/О-2301']) {
+            if (!customsAdapter.includes(group)) throw new Error('Customs adapter missing Applied Informatics group: ' + group);
+          }
+          if (!html.includes('customs-adapter.js?v=20261102-customs-pi-v2')) {
+            throw new Error('Customs adapter cache key was not bumped after routing changes');
+          }
+          if (!html.includes('/api/customs/applied-informatics/course'+course+'-schedule')) {
+            throw new Error('Applied Informatics must use the canonical Customs API route');
+          }
+          if (html.includes('currentGroup.startsWith("ПИ")') || html.includes('currentGroup.startsWith("ПИ")')) {
+            throw new Error('Applied Informatics routing must be based on selected faculty, not group-code prefix');
+          }
+          if (!html.includes('currentFaculty === "customs"') || !html.includes('currentFaculty === "economics"')) {
+            throw new Error('Schedule loading must distinguish Customs Affairs and Economics by selected faculty');
+          }
+          console.log('PASS: DOM IDs, owner selectors, schedule/analytics hooks, Applied Informatics routing, cache key, and inline script extraction');
           NODE
       - name: Parse application JavaScript
         run: node --check /tmp/rta-miniapp-inline.js
