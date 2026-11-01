@@ -2021,6 +2021,11 @@
     customsScript.src = "./data/customs-adapter.js?v=20261025-customs-v1";
     customsScript.onload = async () => {
       try {
+        await primeFastScheduleCache("rta-customs-schedule-cache-v1", null, draft => window.CustomsSchedule.setDraft(draft), source => {
+          window.CustomsScheduleReady = true;
+          window.CustomsScheduleSource = source;
+          if (currentFaculty === "customs") render();
+        });
         // One combined request loads all customs courses in a single API round-trip.
         const requests = [{course:"all",url:"https://rta-schedule-api.onrender.com/api/customs/all-schedules"}];
         const wait = ms => new Promise(resolve => setTimeout(resolve,ms));
@@ -2056,7 +2061,9 @@
         const failed=results.map((r,i)=>r.status==="rejected"?requests[i].course:null).filter(Boolean);
         window.CustomsScheduleSource=failed.length?"partial-api-courses-"+failed.join("-"):"supabase-api";
         if(!lessons.length){window.CustomsScheduleSource="api-no-lessons";return;}
-        window.CustomsSchedule.setDraft({_status:"PRELIMINARY",_source:"Официальные PDF факультета таможенного дела",lessons});
+        const customsDraft={_status:"PRELIMINARY",_source:"Официальные PDF факультета таможенного дела",lessons};
+        window.CustomsSchedule.setDraft(customsDraft);
+        writeFastScheduleCache("rta-customs-schedule-cache-v1", customsDraft);
         window.CustomsScheduleReady=true;
         if(currentFaculty==="customs") render();
       } catch(error) {
