@@ -2031,7 +2031,7 @@
     window.CustomsScheduleReady = false;
     window.CustomsScheduleSource = "loading";
     const customsScript = document.createElement("script");
-    customsScript.src = "./data/customs-adapter.js?v=20261025-customs-v1";
+    customsScript.src = "./data/customs-adapter.js?v=20261102-customs-pi-v2";
     customsScript.onload = async () => {
       try {
         await primeFastScheduleCache("rta-customs-schedule-cache-v1", null, draft => window.CustomsSchedule.setDraft(draft), source => {
