@@ -563,7 +563,14 @@ app.get("/api/owner/representative-access", async (req, res) => {
     console.error("Owner representative access list failed:", error && error.message);
     return res.status(503).json({ error: "Не удалось загрузить настройки доступа старост. Проверь миграцию базы." });
   }
-  return res.json({ data });
+  const { data: vault, error: vaultError } = await supabase.rpc("representative_password_vault_list", { p_secret: REPRESENTATIVE_API_SECRET });
+  if (vaultError || !Array.isArray(vault)) {
+    console.error("Owner representative password vault read failed:", vaultError && vaultError.message);
+    return res.status(503).json({ error: "Не удалось загрузить хранилище паролей старост." });
+  }
+  const passwordsByGroup = new Map(vault.map(item => [item.group_code, item.password]));
+  const withPasswords = data.map(item => ({ ...item, password: passwordsByGroup.get(item.group_code) || null }));
+  return res.json({ data: withPasswords });
 });
 
 app.post("/api/owner/representative-access", async (req, res) => {
