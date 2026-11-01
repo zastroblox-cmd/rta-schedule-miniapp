@@ -113,6 +113,13 @@ jobs:
               assert.ok(/^\d{2}:\d{2}$/.test(lesson.start || ''), route.label + ': invalid start time');
               assert.ok(/^\d{2}:\d{2}$/.test(lesson.end || ''), route.label + ': invalid end time');
               assert.ok(lesson.title, route.label + ': lesson title missing');
+
+              // Applied Informatics was recently migrated; guard against incomplete rows.
+              if (route.label.startsWith('applied informatics course ')) {
+                assert.ok(lesson.teacher && lesson.teacher.trim() && lesson.teacher.trim() !== '-', route.label + ': teacher missing for ' + lesson.group + ' / ' + lesson.title);
+                assert.ok(lesson.room && lesson.room.trim() && lesson.room.trim() !== '-', route.label + ': room missing for ' + lesson.group + ' / ' + lesson.title);
+                assert.ok(lesson.type && lesson.type.trim() && lesson.type.trim().toLowerCase() !== 'занятие', route.label + ': explicit lesson type missing for ' + lesson.group + ' / ' + lesson.title);
+              }
             }
             exports.set(route.label, body);
           }
