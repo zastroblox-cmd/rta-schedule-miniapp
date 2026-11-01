@@ -115,9 +115,11 @@ jobs:
             assert.ok(Array.isArray(body.lessons), route.label + ': lessons must be an array even while import is being completed');
             const groupsWithoutLessons = body._groups.filter(code => !body.lessons.some(lesson => lesson.group === code));
             console.log('CUSTOMS COVERAGE:', route.label, 'groups=' + body._groups.length, 'lessons=' + body.lessons.length, 'groupsWithoutLessons=' + groupsWithoutLessons.length);
-            if (groupsWithoutLessons.length) {
-              console.log('::warning title=Customs schedule incomplete::' + route.label + ' has groups without lessons: ' + groupsWithoutLessons.join(', '));
-            }
+            assert.equal(
+              groupsWithoutLessons.length,
+              0,
+              route.label + ' has groups marked as available but without lessons: ' + groupsWithoutLessons.join(', ')
+            );
             for (const lesson of body.lessons) {
               assert.ok(body._groups.includes(lesson.group), route.label + ': lesson group missing from _groups');
               assert.ok(Number.isInteger(Number(lesson.day)) && Number(lesson.day) >= 0 && Number(lesson.day) <= 6, route.label + ': invalid day');
