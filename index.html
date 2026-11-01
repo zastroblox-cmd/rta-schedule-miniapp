@@ -804,16 +804,18 @@
       {id:"customs", name:"Факультет таможенного дела", short:"Таможенное дело", icon:"🛃"}
     ];
     const DEFAULT_GROUP = "Ю603/О-2503";
-    const hasSavedGroup = Boolean(localStorage.getItem("rta_schedule_group"));
-    // Первичная настройка завершена только после выбора конкретной группы.
+    const storedGroup = localStorage.getItem("rta_schedule_group");
+    // Валидная сохранённая группа — единственный источник истины при повторном запуске.
+    const hasSavedGroup = GROUPS.some(g=>g.id===storedGroup);
     let isInitialGroupSetup = !hasSavedGroup;
-    const savedGroup = localStorage.getItem("rta_schedule_group") || DEFAULT_GROUP;
-    let currentGroup = GROUPS.some(g=>g.id===savedGroup) ? savedGroup : DEFAULT_GROUP;
-    let currentFaculty = GROUPS.find(g=>g.id===currentGroup)?.faculty || localStorage.getItem("rta_schedule_faculty") || "law";
-    let currentDirection = GROUPS.find(g=>g.id===currentGroup)?.direction || (currentFaculty==="economics" ? "economics" : currentFaculty==="customs" ? "customs" : "law");
-    let currentStream = Number(localStorage.getItem("rta_schedule_customs_stream")) || GROUPS.find(g=>g.id===currentGroup)?.stream || 1;
+    const savedGroup = hasSavedGroup ? storedGroup : DEFAULT_GROUP;
+    let currentGroup = savedGroup;
+    const savedGroupRecord = GROUPS.find(g=>g.id===currentGroup) || GROUPS.find(g=>g.id===DEFAULT_GROUP);
+    let currentFaculty = savedGroupRecord.faculty;
+    let currentDirection = savedGroupRecord.direction || (currentFaculty==="economics" ? "economics" : currentFaculty==="customs" ? "customs" : "law");
+    let currentStream = currentFaculty==="customs" && currentDirection==="customs" ? (Number(savedGroupRecord.stream)||Number(localStorage.getItem("rta_schedule_customs_stream"))||1) : (Number(savedGroupRecord.stream)||1);
     const matchesCurrentStream = g => currentFaculty!=="customs" || currentDirection!=="customs" || (Number(g.stream)||1)===currentStream;
-    let currentCourse = Number(localStorage.getItem("rta_schedule_course")) || (GROUPS.find(g=>g.id===currentGroup)?.course || 2);
+    let currentCourse = savedGroupRecord.course;
     localStorage.setItem("rta_schedule_direction",currentDirection);
     if (!GROUPS.some(g=>g.id===currentGroup && g.course===currentCourse && g.faculty===currentFaculty)) {
       currentGroup = GROUPS.find(g=>g.faculty===currentFaculty)?.id || DEFAULT_GROUP;
@@ -931,7 +933,10 @@
               if(currentDirection==="customs"){renderGroupPicker("stream");return;}
               renderGroupPicker("selection");return;
             }
-            if(mode==="direction"){document.getElementById("groupModal").classList.remove("open");return;}
+            if(mode==="direction"){
+              if(isInitialGroupSetup){renderGroupPicker("selection");return;}
+              document.getElementById("groupModal").classList.remove("open");return;
+            }
             renderGroupPicker(mode);
           };
           directions.appendChild(b);
@@ -968,7 +973,7 @@
         GROUPS.filter(g=>g.faculty===currentFaculty&&g.course===currentCourse&&((currentFaculty!=="economics"&&currentFaculty!=="customs")||(g.direction||(currentFaculty==="customs"?"customs":"economics"))===currentDirection)&&matchesCurrentStream(g)).forEach(g=>{
           const b=document.createElement("button"); b.className="group-option"+(g.id===currentGroup?" selected":"");
           b.innerHTML=g.id+"<small>"+(g.status==="available"?"Расписание "+g.course+" курса подключено":g.faculty==="customs"?"Расписание факультета таможенного дела загружается из PDF":"Экономика · расписание переносится из PDF")+"</small>";
-          b.onclick=()=>{currentGroup=g.id;currentCourse=g.course;currentDirection=g.direction||(g.faculty==="economics"?"economics":"law");isInitialGroupSetup=false;if(g.faculty==="customs"){currentStream=Number(g.stream)||1;localStorage.setItem("rta_schedule_customs_stream",String(currentStream));}localStorage.setItem("rta_schedule_direction",currentDirection);localStorage.setItem("rta_schedule_group",currentGroup);localStorage.setItem("rta_schedule_group_faculty_"+currentFaculty,currentGroup);localStorage.setItem("rta_schedule_group_course_"+currentFaculty+"_"+currentCourse,currentGroup);updateGroupLabel();document.getElementById("groupModal").classList.remove("open");render();};
+          b.onclick=()=>{const previousFaculty=currentFaculty;currentGroup=g.id;currentCourse=g.course;currentFaculty=g.faculty;currentDirection=g.direction||(g.faculty==="economics"?"economics":g.faculty==="customs"?"customs":"law");isInitialGroupSetup=false;if(g.faculty==="customs"){currentStream=Number(g.stream)||1;localStorage.setItem("rta_schedule_customs_stream",String(currentStream));}localStorage.setItem("rta_schedule_direction",currentDirection);localStorage.setItem("rta_schedule_faculty",currentFaculty);localStorage.setItem("rta_schedule_course",String(currentCourse));localStorage.setItem("rta_schedule_group",currentGroup);localStorage.setItem("rta_schedule_group_faculty_"+currentFaculty,currentGroup);localStorage.setItem("rta_schedule_group_course_"+currentFaculty+"_"+currentCourse,currentGroup);updateGroupLabel();document.getElementById("closeGroupModal").style.display="";document.getElementById("groupModal").classList.remove("open");render();};
           groupWrap.appendChild(b);
         });
       }
