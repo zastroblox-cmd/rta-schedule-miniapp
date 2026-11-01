@@ -1043,12 +1043,12 @@
       const date=dateForDay(selectedDay);
       // Экономические группы не должны проваливаться в резервное юридическое расписание.
       // Пока их отдельный набор пар не подключён, возвращаем пустой список явно.
-      if (currentGroup.startsWith("Тс")) {
+      if (currentFaculty === "customs") {
         if (!window.CustomsScheduleReady || !window.CustomsSchedule) return [];
         const isoDate = date.getFullYear()+"-"+String(date.getMonth()+1).padStart(2,"0")+"-"+String(date.getDate()).padStart(2,"0");
         return window.CustomsSchedule.getLessonsForDate(currentGroup, isoDate);
       }
-      if (currentGroup.startsWith("Э") || currentGroup.startsWith("ПИ") || currentGroup.startsWith("М601/")) {
+      if (currentFaculty === "economics") {
         if (!window.EconomicsScheduleReady || !window.EconomicsSchedule) return [];
         const isoDate = date.getFullYear()+"-"+String(date.getMonth()+1).padStart(2,"0")+"-"+String(date.getDate()).padStart(2,"0");
         return window.EconomicsSchedule.getLessonsForDate(currentGroup, isoDate);
@@ -1217,7 +1217,7 @@
               : source === "api-no-lessons"
                 ? "Расписание пока обновляется. Попробуй зайти чуть позже."
                 : "Не получилось загрузить расписание. Проверь интернет и попробуй ещё раз.";
-        } else if ((currentGroup.startsWith("Э") || currentGroup.startsWith("ПИ") || currentGroup.startsWith("М601/")) && !window.EconomicsScheduleReady) {
+        } else if ((currentFaculty === "economics") && !window.EconomicsScheduleReady) {
           emptyTitle = "Расписание временно недоступно";
           const source = window.EconomicsScheduleSource || "unknown";
           emptyTitle = "Расписание временно недоступно";
@@ -1437,7 +1437,7 @@
       const ownerScanEndpoints=[
         ...[1,2,3,4].map(course=>({label:"Юридический факультет · курс "+course,url:"https://rta-schedule-api.onrender.com/api/course"+course+"-schedule"})),
         ...[1,2,3,4].map(course=>({label:"Экономический факультет · курс "+course,url:"https://rta-schedule-api.onrender.com/api/economics/course"+course+"-schedule"})),
-        ...[1,2,3,4].map(course=>({label:"Прикладная информатика · курс "+course,url:"https://rta-schedule-api.onrender.com/api/economics/applied-informatics/course"+course+"-schedule"})),
+        ...[1,2,3,4].map(course=>({label:"Прикладная информатика · курс "+course,url:"https://rta-schedule-api.onrender.com/api/customs/applied-informatics/course"+course+"-schedule"})),
         ...[1,2,3,4].map(course=>({label:"Менеджмент · курс "+course,url:"https://rta-schedule-api.onrender.com/api/economics/management/course"+course+"-schedule"})),
         ...[1,2,3,4,5].map(course=>({label:"Таможенный факультет · курс "+course,url:"https://rta-schedule-api.onrender.com/api/customs/course"+course+"-schedule"}))
       ];
@@ -1965,7 +1965,7 @@
             window.EconomicsScheduleReady = true;
             window.EconomicsScheduleSource = "local-cache-refreshing";
             hasEconomicsCache = true;
-            if (currentGroup.startsWith("Э") || currentGroup.startsWith("ПИ") || currentGroup.startsWith("М601/")) render();
+            if (currentFaculty === "economics") render();
           }
         } catch (cacheError) { console.warn("Кэш экономического расписания повреждён; загружаю с сервера.", cacheError); }
         // Запрашиваем данные параллельно; предварительный /health выше заранее будит Render.
@@ -2012,19 +2012,19 @@
         window.EconomicsScheduleSource = failedCourses.length ? "partial-api-courses-" + failedCourses.join("-") : "supabase-api";
         try { localStorage.setItem(economicsCacheKey, JSON.stringify({ savedAt: Date.now(), lessons })); }
         catch (storageError) { console.warn("Не удалось сохранить кэш расписания экономики.", storageError); }
-        if (currentGroup.startsWith("Э") || currentGroup.startsWith("ПИ") || currentGroup.startsWith("М601/")) render();
+        if (currentFaculty === "economics") render();
       } catch (error) {
         window.EconomicsScheduleReady = false;
         window.EconomicsScheduleSource = "api-unavailable-" + String(error && error.message || error).slice(0,100).replace(/[^a-zA-Z0-9 _:-]/g,"");
         console.error("Экономическое расписание пока недоступно через API:", error);
-        if (currentGroup.startsWith("Э") || currentGroup.startsWith("ПИ") || currentGroup.startsWith("М601/")) render();
+        if (currentFaculty === "economics") render();
       }
     };
     economicsScript.onerror = () => {
       window.EconomicsScheduleReady = false;
       window.EconomicsScheduleSource = "adapter-error";
       console.error("Не удалось загрузить адаптер экономического факультета.");
-      if (currentGroup.startsWith("Э") || currentGroup.startsWith("ПИ") || currentGroup.startsWith("М601/")) render();
+      if (currentFaculty === "economics") render();
     };
     document.head.appendChild(economicsScript);
     // Факультет таможенного дела: отдельные курсы и группы, данные из Supabase.
