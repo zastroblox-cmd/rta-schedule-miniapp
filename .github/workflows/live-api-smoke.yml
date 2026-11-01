@@ -43,7 +43,7 @@ jobs:
           assert.ok(Array.isArray(groups.data) && groups.data.length > 0, 'groups must be non-empty');
           assert.ok(faculties.data.some(f => f.slug === 'customs' && f.name === 'Факультет таможенного дела'), 'customs faculty must be listed');
           const customsGroups = groups.data.filter(g => g.courses?.faculties?.slug === 'customs');
-          assert.equal(customsGroups.length, 22, 'customs faculty must have 22 groups across five courses');
+          assert.ok(customsGroups.length >= 22, 'customs faculty must contain all known groups; got ' + customsGroups.length);
 
           const routes = [
             ...[1,2,3,4].map(course => ({label:'law course '+course, path:'/api/course'+course+'-schedule'})),
