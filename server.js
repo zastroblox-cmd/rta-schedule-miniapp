@@ -13,9 +13,17 @@ app.use(express.json({ limit: "32kb" }));
 const PORT = Number(process.env.PORT || 3000);
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY;
+// Optional secret key dedicated to privileged RPC calls. Configure this in Render
+// only after testing; public-key fallback preserves current behavior during rollout.
+const SUPABASE_SERVER_KEY = process.env.SUPABASE_SERVER_KEY;
 
 const supabase = SUPABASE_URL && SUPABASE_KEY
   ? createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false }
+    })
+  : null;
+const supabaseRpc = SUPABASE_URL && (SUPABASE_SERVER_KEY || SUPABASE_KEY)
+  ? createClient(SUPABASE_URL, SUPABASE_SERVER_KEY || SUPABASE_KEY, {
       auth: { persistSession: false, autoRefreshToken: false }
     })
   : null;
@@ -76,7 +84,7 @@ app.post("/api/analytics/track", async (req, res) => {
   const user = verifyTelegramInitData(req.body && req.body.initData, false);
   if (!user) return res.status(403).json({ error: "Valid Telegram Mini App data required" });
   if (!supabase || !ANALYTICS_SECRET) return res.status(503).json({ error: "Analytics is not configured" });
-  const { error } = await supabase.rpc("track_app_user", {
+  const { error } = await supabaseRpc.rpc("track_app_user", {
     p_user_id: user.id,
     p_secret: ANALYTICS_SECRET
   });
@@ -92,7 +100,7 @@ app.post("/api/owner/analytics", async (req, res) => {
   const owner = verifyTelegramInitData(req.body && req.body.initData);
   if (!owner) return res.status(403).json({ authorized: false, error: "Owner access denied" });
   if (!supabase || !ANALYTICS_SECRET) return res.status(503).json({ error: "Analytics is not configured" });
-  const { data, error } = await supabase.rpc("get_app_user_stats", { p_secret: ANALYTICS_SECRET });
+  const { data, error } = await supabaseRpc.rpc("get_app_user_stats", { p_secret: ANALYTICS_SECRET });
   if (error) {
     console.error("Analytics stats query failed:", error.message);
     return res.status(503).json({ error: "Unable to load analytics" });
@@ -574,7 +582,7 @@ async function getRepresentativeAccess(req, groupId) {
     return { ok: false, status: 403, error: "Этот пароль не даёт доступ к выбранной группе." };
   }
   if (!supabase || !REPRESENTATIVE_API_SECRET) return { ok: false, status: 503, error: "Не удалось проверить актуальность доступа." };
-  const { data: accessRow, error } = await supabase.rpc("representative_access_get", { p_secret: REPRESENTATIVE_API_SECRET, p_group_id: groupId });
+  const { data: accessRow, error } = await supabaseRpc.rpc("representative_access_get", { p_secret: REPRESENTATIVE_API_SECRET, p_group_id: groupId });
   if (error) return { ok: false, status: 503, error: "Не удалось проверить актуальность доступа." };
   if (accessRow && accessRow.enabled === false) return { ok: false, status: 403, error: "Доступ старосты отключён владельцем." };
   if (accessRow && accessRow.updated_at && (!Number.isFinite(Number(token.iat)) || Number(token.iat) < new Date(accessRow.updated_at).getTime())) {
@@ -592,12 +600,12 @@ app.get("/api/owner/representative-access", async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
   if (!ownerTokenFromRequest(req)) return res.status(403).json({ error: "Доступ только владельцу." });
   if (!supabase || !REPRESENTATIVE_API_SECRET) return res.status(503).json({ error: "База данных не настроена." });
-  const { data, error } = await supabase.rpc("representative_access_list", { p_secret: REPRESENTATIVE_API_SECRET });
+  const { data, error } = await supabaseRpc.rpc("representative_access_list", { p_secret: REPRESENTATIVE_API_SECRET });
   if (error || !Array.isArray(data)) {
     console.error("Owner representative access list failed:", error && error.message);
     return res.status(503).json({ error: "Не удалось загрузить настройки доступа старост. Проверь миграцию базы." });
   }
-  const { data: vault, error: vaultError } = await supabase.rpc("representative_password_vault_list", { p_secret: REPRESENTATIVE_API_SECRET });
+  const { data: vault, error: vaultError } = await supabaseRpc.rpc("representative_password_vault_list", { p_secret: REPRESENTATIVE_API_SECRET });
   if (vaultError || !Array.isArray(vault)) {
     console.error("Owner representative password vault read failed:", vaultError && vaultError.message);
     return res.status(503).json({ error: "Не удалось загрузить хранилище паролей старост." });
@@ -617,7 +625,7 @@ app.post("/api/owner/representative-access", async (req, res) => {
   if (!Number.isSafeInteger(groupId) || groupId < 1 || typeof enabled !== "boolean") return res.status(400).json({ error: "Укажи группу и состояние доступа." });
   if (password && (password.length < 10 || password.length > 128)) return res.status(400).json({ error: "Пароль должен содержать от 10 до 128 символов." });
   const passwordHash = password ? await hashRepresentativePassword(password) : null;
-  const { data, error } = await supabase.rpc("representative_access_set", {
+  const { data, error } = await supabaseRpc.rpc("representative_access_set", {
     p_secret: REPRESENTATIVE_API_SECRET, p_group_id: groupId, p_password_hash: passwordHash, p_enabled: enabled
   });
   if (error || !data) {
@@ -652,7 +660,7 @@ app.post("/api/representative/login", async (req, res) => {
   if (!groupCode || !password) return res.status(400).json({ error: "Укажи группу и пароль." });
   const { data: group, error: groupError } = await supabase.from("student_groups").select("id,group_code").eq("group_code", groupCode).maybeSingle();
   if (groupError || !group) return res.status(403).json({ error: "Неверный пароль для этой группы." });
-  const { data: accessRow, error: accessError } = await supabase.rpc("representative_access_get", { p_secret: REPRESENTATIVE_API_SECRET, p_group_id: group.id });
+  const { data: accessRow, error: accessError } = await supabaseRpc.rpc("representative_access_get", { p_secret: REPRESENTATIVE_API_SECRET, p_group_id: group.id });
   if (accessError) return res.status(503).json({ error: "Не удалось проверить доступ старосты." });
   if (accessRow && accessRow.enabled === false) return res.status(403).json({ error: "Доступ старосты для этой группы отключён владельцем." });
   const storedHash = accessRow && accessRow.password_hash;
@@ -703,7 +711,7 @@ app.post("/api/representative/change", async (req, res) => {
   const access = await getRepresentativeAccess(req, groupId);
   if (!access.ok) return res.status(access.status).json({ error: access.error });
   if (!validDateString(String(body.entry && body.entry.schedule_date || ""))) return res.status(400).json({ error: "Укажи корректную дату." });
-  const { data, error } = await supabase.rpc("representative_apply_change", {
+  const { data, error } = await supabaseRpc.rpc("representative_apply_change", {
     p_secret: REPRESENTATIVE_API_SECRET,
     p_action: String(body.action || "save_override"),
     p_group_id: groupId,
@@ -725,7 +733,7 @@ app.get("/api/representative/history", async (req, res) => {
   const access = await getRepresentativeAccess(req, groupId);
   if (!access.ok) return res.status(access.status).json({ error: access.error });
   if (!Number.isSafeInteger(groupId) || groupId < 1) return res.status(400).json({ error: "Неверная группа." });
-  const { data, error } = await supabase.rpc("representative_get_history", { p_secret: REPRESENTATIVE_API_SECRET, p_group_id: groupId, p_limit: 30 });
+  const { data, error } = await supabaseRpc.rpc("representative_get_history", { p_secret: REPRESENTATIVE_API_SECRET, p_group_id: groupId, p_limit: 30 });
   if (error) {
     console.error("Representative history failed:", error.message);
     return res.status(503).json({ error: "Не удалось загрузить историю." });
@@ -743,7 +751,7 @@ app.post("/api/representative/restore", async (req, res) => {
   const access = await getRepresentativeAccess(req, groupId);
   if (!access.ok) return res.status(access.status).json({ error: access.error });
   if (!Number.isSafeInteger(groupId) || groupId < 1 || !Number.isSafeInteger(historyId) || historyId < 1) return res.status(400).json({ error: "Неверная запись истории." });
-  const { data, error } = await supabase.rpc("representative_restore_history", {
+  const { data, error } = await supabaseRpc.rpc("representative_restore_history", {
     p_secret: REPRESENTATIVE_API_SECRET,
     p_group_id: groupId,
     p_history_id: historyId,
