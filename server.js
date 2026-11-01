@@ -401,10 +401,17 @@ app.get("/api/economics/course2-schedule", (_req, res) => exportCourseSchedule(2
 app.get("/api/economics/course3-schedule", (_req, res) => exportCourseSchedule(3, res, "economics", "economics"));
 app.get("/api/economics/course4-schedule", (_req, res) => exportCourseSchedule(4, res, "economics", "economics"));
 
-app.get("/api/economics/applied-informatics/course1-schedule", (_req, res) => exportCourseSchedule(1, res, "economics", "applied-informatics"));
-app.get("/api/economics/applied-informatics/course2-schedule", (_req, res) => exportCourseSchedule(2, res, "economics", "applied-informatics"));
-app.get("/api/economics/applied-informatics/course3-schedule", (_req, res) => exportCourseSchedule(3, res, "economics", "applied-informatics"));
-app.get("/api/economics/applied-informatics/course4-schedule", (_req, res) => exportCourseSchedule(4, res, "economics", "applied-informatics"));
+// Applied Informatics belongs to the Customs Affairs faculty. Keep the old economics URLs as
+// compatibility aliases while the Mini App migrates to the correct faculty route.
+app.get("/api/customs/applied-informatics/course1-schedule", (_req, res) => exportCourseSchedule(1, res, "customs", "applied-informatics"));
+app.get("/api/customs/applied-informatics/course2-schedule", (_req, res) => exportCourseSchedule(2, res, "customs", "applied-informatics"));
+app.get("/api/customs/applied-informatics/course3-schedule", (_req, res) => exportCourseSchedule(3, res, "customs", "applied-informatics"));
+app.get("/api/customs/applied-informatics/course4-schedule", (_req, res) => exportCourseSchedule(4, res, "customs", "applied-informatics"));
+app.get("/api/customs/applied-informatics/all-schedules", (_req, res) => exportCourseSchedule(null, res, "customs", "applied-informatics"));
+app.get("/api/economics/applied-informatics/course1-schedule", (_req, res) => exportCourseSchedule(1, res, "customs", "applied-informatics"));
+app.get("/api/economics/applied-informatics/course2-schedule", (_req, res) => exportCourseSchedule(2, res, "customs", "applied-informatics"));
+app.get("/api/economics/applied-informatics/course3-schedule", (_req, res) => exportCourseSchedule(3, res, "customs", "applied-informatics"));
+app.get("/api/economics/applied-informatics/course4-schedule", (_req, res) => exportCourseSchedule(4, res, "customs", "applied-informatics"));
 
 app.get("/api/economics/management/course1-schedule", (_req, res) => exportCourseSchedule(1, res, "economics", "management"));
 app.get("/api/economics/management/course2-schedule", (_req, res) => exportCourseSchedule(2, res, "economics", "management"));
@@ -418,7 +425,7 @@ app.get("/api/customs/course2-schedule", (_req, res) => exportCourseSchedule(2, 
 app.get("/api/customs/course3-schedule", (_req, res) => exportCourseSchedule(3, res, "customs", "customs"));
 app.get("/api/customs/course4-schedule", (_req, res) => exportCourseSchedule(4, res, "customs", "customs"));
 app.get("/api/customs/course5-schedule", (_req, res) => exportCourseSchedule(5, res, "customs", "customs"));
-app.get("/api/customs/all-schedules", (_req, res) => exportCourseSchedule(null, res, "customs", "customs"));
+app.get("/api/customs/all-schedules", (_req, res) => exportCourseSchedule(null, res, "customs", ["customs", "applied-informatics"]));
 
 // Course 4 uses the same faculty-scoped database export as courses 1–3.
 
