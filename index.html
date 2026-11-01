@@ -2043,7 +2043,8 @@
           }
           throw lastError||new Error(label+": API недоступен");
         };
-        try { await fetchJsonWithRetry("https://rta-schedule-api.onrender.com/health","Проверка сервера"); } catch(_) {}
+        // Не ждём отдельный /health: общий прогрев уже запущен при открытии приложения.
+        // Сразу отправляем запрос расписания, чтобы не добавлять ещё один сетевой круг.
         const results = await Promise.allSettled(requests.map(request => fetchJsonWithRetry(request.url,"Курс "+request.course)));
         const payloads = results.filter(result=>result.status==="fulfilled").map(result=>result.value);
         const lessons = payloads.flatMap(payload => Array.isArray(payload.lessons) ? payload.lessons.map(row => ({
