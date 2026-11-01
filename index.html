@@ -1606,110 +1606,161 @@
     document.getElementById("prevWeek").onclick=()=>animateScheduleChange(-1,()=>{weekOffset--;render();});
     document.getElementById("nextWeek").onclick=()=>animateScheduleChange(1,()=>{weekOffset++;render();});
     document.getElementById("todayWeek").onclick=()=>animateScheduleChange(weekOffset===0&&selectedDay===mondayOffset?0:(weekOffset<0?-1:1),()=>{weekOffset=0;selectedDay=mondayOffset;render();});
-    // Соседний день виден рядом уже во время движения пальца; никаких пустых экранов.
-    function moveSelectedDay(direction) {
-      if (selectedTab !== "schedule") return;
-      if (direction > 0) {
-        if (selectedDay >= 6) { weekOffset++; selectedDay = 0; } else selectedDay++;
-      } else {
-        if (selectedDay <= 0) { weekOffset--; selectedDay = 6; } else selectedDay--;
-      }
-      render();
-    }
+    // Надёжный свайп по расписанию: палец двигает текущий экран, отпускание перелистывает день.
     (() => {
       const dayView = document.getElementById("dayView");
-      if (!dayView) return;
       const viewport = document.createElement("div");
+      if (!dayView || !dayView.parentNode) return;
       viewport.className = "day-swipe-viewport";
       viewport.style.cssText = "position:relative;overflow:hidden;width:100%;touch-action:pan-y;";
       dayView.parentNode.insertBefore(viewport, dayView);
       viewport.appendChild(dayView);
       dayView.style.width = "100%";
-      dayView.style.flex = "0 0 100%";
-      let startX=0,startY=0,lastX=0,tracking=false,horizontal=false,neighbor=null,baseDay=0,baseWeek=0,swipeAnimations=[];
-      const ease="cubic-bezier(0.22,0.72,0.18,1)";
-      const setX=(node,x)=>{node.style.transform="translate3d("+x+"px,0,0)";};
-      function buildNeighbor(direction) {
-        if(neighbor){neighbor.remove();neighbor=null;}
-        const oldDay=selectedDay,oldWeek=weekOffset;
-        if(direction>0){if(selectedDay>=6){weekOffset++;selectedDay=0;}else selectedDay++;}
-        else {if(selectedDay<=0){weekOffset--;selectedDay=6;}else selectedDay--;}
-        render();
-        neighbor=dayView.cloneNode(true);
-        neighbor.removeAttribute("id");
-        neighbor.querySelectorAll("[id]").forEach(el=>el.removeAttribute("id"));
-        neighbor.style.cssText="position:absolute;top:0;left:0;width:100%;margin:0;pointer-events:none;will-change:transform;transform:translate3d(100%,0,0);";
-        viewport.appendChild(neighbor);
-        selectedDay=oldDay;weekOffset=oldWeek;
-        render();
-      }
-      function cleanup(){
-        // Cancel only animations created by this swipe, not unrelated UI animations.
-        swipeAnimations.forEach(animation=>animation.cancel());
-        swipeAnimations=[];
-        if(neighbor){
-          neighbor.getAnimations().forEach(animation=>animation.cancel());
-          neighbor.remove();
-          neighbor=null;
+      let startX = 0, startY = 0, lastX = 0;
+      let tracking = false, horizontal = false, animating = false;
+      let baseDay = 0, baseWeek = 0, activeAnimation = null;
+      const ease = "cubic-bezier(.22,.72,.18,1)";
+      const reducedMotion = () => window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const setX = (x) => { dayView.style.transform = "translate3d(" + x + "px,0,0)"; };
+      const clearGesture = () => {
+        tracking = false;
+        horizontal = false;
+        dayView.style.opacity = "";
+        dayView.style.filter = "";
+        dayView.style.willChange = "";
+      };
+      const animateBack = () => {
+        const from = Number.isFinite(lastX - startX) ? lastX - startX : 0;
+        if (reducedMotion()) {
+          setX(0);
+          dayView.style.transform = "";
+          clearGesture();
+          return;
         }
-        dayView.style.transform="";
-        dayView.style.opacity="";
-        dayView.style.filter="";
-        dayView.style.willChange="";
-      }
-      dayView.addEventListener("touchstart",event=>{
-        if(selectedTab!=="schedule"||!event.touches||event.touches.length!==1){tracking=false;return;}
-        cleanup();
-        const t=event.touches[0];startX=lastX=t.clientX;startY=t.clientY;
-        baseDay=selectedDay;baseWeek=weekOffset;tracking=true;horizontal=false;
-      },{passive:true});
-      dayView.addEventListener("touchmove",event=>{
-        if(!tracking||!event.touches||event.touches.length!==1)return;
-        const t=event.touches[0],dx=t.clientX-startX,dy=t.clientY-startY;lastX=t.clientX;
-        if(!horizontal){
-          if(Math.abs(dx)<8&&Math.abs(dy)<8)return;
-          if(Math.abs(dy)>Math.abs(dx)*1.1){tracking=false;return;}
-          if(Math.abs(dx)<=Math.abs(dy)*1.1)return;
-          horizontal=true;
-        }
-        const width=Math.max(viewport.getBoundingClientRect().width,1);
-        const direction=dx<0?1:-1;
-        if(!neighbor)buildNeighbor(direction);
-        // If the finger reverses direction, rebuild the correct adjacent day.
-        const neighborDirection=neighbor.dataset.direction;
-        if(neighborDirection!==String(direction)){
-          neighbor.remove();neighbor=null;
-          selectedDay=baseDay;weekOffset=baseWeek;buildNeighbor(direction);
-        }
-        if(neighbor)neighbor.dataset.direction=String(direction);
-        setX(dayView,Math.max(-width,Math.min(width,dx)));
-        setX(neighbor,direction>0?width+dx:-width+dx);
-        dayView.style.opacity="1";neighbor.style.opacity="1";
-      },{passive:true});
-      function finish(cancelled){
-        if(!tracking)return;tracking=false;
-        const dx=lastX-startX,width=Math.max(viewport.getBoundingClientRect().width,1);
-        if(!horizontal){cleanup();return;}
-        const direction=dx<0?1:-1,turn=!cancelled&&Math.abs(dx)>=Math.max(42,width*.12);
-        if(!neighbor)buildNeighbor(direction);
-        const targetCurrent=turn?(direction>0?-width:width):0;
-        const targetNeighbor=turn?0:(direction>0?width:-width);
-        const currentTransform=dayView.style.transform||"translate3d(0,0,0)";
-        const neighborTransform=neighbor.style.transform||"translate3d(0,0,0)";
-        const a=dayView.animate([{transform:currentTransform},{transform:"translate3d("+targetCurrent+"px,0,0)"}],{duration:turn?220:180,easing:ease,fill:"forwards"});
-        const b=neighbor.animate([{transform:neighborTransform},{transform:"translate3d("+targetNeighbor+"px,0,0)"}],{duration:turn?220:180,easing:ease,fill:"forwards"});
-        swipeAnimations=[a,b];
-        Promise.all([a.finished.catch(()=>{}),b.finished.catch(()=>{})]).then(()=>{
-          // Remove animation effects before render() changes the live day DOM.
-          a.cancel();
-          b.cancel();
-          swipeAnimations=[];
-          if(turn){selectedDay=baseDay;weekOffset=baseWeek;moveSelectedDay(direction);}
-          cleanup();
+        const animation = dayView.animate(
+          [{ transform: "translate3d(" + from + "px,0,0)", opacity: 1 },
+           { transform: "translate3d(0,0,0)", opacity: 1 }],
+          { duration: 170, easing: ease }
+        );
+        activeAnimation = animation;
+        animation.finished.catch(() => {}).then(() => {
+          if (activeAnimation !== animation) return;
+          activeAnimation = null;
+          dayView.style.transform = "";
+          clearGesture();
         });
-      }
-      dayView.addEventListener("touchend",event=>{const t=event.changedTouches&&event.changedTouches[0];if(t)lastX=t.clientX;finish(false);},{passive:true});
-      dayView.addEventListener("touchcancel",()=>finish(true),{passive:true});
+      };
+      dayView.addEventListener("touchstart", event => {
+        if (selectedTab !== "schedule" || animating || !event.touches || event.touches.length !== 1) {
+          tracking = false;
+          return;
+        }
+        if (activeAnimation) {
+          activeAnimation.cancel();
+          activeAnimation = null;
+        }
+        const touch = event.touches[0];
+        startX = lastX = touch.clientX;
+        startY = touch.clientY;
+        baseDay = selectedDay;
+        baseWeek = weekOffset;
+        tracking = true;
+        horizontal = false;
+      }, { passive: true });
+      dayView.addEventListener("touchmove", event => {
+        if (!tracking || animating || !event.touches || event.touches.length !== 1) return;
+        const touch = event.touches[0];
+        const dx = touch.clientX - startX;
+        const dy = touch.clientY - startY;
+        lastX = touch.clientX;
+        if (!horizontal) {
+          if (Math.abs(dx) < 9 && Math.abs(dy) < 9) return;
+          // Вертикальный скролл остаётся полностью нативным.
+          if (Math.abs(dy) > Math.abs(dx) * 1.15) {
+            tracking = false;
+            return;
+          }
+          if (Math.abs(dx) < Math.abs(dy) * 1.15) return;
+          horizontal = true;
+          dayView.style.willChange = "transform,opacity";
+        }
+        const width = Math.max(viewport.getBoundingClientRect().width, 1);
+        // Небольшое сопротивление у края, чтобы жест ощущался контролируемым.
+        const resisted = Math.max(-width * .92, Math.min(width * .92, dx));
+        setX(resisted);
+        dayView.style.opacity = String(1 - Math.min(Math.abs(resisted) / width, .22));
+      }, { passive: true });
+      const finish = cancelled => {
+        if (!tracking) return;
+        const dx = lastX - startX;
+        tracking = false;
+        if (!horizontal) {
+          clearGesture();
+          return;
+        }
+        const width = Math.max(viewport.getBoundingClientRect().width, 1);
+        const threshold = Math.max(48, width * .16);
+        const turn = !cancelled && Math.abs(dx) >= threshold;
+        const direction = dx < 0 ? 1 : -1;
+        const currentX = Math.max(-width * .92, Math.min(width * .92, dx));
+        horizontal = false;
+        if (reducedMotion()) {
+          dayView.style.transform = "";
+          dayView.style.opacity = "";
+          dayView.style.willChange = "";
+          if (turn) {
+            selectedDay = baseDay;
+            weekOffset = baseWeek;
+            moveSelectedDay(direction);
+          }
+          return;
+        }
+        animating = true;
+        const outX = direction > 0 ? -width : width;
+        const animation = dayView.animate(
+          [{ transform: "translate3d(" + currentX + "px,0,0)", opacity: 1 },
+           { transform: "translate3d(" + (turn ? outX : 0) + "px,0,0)", opacity: 1 }],
+          { duration: turn ? 180 : 165, easing: ease, fill: "forwards" }
+        );
+        activeAnimation = animation;
+        animation.finished.catch(() => {}).then(() => {
+          if (activeAnimation !== animation) return;
+          animation.cancel();
+          activeAnimation = null;
+          dayView.style.transform = "";
+          dayView.style.opacity = "";
+          dayView.style.filter = "";
+          dayView.style.willChange = "";
+          if (turn) {
+            selectedDay = baseDay;
+            weekOffset = baseWeek;
+            moveSelectedDay(direction);
+            const enterFrom = direction > 0 ? width * .22 : -width * .22;
+            const incoming = dayView.animate(
+              [{ transform: "translate3d(" + enterFrom + "px,0,0)", opacity: .72 },
+               { transform: "translate3d(0,0,0)", opacity: 1 }],
+              { duration: 190, easing: "cubic-bezier(.16,1,.3,1)" }
+            );
+            activeAnimation = incoming;
+            incoming.finished.catch(() => {}).then(() => {
+              if (activeAnimation !== incoming) return;
+              activeAnimation = null;
+              dayView.style.transform = "";
+              dayView.style.opacity = "";
+              dayView.style.willChange = "";
+              animating = false;
+            });
+          } else {
+            animating = false;
+          }
+        });
+      };
+      dayView.addEventListener("touchend", event => {
+        const touch = event.changedTouches && event.changedTouches[0];
+        if (touch) lastX = touch.clientX;
+        finish(false);
+      }, { passive: true });
+      dayView.addEventListener("touchcancel", () => finish(true), { passive: true });
     })();
     updateGroupLabel();
     render();
