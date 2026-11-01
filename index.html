@@ -1752,12 +1752,18 @@
     course2Script.src = "./data/course2-adapter.js?v=20261022";
     course2Script.onload = async () => {
       try {
+        await primeFastScheduleCache("rta-law-course2-cache-v1", null, draft => window.Course2Schedule.setDraft(draft), source => {
+          window.Course2ScheduleReady = true;
+          window.Course2ScheduleSource = source;
+          if (currentGroup.includes("/О-25")) render();
+        });
         if (window.USE_SERVER_LAW_SCHEDULES !== true) throw new Error("Временно используется проверенное локальное расписание юристов");
         const apiResponse = await fetch("https://rta-schedule-api.onrender.com/api/course2-schedule", {cache:"default"});
         if (!apiResponse.ok) throw new Error("API HTTP " + apiResponse.status);
         const draft = await apiResponse.json();
         if (!draft || !Array.isArray(draft.lessons) || draft.lessons.length === 0) throw new Error("API вернул пустое расписание 2-го курса");
         window.Course2Schedule.setDraft(draft);
+        writeFastScheduleCache("rta-law-course2-cache-v1", draft);
         window.Course2ScheduleReady = true;
         window.Course2ScheduleSource = "api";
         if (currentGroup.includes("/О-25")) render();
@@ -1782,6 +1788,11 @@
     course1Script.src = "./data/course1-adapter.js?v=20261023-api-all";
     course1Script.onload = async () => {
       try {
+        await primeFastScheduleCache("rta-law-course1-cache-v1", "./data/course1-schedule.json?v=20261101-fast", draft => window.Course1Schedule.setDraft(draft), source => {
+          window.Course1ScheduleReady = true;
+          window.Course1ScheduleSource = source;
+          if (currentGroup.startsWith("Ю600/О-26")) render();
+        });
         let draft;
         try {
           if (window.USE_SERVER_LAW_SCHEDULES !== true) throw new Error("Временно используется локальное расписание юристов");
@@ -1799,6 +1810,7 @@
           window.Course1ScheduleSource = "local-json-fallback";
         }
         window.Course1Schedule.setDraft(draft);
+        writeFastScheduleCache("rta-law-course1-cache-v1", draft);
         window.Course1ScheduleReady = true;
         if (currentGroup.startsWith("Ю600/О-26")) render();
       } catch (error) {
@@ -1824,6 +1836,11 @@
     course3Script.src = "./data/course3-adapter.js?v=20261023-api-all";
     course3Script.onload = async () => {
       try {
+        await primeFastScheduleCache("rta-law-course3-cache-v1", "./data/course3-review-draft.json?v=20261101-fast", draft => window.Course3Schedule.setDraft(draft), source => {
+          window.Course3ScheduleReady = true;
+          window.Course3ScheduleSource = source;
+          if (currentGroup.startsWith("Ю") && currentGroup.includes("/О-24")) render();
+        });
         let draft;
         try {
           if (window.USE_SERVER_LAW_SCHEDULES !== true) throw new Error("Временно используется локальное расписание юристов");
@@ -1853,6 +1870,7 @@
           window.Course3ScheduleSource = "local-json-fallback · предупреждения OCR сохранены";
         }
         window.Course3Schedule.setDraft(draft);
+        writeFastScheduleCache("rta-law-course3-cache-v1", draft);
         window.Course3ScheduleReady = true;
         if (currentGroup.startsWith("Ю") && currentGroup.includes("/О-24")) render();
       } catch (error) {
@@ -1878,6 +1896,11 @@
     course4Script.src = "./data/course4-adapter.js?v=20261023-api-all";
     course4Script.onload = async () => {
       try {
+        await primeFastScheduleCache("rta-law-course4-cache-v1", "./data/course4-schedule.json?v=20261101-fast", draft => window.Course4Schedule.setDraft(draft), source => {
+          window.Course4ScheduleReady = true;
+          window.Course4ScheduleSource = source;
+          if (currentGroup.includes("/О-23")) render();
+        });
         let draft;
         try {
           if (window.USE_SERVER_LAW_SCHEDULES !== true) throw new Error("Временно используется локальное расписание юристов");
@@ -1895,6 +1918,7 @@
           window.Course4ScheduleSource = "local-json-fallback";
         }
         window.Course4Schedule.setDraft(draft);
+        writeFastScheduleCache("rta-law-course4-cache-v1", draft);
         window.Course4ScheduleReady = true;
         if (currentGroup.includes("/О-23")) render();
       } catch (error) {
