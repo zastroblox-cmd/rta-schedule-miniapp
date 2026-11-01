@@ -79,10 +79,24 @@ jobs:
           const routes = [
             ...[1,2,3,4].map(course => ({label:'law course '+course, path:'/api/course'+course+'-schedule'})),
             ...[1,2,3,4].map(course => ({label:'economics course '+course, path:'/api/economics/course'+course+'-schedule'})),
-            ...[1,2,3,4].map(course => ({label:'applied informatics course '+course, path:'/api/economics/applied-informatics/course'+course+'-schedule'})),
+            ...[1,2,3,4].map(course => ({label:'applied informatics course '+course, path:'/api/customs/applied-informatics/course'+course+'-schedule'})),
             ...[1,2,3,4].map(course => ({label:'management course '+course, path:'/api/economics/management/course'+course+'-schedule'}))
           ];
           const customsRoutes = [1,2,3,4,5].map(course => ({label:'customs course '+course, path:'/api/customs/course'+course+'-schedule'}));
+
+          const appliedInformaticsGroups = groups.data.filter(g => g.courses?.direction === 'applied-informatics');
+          assert.equal(appliedInformaticsGroups.length, 4, 'Applied Informatics must have exactly four groups');
+          assert.ok(appliedInformaticsGroups.every(g => g.courses?.faculties?.slug === 'customs'), 'Applied Informatics groups must belong to the Customs Affairs faculty');
+
+          // Legacy URLs remain aliases for compatibility, but the canonical route is under customs.
+          const legacyPi = await get('/api/economics/applied-informatics/course1-schedule');
+          assert.ok(legacyPi._groups.includes('ПИ601/О-2601'), 'legacy Applied Informatics alias must still resolve to PI group');
+
+          const allCustoms = await get('/api/customs/all-schedules');
+          assert.ok(allCustoms._groups.includes('ПИ601/О-2601'), 'customs all-schedules must include Applied Informatics groups');
+          for (const code of ['ПИ601/О-2601','ПИ601/О-2501','ПИ601/О-2401','ПИ601/О-2301']) {
+            assert.ok(allCustoms.lessons.some(lesson => lesson.group === code), 'customs all-schedules missing lessons for ' + code);
+          }
 
           const exports = new Map();
           for (const route of routes) {
