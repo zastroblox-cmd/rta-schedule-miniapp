@@ -1705,6 +1705,46 @@
     // Единый источник расписания — общий сервер Supabase для всех факультетов и курсов.
     // Локальные данные остаются только резервом на случай временной недоступности API.
     window.USE_SERVER_LAW_SCHEDULES = true;
+    // Быстрый запуск: сначала показываем последний сохранённый снимок, а сервер обновляем в фоне.
+    // Кэш живёт 7 дней; успешный ответ API заменяет его автоматически.
+    const FAST_SCHEDULE_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
+    function readFastScheduleCache(key) {
+      try {
+        const entry = JSON.parse(localStorage.getItem(key) || "null");
+        if (entry && entry.draft && Array.isArray(entry.draft.lessons) && entry.draft.lessons.length &&
+            Date.now() - Number(entry.savedAt || 0) < FAST_SCHEDULE_CACHE_TTL) return entry.draft;
+      } catch (error) { console.warn("Кэш расписания повреждён:", key, error); }
+      return null;
+    }
+    function writeFastScheduleCache(key, draft) {
+      try {
+        if (draft && Array.isArray(draft.lessons) && draft.lessons.length) {
+          localStorage.setItem(key, JSON.stringify({ savedAt: Date.now(), draft }));
+        }
+      } catch (error) { console.warn("Не удалось сохранить кэш расписания:", key, error); }
+    }
+    async function primeFastScheduleCache(key, fallbackUrl, setDraft, onReady) {
+      const cached = readFastScheduleCache(key);
+      if (cached) {
+        setDraft(cached);
+        onReady("local-cache");
+        return true;
+      }
+      if (!fallbackUrl) return false;
+      try {
+        const response = await fetch(fallbackUrl, { cache: "force-cache" });
+        if (!response.ok) return false;
+        const draft = await response.json();
+        if (!draft || !Array.isArray(draft.lessons) || !draft.lessons.length) return false;
+        setDraft(draft);
+        writeFastScheduleCache(key, draft);
+        onReady("bundled-fallback");
+        return true;
+      } catch (error) {
+        console.warn("Не удалось подготовить локальное расписание для быстрого первого показа:", error);
+        return false;
+      }
+    }
     // Загружаем расписание 2-го курса с сервера. При ошибке остаётся прежняя логика index.html.
     window.Course2ScheduleReady = false;
     window.Course2ScheduleSource = "loading";
