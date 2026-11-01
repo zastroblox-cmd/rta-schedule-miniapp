@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0b1019">
+  <meta name="description" content="Информация о данных и конфиденциальности в RTA Schedule.">
+  <title>Данные и конфиденциальность — RTA Schedule</title>
+  <style>
+    :root{color-scheme:dark;--bg:#0b1019;--panel:#111a28;--line:rgba(148,176,220,.16);--text:#edf3ff;--muted:#a6b4ca;--blue:#83adff}
+    *{box-sizing:border-box}
+    body{margin:0;background:radial-gradient(ellipse at top,#15233a 0%,var(--bg) 52%);color:var(--text);font:15px/1.65 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    main{width:min(760px,100%);margin:0 auto;padding:28px 18px 48px}
+    header{margin-bottom:22px}
+    .brand{color:var(--blue);font-size:12px;font-weight:750;letter-spacing:.13em;text-transform:uppercase}
+    h1{font-size:clamp(28px,7vw,40px);line-height:1.15;letter-spacing:-.04em;margin:10px 0}
+    .intro{color:var(--muted);margin:0}
+    section{margin-top:14px;padding:18px;border:1px solid var(--line);border-radius:18px;background:rgba(17,26,40,.86)}
+    h2{font-size:17px;margin:0 0 8px}
+    p{margin:7px 0}
+    ul{margin:8px 0 0;padding-left:21px}
+    li{padding:3px 0}
+    a{color:var(--blue);text-underline-offset:3px}
+    .notice{border-color:rgba(131,173,255,.28);background:rgba(46,79,128,.13)}
+    .muted{font-size:13px;color:var(--muted)}
+    .back{display:inline-block;margin-top:22px;font-size:14px}
+    footer{margin-top:28px;color:var(--muted);font-size:12px}
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div class="brand">RTA Schedule · Бета-версия</div>
+      <h1>Данные и конфиденциальность</h1>
+      <p class="intro">Кратко объясняем, какие данные нужны для работы расписания и как они используются.</p>
+    </header>
+
+    <section>
+      <h2>1. Что хранится на устройстве</h2>
+      <p>Выбранные факультет, направление, курс и группа, а также часть настроек и кэш расписания сохраняются в локальном хранилище браузера, чтобы при следующем открытии не выбирать всё заново и быстрее показывать пары. В режиме старосты временный токен доступа хранится в хранилище текущей сессии.</p>
+      <p>Эти данные можно удалить, очистив данные сайта в настройках браузера или Telegram.</p>
+    </section>
+
+    <section>
+      <h2>2. Статистика использования</h2>
+      <p>Когда Mini App открывается внутри Telegram, сервер проверяет подписанные Telegram данные. Для подсчёта общего числа пользователей и активности за период сервер сохраняет числовой Telegram ID и время последней активности.</p>
+      <p>Эти сведения используются для агрегированной статистики панели владельца. Полный пакет Telegram initData не сохраняется как запись аналитики. Не собираем содержимое личных переписок Telegram.</p>
+    </section>
+
+    <section>
+      <h2>3. Режим старосты</h2>
+      <p>Если используется режим старосты, сервер проверяет доступ к конкретной группе. Внесённые изменения расписания и история изменений сохраняются на сервере, чтобы обновления были видны другим студентам. Не вводите в поля режима старосты пароли от других сервисов.</p>
+    </section>
+
+    <section>
+      <h2>4. Где обрабатываются данные</h2>
+      <ul>
+        <li><strong>GitHub Pages</strong> — отдаёт интерфейс приложения.</li>
+        <li><strong>Render</strong> — выполняет запросы к API; инфраструктура хостинга может вести технические журналы запросов.</li>
+        <li><strong>Supabase</strong> — хранит расписание, статистику активности и серверные записи изменений.</li>
+      </ul>
+      <p>Расписание открыто для чтения, а изменение серверных записей ограничено проверками доступа.</p>
+    </section>
+
+    <section>
+      <h2>5. Контакт и запросы по данным</h2>
+      <p>По вопросам работы приложения и обработки данных можно написать через <a href="https://t.me/RTAScheduleHelperBot" target="_blank" rel="noopener">официального бота RTA Schedule</a>. В сообщении укажите, что вопрос касается данных или конфиденциальности.</p>
+      <p class="muted">Версия: 1 ноября 2026 года. Это информационная страница бета-версии; перед широким публичным запуском сведения об ответственном операторе и официальный канал обращений нужно дополнить.</p>
+    </section>
+
+    <section class="notice">
+      <h2>Важное о расписании</h2>
+      <p>Данные переносятся из учебных расписаний и могут содержать ошибки или изменения от учебного отдела. При расхождении сверяйтесь с официальным расписанием учебного заведения.</p>
+    </section>
+
+    <a class="back" href="./index.html">← Вернуться в RTA Schedule</a>
+    <footer>RTA Schedule · Расписание РТА</footer>
+  </main>
+</body>
+</html>
