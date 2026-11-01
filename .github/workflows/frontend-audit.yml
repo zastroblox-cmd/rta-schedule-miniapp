@@ -46,7 +46,7 @@ jobs:
           const missing = [...new Set(refs.filter(id => !idSet.has(id)))];
           if (missing.length) throw new Error('Owner panel references missing DOM IDs: ' + missing.join(', '));
 
-          for (const id of ['days','weekRange','weekParity','lessonList','ownerTotalUsers','ownerActiveUsers7d','ownerRefreshStats']) {
+          for (const id of ['days','weekRange','weekParity','lessonList','ownerTotalUsers','ownerActiveUsers30d','ownerActivityRate','ownerActivityBar','ownerRefreshStats']) {
             if (!idSet.has(id)) throw new Error('Required app element missing: #' + id);
           }
           for (const token of ['/api/course2-schedule','/api/analytics/track','/api/owner/analytics','2026, 9, 12']) {
