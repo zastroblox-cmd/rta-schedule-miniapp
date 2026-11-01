@@ -84,6 +84,9 @@ jobs:
           ];
           const customsRoutes = [1,2,3,4,5].map(course => ({label:'customs course '+course, path:'/api/customs/course'+course+'-schedule'}));
 
+          const economicsAppliedInformaticsGroups = groups.data.filter(g => g.courses?.faculties?.slug === 'economics' && g.courses?.direction === 'applied-informatics');
+          assert.equal(economicsAppliedInformaticsGroups.length, 0, 'Applied Informatics must not be attached to the economics faculty');
+
           const appliedInformaticsGroups = groups.data.filter(g => g.courses?.direction === 'applied-informatics');
           assert.equal(appliedInformaticsGroups.length, 4, 'Applied Informatics must have exactly four groups');
           assert.ok(appliedInformaticsGroups.every(g => g.courses?.faculties?.slug === 'customs'), 'Applied Informatics groups must belong to the Customs Affairs faculty');
