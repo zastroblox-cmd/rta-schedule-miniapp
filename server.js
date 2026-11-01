@@ -1,5 +1,7 @@
 const express = require("express");
 const crypto = require("node:crypto");
+const { promisify } = require("node:util");
+const scryptAsync = promisify(crypto.scrypt);
 const { createClient } = require("@supabase/supabase-js");
 
 const app = express();
@@ -539,6 +541,31 @@ function safeStringEqual(a, b) {
   const bb = Buffer.from(String(b || ""), "utf8");
   return aa.length === bb.length && aa.length > 0 && crypto.timingSafeEqual(aa, bb);
 }
+
+// New representative passwords use salted, deliberately expensive scrypt hashes.
+// Existing SHA-256 hashes remain verifiable so this can roll out without locking out
+// current representatives; a password is upgraded the next time the owner changes it.
+async function hashRepresentativePassword(password) {
+  const salt = crypto.randomBytes(16);
+  const derived = await scryptAsync(password, salt, 64, { N: 16384, r: 8, p: 1, maxmem: 64 * 1024 * 1024 });
+  return "scrypt$" + salt.toString("hex") + "$" + derived.toString("hex");
+}
+async function verifyRepresentativePassword(password, storedHash) {
+  if (typeof storedHash !== "string" || !storedHash) return false;
+  if (storedHash.startsWith("scrypt$")) {
+    const parts = storedHash.split("$");
+    if (parts.length !== 3 || !/^[a-f0-9]{32}$/i.test(parts[1]) || !/^[a-f0-9]{128}$/i.test(parts[2])) return false;
+    const salt = Buffer.from(parts[1], "hex");
+    const expected = Buffer.from(parts[2], "hex");
+    const actual = await scryptAsync(password, salt, expected.length, { N: 16384, r: 8, p: 1, maxmem: 64 * 1024 * 1024 });
+    return actual.length === expected.length && crypto.timingSafeEqual(actual, expected);
+  }
+  // Legacy format retained only for backwards compatibility until passwords are rotated.
+  if (/^[a-f0-9]{64}$/i.test(storedHash)) {
+    return safeStringEqual(crypto.createHash("sha256").update(password, "utf8").digest("hex"), storedHash);
+  }
+  return false;
+}
 async function getRepresentativeAccess(req, groupId) {
   const token = verifyRepresentativeToken(req);
   if (!token) return { ok: false, status: 401, error: "Сессия старосты истекла. Войди снова." };
@@ -589,7 +616,7 @@ app.post("/api/owner/representative-access", async (req, res) => {
   const password = req.body && req.body.password != null ? String(req.body.password) : "";
   if (!Number.isSafeInteger(groupId) || groupId < 1 || typeof enabled !== "boolean") return res.status(400).json({ error: "Укажи группу и состояние доступа." });
   if (password && (password.length < 10 || password.length > 128)) return res.status(400).json({ error: "Пароль должен содержать от 10 до 128 символов." });
-  const passwordHash = password ? crypto.createHash("sha256").update(password, "utf8").digest("hex") : null;
+  const passwordHash = password ? await hashRepresentativePassword(password) : null;
   const { data, error } = await supabase.rpc("representative_access_set", {
     p_secret: REPRESENTATIVE_API_SECRET, p_group_id: groupId, p_password_hash: passwordHash, p_enabled: enabled
   });
@@ -630,7 +657,7 @@ app.post("/api/representative/login", async (req, res) => {
   if (accessRow && accessRow.enabled === false) return res.status(403).json({ error: "Доступ старосты для этой группы отключён владельцем." });
   const storedHash = accessRow && accessRow.password_hash;
   const validPassword = storedHash
-    ? safeStringEqual(crypto.createHash("sha256").update(password, "utf8").digest("hex"), storedHash)
+    ? await verifyRepresentativePassword(password, storedHash)
     : safeStringEqual(password, REPRESENTATIVE_PASSWORDS[groupCode]);
   if (!validPassword) {
     attempt.count += 1;
