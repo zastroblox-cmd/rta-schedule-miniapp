@@ -1029,9 +1029,11 @@
       for (let i=0;i<7;i++) {
         const d = dateForDay(i);
         const b = document.createElement("button");
+        // Индикатор пар считаем по базовому расписанию: не запускаем 7 сетевых
+        // запросов к API изменений старосты при каждом перелистывании дня.
         const previousDay = selectedDay;
         selectedDay = i;
-        const hasLessons = lessonsForSelectedDate().length > 0;
+        const hasLessons = baseLessonsForSelectedDate().length > 0;
         selectedDay = previousDay;
         b.className = "day" + (i===selectedDay ? " active" : "") + (hasLessons ? " has-class" : "");
         b.innerHTML = `<span class="dow">${daysShort[i]}</span><span class="num">${d.getDate()}</span>`;
