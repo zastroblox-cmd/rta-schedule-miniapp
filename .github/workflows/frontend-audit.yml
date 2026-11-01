@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - "index.html"
+      - "privacy.html"
       - "data/*.js"
       - "data/*.json"
       - ".github/workflows/frontend-audit.yml"
@@ -31,7 +32,7 @@ jobs:
           const html = fs.readFileSync('index.html', 'utf8');
           const privacy = fs.readFileSync('privacy.html', 'utf8');
           if (!html.includes('href="./privacy.html"')) throw new Error('Privacy page link missing from app');
-          for (const text of ['Данные и конфиденциальность', 'Telegram ID', 'Render', 'Supabase', 'официального бота RTA Schedule']) {
+          for (const text of ['Данные и конфиденциальность', 'Telegram ID', 'Режим старосты', 'пересылка обращений сейчас не настроена']) {
             if (!privacy.includes(text)) throw new Error('Privacy page is missing required disclosure: ' + text);
           }
           const inlineScripts = [...html.matchAll(/<script\b(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)<\/script>/gi)]
