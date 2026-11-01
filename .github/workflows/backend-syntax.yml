@@ -1,0 +1,29 @@
+name: Backend syntax check
+
+on:
+  push:
+    branches: [backend-api]
+    paths:
+      - "server.js"
+      - "package.json"
+      - ".github/workflows/backend-syntax.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Check out backend branch
+        uses: actions/checkout@v4
+        with:
+          ref: backend-api
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Validate backend JavaScript syntax
+        run: node --check server.js
