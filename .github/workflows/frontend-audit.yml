@@ -67,7 +67,7 @@ jobs:
           if (!html.includes('customs-adapter.js?v=20261102-customs-pi-v2')) {
             throw new Error('Customs adapter cache key was not bumped after routing changes');
           }
-          if (!html.includes('/api/customs/applied-informatics/course'+course+'-schedule')) {
+          if (!html.includes('/api/customs/applied-informatics/course"+course+"-schedule')) {
             throw new Error('Applied Informatics must use the canonical Customs API route');
           }
           if (html.includes('currentGroup.startsWith("ПИ")') || html.includes('currentGroup.startsWith("ПИ")')) {
