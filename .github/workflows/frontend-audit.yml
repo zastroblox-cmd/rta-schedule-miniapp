@@ -6,6 +6,8 @@ on:
     branches: [main]
     paths:
       - "index.html"
+      - "data/*.js"
+      - "data/*.json"
       - ".github/workflows/frontend-audit.yml"
 
 permissions:
@@ -54,3 +56,18 @@ jobs:
           NODE
       - name: Parse application JavaScript
         run: node --check /tmp/rta-miniapp-inline.js
+
+      - name: Parse schedule JSON and adapter JavaScript
+        run: |
+          for file in data/*.js; do
+            node --check "$file"
+          done
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = require('node:path');
+          for (const name of fs.readdirSync('data').filter(name => name.endsWith('.json'))) {
+            const file = path.join('data', name);
+            JSON.parse(fs.readFileSync(file, 'utf8'));
+            console.log('PASS JSON:', file);
+          }
+          NODE
