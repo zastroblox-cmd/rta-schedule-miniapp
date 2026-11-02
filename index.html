@@ -2231,17 +2231,17 @@
     const entry={schedule_date:date,subject:$("repSubject").value.trim(),starts_at:$("repStart").value,ends_at:$("repEnd").value,teacher:$("repTeacher").value.trim(),room:$("repRoom").value.trim(),lesson_type:$("repType").value.trim()||"Занятие",notes:$("repNotes").value.trim()};
     if(!entry.subject||!entry.starts_at||!entry.ends_at||entry.starts_at>=entry.ends_at){$("repStatus").textContent="Проверь предмет и время пары.";return;}
     $("repStatus").textContent="Сохраняем…";
-    try{await request("/api/representative/change",{method:"POST",body:JSON.stringify({group_id:gid,entry_id:editingId,action:"save_override",entry})});$("repEditForm").style.display="none";editingId=null;await loadEntries();$("repStatus").textContent="Сохранено. Обновляем расписание…";setTimeout(()=>window.location.reload(),350);}
+    try{await request("/api/representative/change",{method:"POST",body:JSON.stringify({group_id:gid,entry_id:editingId,action:"save_override",entry})});$("repEditForm").style.display="none";editingId=null;await loadEntries();$("repStatus").textContent="Сохранено. Изменение применено; можно продолжать редактирование.";}
     catch(err){$("repStatus").textContent=err.message||"Не удалось сохранить.";}
   }
   async function removeEntry(x){
     if(!confirm("Убрать «"+x.subject+"» только на "+selectedDate()+"?"))return;
-    try{const gid=await groupId();await request("/api/representative/change",{method:"POST",body:JSON.stringify({group_id:gid,entry_id:x.id,action:"delete_for_date",entry:{schedule_date:selectedDate()}})});await loadEntries();$("repStatus").textContent="Пара убрана на выбранную дату.";setTimeout(()=>window.location.reload(),350);}
+    try{const gid=await groupId();await request("/api/representative/change",{method:"POST",body:JSON.stringify({group_id:gid,entry_id:x.id,action:"delete_for_date",entry:{schedule_date:selectedDate()}})});await loadEntries();$("repStatus").textContent="Пара убрана на выбранную дату.";}
     catch(e){$("repStatus").textContent=e.message||"Не удалось убрать пару.";}
   }
   async function restoreHistory(historyId){
     if(!confirm("Отменить это изменение? Расписание будет восстановлено до предыдущего состояния."))return;
-    try{const gid=await groupId();await request("/api/representative/restore",{method:"POST",body:JSON.stringify({group_id:gid,history_id:historyId})});$("repStatus").textContent="Изменение отменено. Обновляем расписание…";await loadEntries();setTimeout(()=>window.location.reload(),350);}
+    try{const gid=await groupId();await request("/api/representative/restore",{method:"POST",body:JSON.stringify({group_id:gid,history_id:historyId})});$("repStatus").textContent="Изменение отменено.";await loadEntries();}
     catch(e){$("repStatus").textContent=e.message||"Не удалось отменить изменение.";}
   }
   async function loadHistory(){
