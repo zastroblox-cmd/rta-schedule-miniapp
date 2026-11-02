@@ -1807,6 +1807,37 @@
         finish(false);
       }, { passive: true });
       dayView.addEventListener("touchcancel", () => finish(true), { passive: true });
+
+      // Если Android/Telegram сворачивает Mini App во время анимации, браузер
+      // может приостановить Web Animation. Сбрасываем жест и блокировки при возврате,
+      // чтобы расписание никогда не оставалось полупрозрачным или «застрявшим».
+      const recoverSwipe = () => {
+        if (activeAnimation) {
+          try { activeAnimation.cancel(); } catch (_) {}
+        }
+        activeAnimation = null;
+        animating = false;
+        clearGesture();
+        dayView.style.filter = "";
+      };
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) {
+          recoverSwipe();
+          scheduleTransitionId++;
+          dayView.getAnimations().forEach(animation => {
+            try { animation.cancel(); } catch (_) {}
+          });
+          dayView.classList.remove("is-changing");
+          dayView.style.opacity = "";
+          dayView.style.transform = "";
+          dayView.style.filter = "";
+          dayView.style.willChange = "";
+        }
+      });
+      window.addEventListener("pageshow", () => {
+        recoverSwipe();
+        dayView.classList.remove("is-changing");
+      });
     })();
     updateGroupLabel();
     render();
