@@ -1203,7 +1203,7 @@
         if (parts[0] === "rep_all_weeks_edit" || parts[0] === "rep_all_weeks_delete") {
           if (parts[1] && parts[2]) excluded.add(parts[1].slice(0,5)+"|"+parts[2].slice(0,5));
         }
-        if (parts[0] === "rep_all_weeks_delete") return null;
+        if (parts[0].startsWith("rep_all_weeks_delete")) return null;
         return {
           start:String(item.starts_at || "").slice(0,5), end:String(item.ends_at || "").slice(0,5),
           title:item.subject || "", type:item.lesson_type || "Занятие",
