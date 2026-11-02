@@ -268,7 +268,7 @@ app.get("/api/schedule-changes", async (req, res) => {
     (!row.valid_to || row.valid_to >= dateString)
   );
   const excluded = validRecurringRows.filter(row =>
-    !String(row.source_label || "").startsWith("rep_all_weeks_delete|") &&
+    !String(row.source_label || "").startsWith("rep_all_weeks_delete") &&
     (row.excluded_dates || []).includes(dateString)
   ).map(row => ({ starts_at: row.starts_at, ends_at: row.ends_at }));
   const recurringChanges = validRecurringRows.filter(row => {
@@ -377,7 +377,7 @@ async function exportCourseSchedule(courseNumber, res, facultySlug = "law", dire
   if (entriesError) return res.status(500).json({ error: "Unable to load course schedule" });
 
   const groupById = new Map(groups.map(group => [group.id, group]));
-  let lessons = (entries || []).filter(row => !String(row.source_label || "").startsWith("rep_all_weeks_delete|")).map(row => toMiniAppLesson({
+  let lessons = (entries || []).filter(row => !String(row.source_label || "").startsWith("rep_all_weeks_delete")).map(row => toMiniAppLesson({
     ...row,
     group_code: groupById.get(row.group_id)?.group_code
   }));
