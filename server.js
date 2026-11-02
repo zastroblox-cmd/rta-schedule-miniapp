@@ -717,9 +717,16 @@ app.post("/api/representative/change", async (req, res) => {
   const access = await getRepresentativeAccess(req, groupId);
   if (!access.ok) return res.status(access.status).json({ error: access.error });
   if (!validDateString(String(body.entry && body.entry.schedule_date || ""))) return res.status(400).json({ error: "Укажи корректную дату." });
-  const { data, error } = await supabaseRpc.rpc("representative_apply_change", {
+  const scope = String(body.scope || "date");
+  const recurringScope = scope === "all_weeks";
+  const rpcName = recurringScope ? "representative_apply_recurring_change" : "representative_apply_change";
+  const requestedAction = String(body.action || "save_override");
+  const rpcAction = recurringScope
+    ? (requestedAction === "delete_for_date" ? "delete_recurring" : "save_recurring")
+    : requestedAction;
+  const { data, error } = await supabaseRpc.rpc(rpcName, {
     p_secret: REPRESENTATIVE_API_SECRET,
-    p_action: String(body.action || "save_override"),
+    p_action: rpcAction,
     p_group_id: groupId,
     p_entry_id: body.entry_id == null ? null : Number(body.entry_id),
     p_entry: body.entry || {},
@@ -727,6 +734,10 @@ app.post("/api/representative/change", async (req, res) => {
   });
   if (error) {
     console.error("Representative change failed:", error.message);
+    const message = String(error.message || "");
+    if (message.includes("one_off_cannot_delete_all_weeks")) {
+      return res.status(400).json({ error: "Это разовая пара. Чтобы убрать её только на выбранную дату, переключи область действия на «Только на дату»." });
+    }
     return res.status(400).json({ error: "Не удалось сохранить изменение. Проверь поля и попробуй ещё раз." });
   }
   return res.json({ ok: true, result: data });
