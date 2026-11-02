@@ -396,6 +396,9 @@
     .rep-primary,.rep-secondary,.rep-danger { border-radius:11px; padding:11px 12px; font-size:12px; font-weight:700; }
     .rep-primary { border:1px solid #5794ff70; color:#fff; background:linear-gradient(135deg,#397be9,#2458bb); }
     .rep-secondary { border:1px solid #ffffff20; color:#e4edff; background:#ffffff09; }
+    .rep-scope-button.active { border-color:#5794ff; color:#fff; background:linear-gradient(135deg,rgba(57,123,233,.38),rgba(36,88,187,.28)); box-shadow:inset 0 0 0 1px #5794ff35; }
+    .rep-scope-picker { margin:12px 0 16px; padding:12px; border:1px solid #ffffff12; border-radius:14px; background:#0c121d80; }
+    .rep-scope-picker .rep-help { margin:8px 0 0; }
     .rep-danger { border:1px solid #ff7d7d45; color:#ffb6b6; background:#ff555510; }
     .rep-lesson { display:flex; align-items:center; gap:9px; padding:10px 0; border-top:1px solid var(--line); }
     .rep-lesson-main { flex:1; min-width:0; }
@@ -451,6 +454,14 @@
           <button class="rep-primary" id="repLoginButton" style="width:100%">Войти в режим старосты</button>
         </div>
         <div id="repEditor" style="display:none">
+          <div class="rep-scope-picker">
+            <div style="font-size:12px;font-weight:750;margin-bottom:9px">Применить изменение</div>
+            <div class="rep-grid">
+              <button type="button" class="rep-secondary rep-scope-button active" id="repScopeDate" aria-pressed="true">Только на дату</button>
+              <button type="button" class="rep-secondary rep-scope-button" id="repScopeAll" aria-pressed="false">На все недели</button>
+            </div>
+            <p class="rep-help" id="repScopeHelp">Изменится только выбранная дата. Остальные дни останутся без изменений.</p>
+          </div>
           <div class="rep-field">Дата расписания<input type="date" id="repDate"></div>
           <div class="rep-grid"><button class="rep-secondary" id="repRefresh">Обновить пары</button><button class="rep-secondary" id="repNew">+ Добавить пару</button></div>
           <div id="repLessons" style="margin-top:12px"></div>
@@ -2177,11 +2188,21 @@
   const $=id=>document.getElementById(id);
   const panel=$("repPanel"), tokenKey="rta_rep_token", roleKey="rta_rep_role", groupKey="rta_rep_group";
   let token=sessionStorage.getItem(tokenKey)||"", role=sessionStorage.getItem(roleKey)||"", tokenGroup=sessionStorage.getItem(groupKey)||"";
-  let groupRows=[], activeEntries=[], editingId=null;
+  let groupRows=[], activeEntries=[], editingId=null, editScope="date";
   const tg=window.Telegram&&window.Telegram.WebApp?window.Telegram.WebApp:null;
   function selectedDate(){const d=$("repDate").value;if(d)return d;const value=typeof dateForDay==="function"?dateForDay(selectedDay):new Date();return [value.getFullYear(),String(value.getMonth()+1).padStart(2,"0"),String(value.getDate()).padStart(2,"0")].join("-");}
   function todayIso(){const d=typeof dateForDay==="function"?dateForDay(selectedDay):new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-");}
   async function request(path,options={}){const response=await fetch(API+path,{...options,headers:{"Content-Type":"application/json",...(token?{Authorization:"Bearer "+token}:{}),...(options.headers||{})},cache:"no-store"});const data=await response.json().catch(()=>({error:"Сервер вернул некорректный ответ."}));if(!response.ok)throw new Error(data.error||"Ошибка сервера");return data;}
+  function setScope(scope){
+    editScope=scope==="all_weeks"?"all_weeks":"date";
+    $("repScopeDate").classList.toggle("active",editScope==="date");
+    $("repScopeAll").classList.toggle("active",editScope==="all_weeks");
+    $("repScopeDate").setAttribute("aria-pressed",String(editScope==="date"));
+    $("repScopeAll").setAttribute("aria-pressed",String(editScope==="all_weeks"));
+    $("repScopeHelp").textContent=editScope==="all_weeks"
+      ?"Изменится повторяющаяся пара в этот день недели на всех неделях. Разовая пара при сохранении станет повторяющейся."
+      :"Изменится только выбранная дата. Остальные дни и недели останутся без изменений.";
+  }
   function showEditor(){ $("repLogin").style.display="none";$("repEditor").style.display="block";$("repLoginStatus").textContent="";$("repIntro").textContent=role==="owner"?"Доступ владельца: все группы.":"Доступ ограничен группой "+currentGroup+"."; $("repGroupLabel").textContent=currentGroup; }
   function showLogin(message=""){ $("repLogin").style.display="block";$("repEditor").style.display="none";$("repGroupLabel").textContent=currentGroup;$("repLoginStatus").textContent=message; }
   function clearToken(){token="";role="";tokenGroup="";sessionStorage.removeItem(tokenKey);sessionStorage.removeItem(roleKey);sessionStorage.removeItem(groupKey);}
@@ -2221,7 +2242,7 @@
   }
   function startEdit(x=null){
     editingId=x?x.id:null;
-    $("repEditForm").style.display="block";$("repFormTitle").textContent=x?"Изменить пару на выбранную дату":"Новая пара на выбранную дату";
+    $("repEditForm").style.display="block";$("repFormTitle").textContent=x?(editScope==="all_weeks"?"Изменить пару на все недели":"Изменить пару на выбранную дату"):(editScope==="all_weeks"?"Новая пара на все недели":"Новая пара на выбранную дату");
     $("repSubject").value=x?.subject||"";$("repStart").value=String(x?.starts_at||"").slice(0,5);$("repEnd").value=String(x?.ends_at||"").slice(0,5);
     $("repTeacher").value=x?.teacher||"";$("repRoom").value=x?.room||"";$("repType").value=x?.lesson_type||"Занятие";$("repNotes").value=x?.notes||"";
     $("repEditForm").scrollIntoView({behavior:"smooth",block:"start"});
@@ -2231,13 +2252,19 @@
     const entry={schedule_date:date,subject:$("repSubject").value.trim(),starts_at:$("repStart").value,ends_at:$("repEnd").value,teacher:$("repTeacher").value.trim(),room:$("repRoom").value.trim(),lesson_type:$("repType").value.trim()||"Занятие",notes:$("repNotes").value.trim()};
     if(!entry.subject||!entry.starts_at||!entry.ends_at||entry.starts_at>=entry.ends_at){$("repStatus").textContent="Проверь предмет и время пары.";return;}
     $("repStatus").textContent="Сохраняем…";
-    try{await request("/api/representative/change",{method:"POST",body:JSON.stringify({group_id:gid,entry_id:editingId,action:"save_override",entry})});$("repEditForm").style.display="none";editingId=null;await loadEntries();$("repStatus").textContent="Сохранено. Изменение применено; можно продолжать редактирование.";}
+    try{await request("/api/representative/change",{method:"POST",body:JSON.stringify({group_id:gid,entry_id:editingId,action:"save_override",scope:editScope,entry})});$("repEditForm").style.display="none";editingId=null;await loadEntries();$("repStatus").textContent=editScope==="all_weeks"?"Сохранено. Изменение применяется на все недели.":"Сохранено. Изменение применяется только на выбранную дату.";}
     catch(err){$("repStatus").textContent=err.message||"Не удалось сохранить.";}
   }
   async function removeEntry(x){
-    if(!confirm("Убрать «"+x.subject+"» только на "+selectedDate()+"?"))return;
-    try{const gid=await groupId();await request("/api/representative/change",{method:"POST",body:JSON.stringify({group_id:gid,entry_id:x.id,action:"delete_for_date",entry:{schedule_date:selectedDate()}})});await loadEntries();$("repStatus").textContent="Пара убрана на выбранную дату.";}
-    catch(e){$("repStatus").textContent=e.message||"Не удалось убрать пару.";}
+    const allWeeks=editScope==="all_weeks";
+    const target=allWeeks?"из всех недель":"только на "+selectedDate();
+    if(!confirm("Убрать «"+x.subject+"» "+target+"?"))return;
+    try{
+      const gid=await groupId();
+      await request("/api/representative/change",{method:"POST",body:JSON.stringify({group_id:gid,entry_id:x.id,action:"delete_for_date",scope:editScope,entry:{schedule_date:selectedDate()}})});
+      await loadEntries();
+      $("repStatus").textContent=allWeeks?"Повторяющаяся пара удалена из всех недель.":"Пара убрана только на выбранную дату.";
+    }catch(e){$("repStatus").textContent=e.message||"Не удалось убрать пару.";}
   }
   async function restoreHistory(historyId){
     if(!confirm("Отменить это изменение? Расписание будет восстановлено до предыдущего состояния."))return;
@@ -2266,12 +2293,15 @@
   $("repLoginButton").addEventListener("click",login);
   $("repPassword").addEventListener("keydown",e=>{if(e.key==="Enter")login();});
   $("repRefresh").addEventListener("click",()=>void loadEntries());
+  $("repScopeDate").addEventListener("click",()=>setScope("date"));
+  $("repScopeAll").addEventListener("click",()=>setScope("all_weeks"));
   $("repDate").addEventListener("change",()=>void loadEntries());
   $("repNew").addEventListener("click",()=>startEdit());
   $("repCancelEdit").addEventListener("click",()=>{$("repEditForm").style.display="none";editingId=null;});
   $("repEditForm").addEventListener("submit",saveEntry);
   $("repLogout").addEventListener("click",()=>{clearToken();showLogin("Ты вышел из режима старосты.");});
   $("repDate").value=todayIso();
+  setScope("date");
 })();
 </script>
 
