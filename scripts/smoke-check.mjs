@@ -10,14 +10,14 @@ const requiredIds = [
 ];
 
 for (const id of requiredIds) {
-  assert.match(html, new RegExp('id=["\\']' + id + '["\\']'), `Missing required UI element: #${id}`);
+  assert.ok(html.includes('id="' + id + '"') || html.includes("id='" + id + "'"), `Missing required UI element: #${id}`);
 }
 
 const inlineScripts = [];
-const scriptPattern = /<script\\b([^>]*)>([\\s\\S]*?)<\\/script\\s*>/gi;
+const scriptPattern = /<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi;
 let match;
 while ((match = scriptPattern.exec(html)) !== null) {
-  if (/\\bsrc\\s*=/.test(match[1])) continue;
+  if (/\bsrc\s*=/.test(match[1])) continue;
   const source = match[2].trim();
   if (source) inlineScripts.push(source);
 }
@@ -26,11 +26,11 @@ inlineScripts.forEach((source, index) => {
   new vm.Script(source, { filename: `index.html:inline-script-${index + 1}` });
 });
 
-assert.match(html, /new Date\\(2026,\\s*9,\\s*12\\)/, "Week parity anchor must remain 12 October 2026");
+assert.match(html, /new Date\(2026,\s*9,\s*12\)/, "Week parity anchor must remain 12 October 2026");
 assert.match(html, /12–18 октября 2026 — неделя Б/, "Week B anchor explanation must remain");
 assert.match(html, /visibilitychange/, "Swipe recovery on app visibility changes must remain");
 assert.match(html, /pageshow/, "Swipe recovery after page restore must remain");
-assert.match(html, /Telegram\\.WebApp/, "Telegram Mini App SDK integration must remain");
+assert.match(html, /Telegram\.WebApp/, "Telegram Mini App SDK integration must remain");
 assert.match(html, /repScopeAll/, "Representative all-weeks scope must remain");
 assert.match(html, /repScopeDate/, "Representative one-date scope must remain");
 
