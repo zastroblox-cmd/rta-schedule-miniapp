@@ -1197,6 +1197,21 @@
       if (!changes) return base;
       const slot = item => String(item.start || item.starts_at || "").slice(0,5)+"|"+String(item.end || item.ends_at || "").slice(0,5);
       const excluded = new Set((changes.excluded || []).map(slot));
+      const recurringChanges = (changes.recurring_changes || []).map(item => {
+        const source = String(item.source_label || "");
+        const parts = source.split("|");
+        if (parts[0] === "rep_all_weeks_edit" || parts[0] === "rep_all_weeks_delete") {
+          if (parts[1] && parts[2]) excluded.add(parts[1].slice(0,5)+"|"+parts[2].slice(0,5));
+        }
+        if (parts[0] === "rep_all_weeks_delete") return null;
+        return {
+          start:String(item.starts_at || "").slice(0,5), end:String(item.ends_at || "").slice(0,5),
+          title:item.subject || "", type:item.lesson_type || "Занятие",
+          room:item.room || "Уточняется накануне", teacher:item.teacher || "",
+          color:(item.lesson_type || "").includes("Физкультура") ? "green" : "blue",
+          note:item.notes || "", representativeOverride:true, representativeRecurring:true
+        };
+      }).filter(Boolean);
       const overrides = (changes.overrides || []).map(item => ({
         start:String(item.starts_at || "").slice(0,5), end:String(item.ends_at || "").slice(0,5),
         title:item.subject || "", type:item.lesson_type || "Занятие",
@@ -1205,8 +1220,10 @@
         note:item.notes || "", representativeOverride:true
       }));
       const overrideSlots = new Set(overrides.map(slot));
+      const recurringOverrideSlots = new Set(recurringChanges.map(slot));
       return [
-        ...base.filter(item => !excluded.has(slot(item)) && !overrideSlots.has(slot(item))),
+        ...base.filter(item => !excluded.has(slot(item)) && !overrideSlots.has(slot(item)) && !recurringOverrideSlots.has(slot(item))),
+        ...recurringChanges,
         ...overrides
       ].sort((a,b)=>a.start.localeCompare(b.start));
     }
