@@ -67,6 +67,7 @@ try {
   const activeDay = page.locator("#days .day.active");
   assert.equal(await activeDay.count(), 1, "exactly one day must be selected");
   await page.locator("#days .day").last().click();
+  await page.waitForFunction(() => /Воскресенье/i.test(document.querySelector("#dayHeading")?.textContent || ""));
   assert.match(await page.locator("#dayHeading").innerText(), /Воскресенье/i, "Sunday must be selectable");
   const sundayRange = await page.locator("#weekRange").innerText();
 
