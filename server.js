@@ -263,18 +263,19 @@ app.get("/api/schedule-changes", async (req, res) => {
   if (overrideResult.error || recurringResult.error) {
     return res.status(500).json({ error: "Unable to load schedule changes" });
   }
-  const recurringRows = (recurringResult.data || []).filter(row =>
+  const validRecurringRows = (recurringResult.data || []).filter(row =>
     (!row.valid_from || row.valid_from <= dateString) &&
-    (!row.valid_to || row.valid_to >= dateString) &&
-    !(row.excluded_dates || []).includes(dateString)
+    (!row.valid_to || row.valid_to >= dateString)
   );
-  const excluded = recurringRows.filter(row =>
+  const excluded = validRecurringRows.filter(row =>
     !String(row.source_label || "").startsWith("rep_all_weeks_delete|") &&
     (row.excluded_dates || []).includes(dateString)
   ).map(row => ({ starts_at: row.starts_at, ends_at: row.ends_at }));
-  const recurringChanges = recurringRows.filter(row =>
-    String(row.source_label || "").startsWith("rep_all_weeks_")
-  );
+  const recurringChanges = validRecurringRows.filter(row => {
+    const marker = String(row.source_label || "");
+    return marker.startsWith("rep_all_weeks_delete|") ||
+      (marker.startsWith("rep_all_weeks_") && !(row.excluded_dates || []).includes(dateString));
+  });
   return res.json({
     group_code: group.group_code,
     date: dateString,
