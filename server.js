@@ -172,7 +172,7 @@ app.get("/api/schedule", async (req, res) => {
   const date = new Date(dateString + "T12:00:00Z");
   const weekday = date.getUTCDay() || 7;
   const weekType = getWeekType(dateString);
-  const fields = "id,group_id,entry_kind,weekday,week_type,schedule_date,starts_at,ends_at,subject,teacher,room,lesson_type,notes,excluded_dates,valid_from,valid_to";
+  const fields = "id,group_id,entry_kind,weekday,week_type,schedule_date,starts_at,ends_at,subject,teacher,room,lesson_type,notes,excluded_dates,valid_from,valid_to,source_label";
 
   // Both reads are independent; run them concurrently to reduce schedule-load latency.
   const [overrideResult, recurringResult] = await Promise.all([
@@ -256,22 +256,30 @@ app.get("/api/schedule-changes", async (req, res) => {
       .eq("group_id", group.id).eq("entry_kind", "date_override")
       .eq("schedule_date", dateString).order("starts_at"),
     supabase.from("schedule_entries")
-      .select("id,starts_at,ends_at,excluded_dates,valid_from,valid_to,week_type")
+      .select("id,starts_at,ends_at,subject,teacher,room,lesson_type,notes,excluded_dates,valid_from,valid_to,week_type,weekday,source_label")
       .eq("group_id", group.id).eq("entry_kind", "recurring").eq("weekday", weekday)
       .or("week_type.is.null,week_type.eq." + getWeekType(dateString)).order("starts_at")
   ]);
   if (overrideResult.error || recurringResult.error) {
     return res.status(500).json({ error: "Unable to load schedule changes" });
   }
-  const excluded = (recurringResult.data || []).filter(row =>
+  const recurringRows = (recurringResult.data || []).filter(row =>
     (!row.valid_from || row.valid_from <= dateString) &&
     (!row.valid_to || row.valid_to >= dateString) &&
+    !(row.excluded_dates || []).includes(dateString)
+  );
+  const excluded = recurringRows.filter(row =>
+    !String(row.source_label || "").startsWith("rep_all_weeks_delete|") &&
     (row.excluded_dates || []).includes(dateString)
   ).map(row => ({ starts_at: row.starts_at, ends_at: row.ends_at }));
+  const recurringChanges = recurringRows.filter(row =>
+    String(row.source_label || "").startsWith("rep_all_weeks_")
+  );
   return res.json({
     group_code: group.group_code,
     date: dateString,
     excluded,
+    recurring_changes: recurringChanges,
     overrides: overrideResult.data || []
   });
 });
@@ -362,13 +370,13 @@ async function exportCourseSchedule(courseNumber, res, facultySlug = "law", dire
   const ids = groups.map(group => group.id);
   const { data: entries, error: entriesError } = await supabase
     .from("schedule_entries")
-    .select("group_id,entry_kind,weekday,week_type,schedule_date,starts_at,ends_at,subject,teacher,room,lesson_type,notes,excluded_dates,valid_from,valid_to")
+    .select("group_id,entry_kind,weekday,week_type,schedule_date,starts_at,ends_at,subject,teacher,room,lesson_type,notes,excluded_dates,valid_from,valid_to,source_label")
     .in("group_id", ids)
     .order("starts_at");
   if (entriesError) return res.status(500).json({ error: "Unable to load course schedule" });
 
   const groupById = new Map(groups.map(group => [group.id, group]));
-  let lessons = (entries || []).map(row => toMiniAppLesson({
+  let lessons = (entries || []).filter(row => !String(row.source_label || "").startsWith("rep_all_weeks_delete|")).map(row => toMiniAppLesson({
     ...row,
     group_code: groupById.get(row.group_id)?.group_code
   }));
@@ -705,7 +713,7 @@ app.get("/api/representative/schedule", async (req, res) => {
   if (overridesResult.error || recurringResult.error) return res.status(503).json({ error: "Не удалось загрузить пары." });
   const overrides = overridesResult.data || [];
   const overrideSlots = new Set(overrides.map(x => x.starts_at + "|" + x.ends_at));
-  const recurring = (recurringResult.data || []).filter(x => (!x.valid_from || x.valid_from <= dateString) && (!x.valid_to || x.valid_to >= dateString) && !(x.excluded_dates || []).includes(dateString) && !overrideSlots.has(x.starts_at + "|" + x.ends_at));
+  const recurring = (recurringResult.data || []).filter(x => !String(x.source_label || "").startsWith("rep_all_weeks_delete|") && (!x.valid_from || x.valid_from <= dateString) && (!x.valid_to || x.valid_to >= dateString) && !(x.excluded_dates || []).includes(dateString) && !overrideSlots.has(x.starts_at + "|" + x.ends_at));
   return res.json({ data: [...recurring, ...overrides].sort((a,b) => String(a.starts_at).localeCompare(String(b.starts_at))), date: dateString, group_id: groupId, group_code: access.role === "representative" ? verifyRepresentativeToken(req).groupCode : undefined });
 });
 
