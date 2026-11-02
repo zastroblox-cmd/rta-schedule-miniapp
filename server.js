@@ -625,8 +625,14 @@ app.post("/api/owner/representative-access", async (req, res) => {
   if (!Number.isSafeInteger(groupId) || groupId < 1 || typeof enabled !== "boolean") return res.status(400).json({ error: "Укажи группу и состояние доступа." });
   if (password && (password.length < 10 || password.length > 128)) return res.status(400).json({ error: "Пароль должен содержать от 10 до 128 символов." });
   const passwordHash = password ? await hashRepresentativePassword(password) : null;
-  const { data, error } = await supabaseRpc.rpc("representative_access_set", {
-    p_secret: REPRESENTATIVE_API_SECRET, p_group_id: groupId, p_password_hash: passwordHash, p_enabled: enabled
+  // Update the verifier hash and the owner-only password vault in one database transaction.
+  // Otherwise the owner panel can show a stale password while login checks the new hash.
+  const { data, error } = await supabaseRpc.rpc("representative_access_set_with_password", {
+    p_secret: REPRESENTATIVE_API_SECRET,
+    p_group_id: groupId,
+    p_password_hash: passwordHash,
+    p_enabled: enabled,
+    p_password_plaintext: password || null
   });
   if (error || !data) {
     console.error("Owner representative access update failed:", error && error.message);
