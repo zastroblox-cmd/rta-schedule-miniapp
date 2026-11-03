@@ -77,20 +77,26 @@ try {
   assert.match(nextRange, /19.*25/, "next week must be 19–25 October");
   assert.match(await page.locator("#weekParity").innerText(), /Чётная неделя/i, "19–25 October must be week А / even");
 
-  // Check parity in both directions, including negative offsets and repeated weeks.
+  // Check parity in both directions, waiting for each animated week change before the next click.
   for (let i = 0; i < 3; i++) {
+    const previousRange = await page.locator("#weekRange").innerText();
     await page.locator("#nextWeek").click();
-    await page.waitForFunction(previous => document.querySelector("#weekRange")?.textContent !== previous, nextRange);
+    await page.waitForFunction(previous => document.querySelector("#weekRange")?.textContent !== previous, previousRange);
   }
   assert.match(await page.locator("#weekParity").innerText(), /Нечётная неделя/i, "week parity must alternate after multiple forward moves");
-  await page.locator("#prevWeek").click();
-  await page.waitForFunction(() => /Чётная неделя/i.test(document.querySelector("#weekParity")?.textContent || ""));
-  await page.locator("#prevWeek").click();
-  await page.waitForFunction(() => /Нечётная неделя/i.test(document.querySelector("#weekParity")?.textContent || ""));
-  await page.locator("#prevWeek").click();
-  await page.waitForFunction(() => /Чётная неделя/i.test(document.querySelector("#weekParity")?.textContent || ""));
-  await page.locator("#prevWeek").click();
-  await page.waitForFunction(expected => document.querySelector("#weekRange")?.textContent === expected, initialRange);
+  const backwardExpectations = [
+    /Чётная неделя/i,
+    /Нечётная неделя/i,
+    /Чётная неделя/i,
+    /Нечётная неделя/i
+  ];
+  for (const expectedParity of backwardExpectations) {
+    const previousRange = await page.locator("#weekRange").innerText();
+    await page.locator("#prevWeek").click();
+    await page.waitForFunction(previous => document.querySelector("#weekRange")?.textContent !== previous, previousRange);
+    assert.match(await page.locator("#weekParity").innerText(), expectedParity, "week parity must alternate after each backward move");
+  }
+  assert.equal(await page.locator("#weekRange").innerText(), initialRange, "four backward moves must restore the original week");
 
   await page.locator("#todayWeek").click();
   const activeDay = page.locator("#days .day.active");
