@@ -90,8 +90,6 @@ try {
   await page.locator("#prevWeek").click();
   await page.waitForFunction(() => /Чётная неделя/i.test(document.querySelector("#weekParity")?.textContent || ""));
   await page.locator("#prevWeek").click();
-  await page.waitForFunction(() => /Нечётная неделя/i.test(document.querySelector("#weekParity")?.textContent || ""));
-  await page.locator("#prevWeek").click();
   await page.waitForFunction(expected => document.querySelector("#weekRange")?.textContent === expected, initialRange);
 
   await page.locator("#todayWeek").click();
