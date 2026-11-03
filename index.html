@@ -2297,11 +2297,11 @@
     $("repEditForm").scrollIntoView({behavior:"smooth",block:"start"});
   }
   async function saveEntry(e){
-    e.preventDefault();const date=selectedDate(),gid=await groupId();
+    e.preventDefault();const date=selectedDate();
     const entry={schedule_date:date,subject:$("repSubject").value.trim(),starts_at:$("repStart").value,ends_at:$("repEnd").value,teacher:$("repTeacher").value.trim(),room:$("repRoom").value.trim(),lesson_type:$("repType").value.trim()||"Занятие",notes:$("repNotes").value.trim()};
     if(!entry.subject||!entry.starts_at||!entry.ends_at||entry.starts_at>=entry.ends_at){$("repStatus").textContent="Проверь предмет и время пары.";return;}
     $("repStatus").textContent="Сохраняем…";
-    try{await request("/api/representative/change",{method:"POST",body:JSON.stringify({group_id:gid,entry_id:editingId,action:"save_override",scope:editScope,entry})});$("repEditForm").style.display="none";editingId=null;await loadEntries();keepRepresentativeEditorVisible();$("repStatus").textContent=editScope==="all_weeks"?"Сохранено. Изменение применяется на все недели.":"Сохранено. Изменение применяется только на выбранную дату.";}
+    try{const gid=await groupId();await request("/api/representative/change",{method:"POST",body:JSON.stringify({group_id:gid,entry_id:editingId,action:"save_override",scope:editScope,entry})});$("repEditForm").style.display="none";editingId=null;await loadEntries();keepRepresentativeEditorVisible();$("repStatus").textContent=editScope==="all_weeks"?"Сохранено. Изменение применяется на все недели.":"Сохранено. Изменение применяется только на выбранную дату.";}
     catch(err){$("repStatus").textContent=err.message||"Не удалось сохранить.";}
   }
   async function removeEntry(x){
