@@ -2252,6 +2252,7 @@
       :"Изменится только выбранная дата. Остальные дни и недели останутся без изменений.";
   }
   function showEditor(){ $("repLogin").style.display="none";$("repEditor").style.display="block";$("repLoginStatus").textContent="";$("repIntro").textContent=role==="owner"?"Доступ владельца: все группы.":"Доступ ограничен группой "+currentGroup+"."; $("repGroupLabel").textContent=currentGroup; }
+  function keepRepresentativeEditorVisible(){if(typeof showTab==="function")showTab("profile");panel.classList.add("open");}
   function showLogin(message=""){ $("repLogin").style.display="block";$("repEditor").style.display="none";$("repGroupLabel").textContent=currentGroup;$("repLoginStatus").textContent=message; }
   function clearToken(){token="";role="";tokenGroup="";sessionStorage.removeItem(tokenKey);sessionStorage.removeItem(roleKey);sessionStorage.removeItem(groupKey);}
   async function login(){
@@ -2281,7 +2282,7 @@
       if(role!=="owner"&&tokenGroup!==currentGroup)throw new Error("Пароль действует только для "+tokenGroup+". Выйди и войди заново.");
       const d=await request("/api/representative/schedule?group_id="+encodeURIComponent(gid)+"&date="+encodeURIComponent(date));
       activeEntries=d.data||[];
-      $("repLessons").innerHTML=activeEntries.length?activeEntries.map((x,i)=>'<div class="rep-lesson"><div class="rep-lesson-main"><strong>'+esc(String(x.starts_at||"").slice(0,5))+'–'+esc(String(x.ends_at||"").slice(0,5))+' · '+esc(x.subject)+'</strong><small>'+esc([x.teacher,x.room,x.entry_kind==="recurring"?"Повторяющаяся пара":"Только на эту дату"].filter(Boolean).join(" · "))+'</small></div><button class="rep-secondary" data-edit="'+i+'">Изменить</button><button class="rep-danger" data-delete="'+i+'">Убрать</button></div>').join(""):'<p class="rep-help">На эту дату пар нет. Можно добавить новую.</p>';
+      $("repLessons").innerHTML=activeEntries.length?activeEntries.map((x,i)=>'<div class="rep-lesson"><div class="rep-lesson-main"><strong>'+esc(String(x.starts_at||"").slice(0,5))+'–'+esc(String(x.ends_at||"").slice(0,5))+' · '+esc(x.subject)+'</strong><small>'+esc([x.teacher,x.room,x.entry_kind==="recurring"?"Повторяющаяся пара":"Только на эту дату"].filter(Boolean).join(" · "))+'</small></div><button type="button" class="rep-secondary" data-edit="'+i+'">Изменить</button><button type="button" class="rep-danger" data-delete="'+i+'">Убрать</button></div>').join(""):'<p class="rep-help">На эту дату пар нет. Можно добавить новую.</p>';
       $("repLessons").querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>startEdit(activeEntries[Number(b.dataset.edit)]));
       $("repLessons").querySelectorAll("[data-delete]").forEach(b=>b.onclick=()=>removeEntry(activeEntries[Number(b.dataset.delete)]));
       $("repStatus").textContent="Группа: "+currentGroup+" · "+date;
@@ -2300,7 +2301,7 @@
     const entry={schedule_date:date,subject:$("repSubject").value.trim(),starts_at:$("repStart").value,ends_at:$("repEnd").value,teacher:$("repTeacher").value.trim(),room:$("repRoom").value.trim(),lesson_type:$("repType").value.trim()||"Занятие",notes:$("repNotes").value.trim()};
     if(!entry.subject||!entry.starts_at||!entry.ends_at||entry.starts_at>=entry.ends_at){$("repStatus").textContent="Проверь предмет и время пары.";return;}
     $("repStatus").textContent="Сохраняем…";
-    try{await request("/api/representative/change",{method:"POST",body:JSON.stringify({group_id:gid,entry_id:editingId,action:"save_override",scope:editScope,entry})});$("repEditForm").style.display="none";editingId=null;await loadEntries();$("repStatus").textContent=editScope==="all_weeks"?"Сохранено. Изменение применяется на все недели.":"Сохранено. Изменение применяется только на выбранную дату.";}
+    try{await request("/api/representative/change",{method:"POST",body:JSON.stringify({group_id:gid,entry_id:editingId,action:"save_override",scope:editScope,entry})});$("repEditForm").style.display="none";editingId=null;await loadEntries();keepRepresentativeEditorVisible();$("repStatus").textContent=editScope==="all_weeks"?"Сохранено. Изменение применяется на все недели.":"Сохранено. Изменение применяется только на выбранную дату.";}
     catch(err){$("repStatus").textContent=err.message||"Не удалось сохранить.";}
   }
   async function removeEntry(x){
@@ -2311,18 +2312,19 @@
       const gid=await groupId();
       await request("/api/representative/change",{method:"POST",body:JSON.stringify({group_id:gid,entry_id:x.id,action:"delete_for_date",scope:editScope,entry:{schedule_date:selectedDate()}})});
       await loadEntries();
+      keepRepresentativeEditorVisible();
       $("repStatus").textContent=allWeeks?"Повторяющаяся пара удалена из всех недель.":"Пара убрана только на выбранную дату.";
     }catch(e){$("repStatus").textContent=e.message||"Не удалось убрать пару.";}
   }
   async function restoreHistory(historyId){
     if(!confirm("Отменить это изменение? Расписание будет восстановлено до предыдущего состояния."))return;
-    try{const gid=await groupId();await request("/api/representative/restore",{method:"POST",body:JSON.stringify({group_id:gid,history_id:historyId})});$("repStatus").textContent="Изменение отменено.";await loadEntries();}
+    try{const gid=await groupId();await request("/api/representative/restore",{method:"POST",body:JSON.stringify({group_id:gid,history_id:historyId})});$("repStatus").textContent="Изменение отменено.";await loadEntries();keepRepresentativeEditorVisible();}
     catch(e){$("repStatus").textContent=e.message||"Не удалось отменить изменение.";}
   }
   async function loadHistory(){
     try{
       const gid=await groupId(),d=await request("/api/representative/history?group_id="+gid),items=d.data||[];
-      $("repHistory").innerHTML=items.length?items.map(x=>'<div class="rep-history-item"><strong>'+esc(x.action==="insert"?"Добавление":x.action==="delete"?"Удаление":x.action==="restore"?"Восстановление":"Изменение")+'</strong><br>'+esc(x.reason||"Правка расписания")+'<br>'+esc(new Date(x.created_at).toLocaleString("ru-RU"))+'<br><button class="rep-secondary" style="margin-top:6px;padding:6px 9px" data-restore="'+Number(x.id)+'">Отменить это изменение</button></div>').join(""):'<div class="rep-history-item">Изменений пока нет.</div>';
+      $("repHistory").innerHTML=items.length?items.map(x=>'<div class="rep-history-item"><strong>'+esc(x.action==="insert"?"Добавление":x.action==="delete"?"Удаление":x.action==="restore"?"Восстановление":"Изменение")+'</strong><br>'+esc(x.reason||"Правка расписания")+'<br>'+esc(new Date(x.created_at).toLocaleString("ru-RU"))+'<br><button type="button" class="rep-secondary" style="margin-top:6px;padding:6px 9px" data-restore="'+Number(x.id)+'">Отменить это изменение</button></div>').join(""):'<div class="rep-history-item">Изменений пока нет.</div>';
       $("repHistory").querySelectorAll("[data-restore]").forEach(b=>b.onclick=()=>void restoreHistory(Number(b.dataset.restore)));
     }catch(_){$("repHistory").innerHTML='<div class="rep-history-item">История пока недоступна.</div>';}
   }
