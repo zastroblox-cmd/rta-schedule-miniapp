@@ -42,6 +42,19 @@ try {
   await context.addInitScript(() => {
     localStorage.setItem("rta_schedule_group", "Ю603/О-2503");
     window.Telegram = { WebApp: { initData: "" } };
+
+    // Freeze the calendar at Wednesday 14 October 2026 so parity tests are
+    // deterministic: 12–18 Oct is week Б, 19–25 Oct is week А.
+    const NativeDate = Date;
+    const fixedNow = new NativeDate("2026-10-14T12:00:00");
+    class FixedDate extends NativeDate {
+      constructor(...args) {
+        if (args.length === 0) super(fixedNow.getTime());
+        else super(...args);
+      }
+      static now() { return fixedNow.getTime(); }
+    }
+    window.Date = FixedDate;
   });
   const page = await context.newPage();
   page.on("pageerror", error => pageErrors.push(error.message));
@@ -55,17 +68,41 @@ try {
   assert.equal(await page.locator("#days .day").count(), 7, "week must render seven day buttons");
 
   const initialRange = await page.locator("#weekRange").innerText();
+  assert.match(initialRange, /12.*18/, "fixed date must start in the week of 12–18 October");
+  assert.match(await page.locator("#weekParity").innerText(), /Нечётная неделя/i, "12–18 October must be week Б / odd");
+
   await page.locator("#nextWeek").click();
   await page.waitForFunction(previous => document.querySelector("#weekRange")?.textContent !== previous, initialRange);
   const nextRange = await page.locator("#weekRange").innerText();
-  assert.notEqual(nextRange, initialRange, "next-week button must change the displayed week");
+  assert.match(nextRange, /19.*25/, "next week must be 19–25 October");
+  assert.match(await page.locator("#weekParity").innerText(), /Чётная неделя/i, "19–25 October must be week А / even");
+
+  // Check parity in both directions, including negative offsets and repeated weeks.
+  for (let i = 0; i < 3; i++) {
+    await page.locator("#nextWeek").click();
+    await page.waitForFunction(previous => document.querySelector("#weekRange")?.textContent !== previous, nextRange);
+  }
+  assert.match(await page.locator("#weekParity").innerText(), /Нечётная неделя/i, "week parity must alternate after multiple forward moves");
+  await page.locator("#prevWeek").click();
+  await page.waitForFunction(() => /Чётная неделя/i.test(document.querySelector("#weekParity")?.textContent || ""));
+  await page.locator("#prevWeek").click();
+  await page.waitForFunction(() => /Нечётная неделя/i.test(document.querySelector("#weekParity")?.textContent || ""));
+  await page.locator("#prevWeek").click();
+  await page.waitForFunction(() => /Чётная неделя/i.test(document.querySelector("#weekParity")?.textContent || ""));
+  await page.locator("#prevWeek").click();
+  await page.waitForFunction(() => /Нечётная неделя/i.test(document.querySelector("#weekParity")?.textContent || ""));
   await page.locator("#prevWeek").click();
   await page.waitForFunction(expected => document.querySelector("#weekRange")?.textContent === expected, initialRange);
-  assert.equal(await page.locator("#weekRange").innerText(), initialRange, "previous-week button must return to the original week");
 
   await page.locator("#todayWeek").click();
   const activeDay = page.locator("#days .day.active");
   assert.equal(await activeDay.count(), 1, "exactly one day must be selected");
+  const dayNames = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"];
+  for (let i = 0; i < dayNames.length; i++) {
+    await page.locator("#days .day").nth(i).click();
+    await page.waitForFunction(name => (document.querySelector("#dayHeading")?.textContent || "").includes(name), dayNames[i]);
+    assert.match(await page.locator("#dayHeading").innerText(), new RegExp(dayNames[i], "i"), dayNames[i] + " must be selectable");
+  }
   await page.locator("#days .day").last().click();
   await page.waitForFunction(() => /Воскресенье/i.test(document.querySelector("#dayHeading")?.textContent || ""));
   assert.match(await page.locator("#dayHeading").innerText(), /Воскресенье/i, "Sunday must be selectable");
@@ -97,7 +134,7 @@ try {
   assert.equal(await page.locator("#weekRange").innerText(), mondayRange, "rapid reverse swipe must restore the same week");
   assert.deepEqual(pageErrors, [], "application must not throw uncaught JavaScript errors");
 
-  console.log("PASS: seven day buttons, next/previous week, Today, Sunday→Monday week rollover, repeated/reverse touch swipes, no uncaught page errors.");
+  console.log("PASS: seven selectable days, Today, stable 12–18 Oct week Б / 19–25 Oct week А anchor, alternating parity across forward/backward week changes, Sunday→Monday rollover, repeated/reverse touch swipes, no uncaught page errors.");
   await context.close();
 } finally {
   await browser.close();
