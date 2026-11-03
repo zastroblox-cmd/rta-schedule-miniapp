@@ -51,7 +51,7 @@ test.describe("RTASchedule Mini App regression", () => {
     expect(html).toContain("function keepRepresentativeEditorVisible()");
     expect(html).toMatch(/async function saveEntry[\s\S]{0,5000}keepRepresentativeEditorVisible\(\)/);
     expect(html).toMatch(/async function removeEntry[\s\S]{0,5000}keepRepresentativeEditorVisible\(\)/);
-    expect(html).toMatch(/async function restoreChange[\s\S]{0,5000}keepRepresentativeEditorVisible\(\)/);
+    expect(html).toMatch(/async function restoreHistory[\s\S]{0,5000}keepRepresentativeEditorVisible\(\)/);
     expect(html).toMatch(/<button type="button" class="rep-secondary" data-edit=/);
     expect(html).toMatch(/<button type="button" class="rep-danger" data-delete=/);
   });
