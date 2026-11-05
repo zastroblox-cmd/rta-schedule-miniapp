@@ -13,17 +13,19 @@ app.use(express.json({ limit: "32kb" }));
 const PORT = Number(process.env.PORT || 3000);
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY;
-// Optional secret key dedicated to privileged RPC calls. Configure this in Render
-// only after testing; public-key fallback preserves current behavior during rollout.
-const SUPABASE_SERVER_KEY = process.env.SUPABASE_SERVER_KEY;
+// Privileged SECURITY DEFINER RPCs must use a server-only Supabase key.
+// Accept common variable names, but never fall back to a public/publishable key.
+const SUPABASE_SERVER_KEY = process.env.SUPABASE_SERVER_KEY
+  || process.env.SUPABASE_SERVICE_ROLE_KEY
+  || process.env.SUPABASE_SECRET_KEY;
 
 const supabase = SUPABASE_URL && SUPABASE_KEY
   ? createClient(SUPABASE_URL, SUPABASE_KEY, {
       auth: { persistSession: false, autoRefreshToken: false }
     })
   : null;
-const supabaseRpc = SUPABASE_URL && (SUPABASE_SERVER_KEY || SUPABASE_KEY)
-  ? createClient(SUPABASE_URL, SUPABASE_SERVER_KEY || SUPABASE_KEY, {
+const supabaseRpc = SUPABASE_URL && SUPABASE_SERVER_KEY
+  ? createClient(SUPABASE_URL, SUPABASE_SERVER_KEY, {
       auth: { persistSession: false, autoRefreshToken: false }
     })
   : null;
@@ -83,7 +85,7 @@ app.post("/api/analytics/track", async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
   const user = verifyTelegramInitData(req.body && req.body.initData, false);
   if (!user) return res.status(403).json({ error: "Valid Telegram Mini App data required" });
-  if (!supabase || !ANALYTICS_SECRET) return res.status(503).json({ error: "Analytics is not configured" });
+  if (!supabase || !supabaseRpc || !ANALYTICS_SECRET) return res.status(503).json({ error: "Analytics is not configured" });
   const { error } = await supabaseRpc.rpc("track_app_user", {
     p_user_id: user.id,
     p_secret: ANALYTICS_SECRET
@@ -99,7 +101,7 @@ app.post("/api/owner/analytics", async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
   const owner = verifyTelegramInitData(req.body && req.body.initData);
   if (!owner) return res.status(403).json({ authorized: false, error: "Owner access denied" });
-  if (!supabase || !ANALYTICS_SECRET) return res.status(503).json({ error: "Analytics is not configured" });
+  if (!supabase || !supabaseRpc || !ANALYTICS_SECRET) return res.status(503).json({ error: "Analytics is not configured" });
   const { data, error } = await supabaseRpc.rpc("get_app_user_stats", { p_secret: ANALYTICS_SECRET });
   if (error) {
     console.error("Analytics stats query failed:", error.message);
@@ -590,7 +592,7 @@ async function getRepresentativeAccess(req, groupId) {
   if (token.role !== "representative" || Number(token.groupId) !== Number(groupId)) {
     return { ok: false, status: 403, error: "Этот пароль не даёт доступ к выбранной группе." };
   }
-  if (!supabase || !REPRESENTATIVE_API_SECRET) return { ok: false, status: 503, error: "Не удалось проверить актуальность доступа." };
+  if (!supabase || !supabaseRpc || !REPRESENTATIVE_API_SECRET) return { ok: false, status: 503, error: "Не удалось проверить актуальность доступа." };
   const { data: accessRow, error } = await supabaseRpc.rpc("representative_access_get", { p_secret: REPRESENTATIVE_API_SECRET, p_group_id: groupId });
   if (error) return { ok: false, status: 503, error: "Не удалось проверить актуальность доступа." };
   if (accessRow && accessRow.enabled === false) return { ok: false, status: 403, error: "Доступ старосты отключён владельцем." };
@@ -608,7 +610,7 @@ function ownerTokenFromRequest(req) {
 app.get("/api/owner/representative-access", async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
   if (!ownerTokenFromRequest(req)) return res.status(403).json({ error: "Доступ только владельцу." });
-  if (!supabase || !REPRESENTATIVE_API_SECRET) return res.status(503).json({ error: "База данных не настроена." });
+  if (!supabase || !supabaseRpc || !REPRESENTATIVE_API_SECRET) return res.status(503).json({ error: "База данных не настроена." });
   const { data, error } = await supabaseRpc.rpc("representative_access_list", { p_secret: REPRESENTATIVE_API_SECRET });
   if (error || !Array.isArray(data)) {
     console.error("Owner representative access list failed:", error && error.message);
@@ -627,7 +629,7 @@ app.get("/api/owner/representative-access", async (req, res) => {
 app.post("/api/owner/representative-access", async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
   if (!ownerTokenFromRequest(req)) return res.status(403).json({ error: "Доступ только владельцу." });
-  if (!supabase || !REPRESENTATIVE_API_SECRET) return res.status(503).json({ error: "База данных не настроена." });
+  if (!supabase || !supabaseRpc || !REPRESENTATIVE_API_SECRET) return res.status(503).json({ error: "База данных не настроена." });
   const groupId = Number(req.body && req.body.group_id);
   const enabled = req.body && req.body.enabled;
   const password = req.body && req.body.password != null ? String(req.body.password) : "";
@@ -720,7 +722,7 @@ app.get("/api/representative/schedule", async (req, res) => {
 
 app.post("/api/representative/change", async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
-  if (!supabase || !REPRESENTATIVE_API_SECRET) return res.status(503).json({ error: "Редактирование не настроено." });
+  if (!supabase || !supabaseRpc || !REPRESENTATIVE_API_SECRET) return res.status(503).json({ error: "Редактирование не настроено." });
   const body = req.body || {};
   const groupId = Number(body.group_id);
   const access = await getRepresentativeAccess(req, groupId);
@@ -754,7 +756,7 @@ app.post("/api/representative/change", async (req, res) => {
 
 app.get("/api/representative/history", async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
-  if (!supabase || !REPRESENTATIVE_API_SECRET) return res.status(503).json({ error: "История недоступна." });
+  if (!supabase || !supabaseRpc || !REPRESENTATIVE_API_SECRET) return res.status(503).json({ error: "История недоступна." });
   const groupId = Number(req.query.group_id);
   const access = await getRepresentativeAccess(req, groupId);
   if (!access.ok) return res.status(access.status).json({ error: access.error });
@@ -770,7 +772,7 @@ app.get("/api/representative/history", async (req, res) => {
 
 app.post("/api/representative/restore", async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
-  if (!supabase || !REPRESENTATIVE_API_SECRET) return res.status(503).json({ error: "Восстановление недоступно." });
+  if (!supabase || !supabaseRpc || !REPRESENTATIVE_API_SECRET) return res.status(503).json({ error: "Восстановление недоступно." });
   const body = req.body || {};
   const groupId = Number(body.group_id);
   const historyId = Number(body.history_id);
