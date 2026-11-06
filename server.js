@@ -4,6 +4,8 @@ const { promisify } = require("node:util");
 const scryptAsync = promisify(crypto.scrypt);
 const { createClient } = require("@supabase/supabase-js");
 const { getWeekType, validDateString } = require("./lib/schedule-utils");
+const { dispatchReminders } = require("./lib/reminder-dispatch");
+const REMINDER_CRON_SECRET = String(process.env.REMINDER_CRON_SECRET || "");
 
 const app = express();
 app.disable("x-powered-by");
@@ -873,6 +875,91 @@ app.post("/api/representative/restore", async (req, res) => {
     return res.status(400).json({ error: "Не удалось отменить изменение. Возможно, запись уже изменена." });
   }
   return res.json({ ok: true, result: data });
+});
+
+
+app.post("/api/reminders/status", async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  const user = verifyTelegramInitData(req.body && req.body.initData, false);
+  if (!user) return res.status(403).json({ error: "Открой приложение через Telegram, чтобы настроить напоминания." });
+  if (!supabaseRpc) return res.status(503).json({ error: "Напоминания временно недоступны." });
+  const { data, error } = await supabaseRpc.from("reminder_subscriptions")
+    .select("enabled,student_groups(group_code)")
+    .eq("telegram_user_id", user.id).maybeSingle();
+  if (error) {
+    console.error("Reminder status lookup failed:", error.message);
+    return res.status(503).json({ error: "Не удалось загрузить настройки напоминаний." });
+  }
+  return res.json({
+    enabled: Boolean(data && data.enabled),
+    group_code: data && data.student_groups ? data.student_groups.group_code : null
+  });
+});
+
+app.post("/api/reminders", async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  const user = verifyTelegramInitData(req.body && req.body.initData, false);
+  if (!user) return res.status(403).json({ error: "Открой приложение через Telegram, чтобы настроить напоминания." });
+  if (!supabaseRpc || !TELEGRAM_BOT_TOKEN) return res.status(503).json({ error: "Напоминания временно недоступны." });
+  const body = req.body || {};
+  if (typeof body.enabled !== "boolean") return res.status(400).json({ error: "Не указано состояние напоминаний." });
+
+  if (!body.enabled) {
+    const { error } = await supabaseRpc.from("reminder_subscriptions")
+      .update({ enabled: false, updated_at: new Date().toISOString() })
+      .eq("telegram_user_id", user.id);
+    if (error) {
+      console.error("Reminder opt-out failed:", error.message);
+      return res.status(503).json({ error: "Не удалось отключить напоминания." });
+    }
+    return res.json({ ok: true, enabled: false, group_code: null });
+  }
+
+  const groupCode = String(body.group_code || "").trim();
+  if (!groupCode || groupCode.length > 80) return res.status(400).json({ error: "Выбери учебную группу." });
+  const { data: group, error: groupError } = await supabaseRpc.from("student_groups")
+    .select("id,group_code").eq("group_code", groupCode).maybeSingle();
+  if (groupError) return res.status(503).json({ error: "Не удалось проверить группу." });
+  if (!group) return res.status(404).json({ error: "Группа не найдена в базе расписания." });
+
+  const { count, error: countError } = await supabaseRpc.from("schedule_entries")
+    .select("id", { count: "exact", head: true }).eq("group_id", group.id);
+  if (countError) return res.status(503).json({ error: "Не удалось проверить полноту расписания." });
+  if ((count || 0) < 10) {
+    return res.status(409).json({ error: "Напоминания для этой группы пока не включены: расписание ещё не полностью перенесено в базу." });
+  }
+
+  const { error } = await supabaseRpc.from("reminder_subscriptions").upsert({
+    telegram_user_id: user.id,
+    group_id: group.id,
+    enabled: true,
+    updated_at: new Date().toISOString()
+  }, { onConflict: "telegram_user_id" });
+  if (error) {
+    console.error("Reminder opt-in failed:", error.message);
+    return res.status(503).json({ error: "Не удалось сохранить настройку напоминаний." });
+  }
+  return res.json({ ok: true, enabled: true, group_code: group.group_code });
+});
+
+app.post("/api/reminders/dispatch", async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  if (!REMINDER_CRON_SECRET || !supabaseRpc || !TELEGRAM_BOT_TOKEN) {
+    return res.status(503).json({ error: "Reminder dispatch is not configured" });
+  }
+  const supplied = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "");
+  const expectedBuffer = Buffer.from(REMINDER_CRON_SECRET);
+  const suppliedBuffer = Buffer.from(supplied);
+  if (expectedBuffer.length !== suppliedBuffer.length || !crypto.timingSafeEqual(expectedBuffer, suppliedBuffer)) {
+    return res.status(403).json({ error: "Forbidden" });
+  }
+  try {
+    const result = await dispatchReminders({ supabaseRpc, botToken: TELEGRAM_BOT_TOKEN });
+    return res.json({ ok: true, ...result });
+  } catch (error) {
+    console.error("Reminder dispatch failed:", error.message);
+    return res.status(503).json({ error: "Unable to dispatch reminders" });
+  }
 });
 
 app.listen(PORT, "0.0.0.0", () => {
