@@ -962,7 +962,26 @@ app.post("/api/reminders/dispatch", async (req, res) => {
   }
 });
 
+let reminderDispatchRunning = false;
+async function runReminderDispatch() {
+  if (reminderDispatchRunning || !supabaseRpc || !TELEGRAM_BOT_TOKEN) return;
+  reminderDispatchRunning = true;
+  try {
+    const result = await dispatchReminders({ supabaseRpc, botToken: TELEGRAM_BOT_TOKEN });
+    if (result.sent || result.failed) {
+      console.log("Class reminder dispatch:", JSON.stringify(result));
+    }
+  } catch (error) {
+    console.error("Class reminder scheduler failed:", error.message);
+  } finally {
+    reminderDispatchRunning = false;
+  }
+}
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`RTA schedule API listening on port ${PORT}`);
   void configureTelegramWebhook();
+  void runReminderDispatch();
+  const reminderTimer = setInterval(() => { void runReminderDispatch(); }, 60_000);
+  if (typeof reminderTimer.unref === "function") reminderTimer.unref();
 });
