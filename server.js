@@ -222,6 +222,120 @@ app.get("/api/schedule", async (req, res) => {
 // Public, read-only overlay for changes made by class representatives.
 // The base timetable can stay on its verified local source while dated edits
 // from Supabase are reflected immediately in the regular schedule.
+// Student-submitted schedule change reports. Reports are aggregated publicly;
+ // raw reporter identifiers never leave the server and are stored only as keyed hashes.
+const SCHEDULE_REPORT_TYPES = new Set(["cancelled", "moved", "room", "teacher", "other"]);
+
+function summarizeScheduleReports(rows) {
+  const grouped = new Map();
+  for (const row of rows || []) {
+    const key = String(row.starts_at || "").slice(0, 5);
+    if (!key) continue;
+    if (!grouped.has(key)) grouped.set(key, { starts_at: key, report_count: 0, report_types: [], latest_at: null });
+    const item = grouped.get(key);
+    item.report_count += 1;
+    if (!item.report_types.includes(row.report_type)) item.report_types.push(row.report_type);
+    if (!item.latest_at || String(row.updated_at || "") > item.latest_at) item.latest_at = row.updated_at;
+  }
+  return [...grouped.values()].sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+}
+
+app.get("/api/schedule-reports", async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  if (!supabase || !supabaseRpc) return res.status(503).json({ error: "Reports are not configured" });
+  const groupCode = String(req.query.group_code || "").trim();
+  const dateString = String(req.query.date || "");
+  if (!groupCode || groupCode.length > 80 || !validDateString(dateString)) {
+    return res.status(400).json({ error: "group_code and a valid date are required" });
+  }
+  const { data: group, error: groupError } = await supabase
+    .from("student_groups").select("id").eq("group_code", groupCode).maybeSingle();
+  if (groupError) return res.status(500).json({ error: "Unable to resolve group" });
+  if (!group) return res.status(404).json({ error: "Group not found" });
+  const { data, error } = await supabaseRpc.from("schedule_change_reports")
+    .select("starts_at,report_type,updated_at")
+    .eq("group_id", group.id).eq("schedule_date", dateString)
+    .order("starts_at").limit(500);
+  if (error) {
+    console.error("Schedule report summary failed:", error.message);
+    return res.status(503).json({ error: "Unable to load reports" });
+  }
+  return res.json({ date: dateString, data: summarizeScheduleReports(data) });
+});
+
+app.post("/api/schedule-reports", async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  const user = verifyTelegramInitData(req.body && req.body.initData, false);
+  if (!user) return res.status(403).json({ error: "Valid Telegram Mini App data required" });
+  if (!supabase || !supabaseRpc || !TELEGRAM_BOT_TOKEN) {
+    return res.status(503).json({ error: "Reports are not configured" });
+  }
+
+  const body = req.body || {};
+  const groupCode = String(body.group_code || "").trim();
+  const dateString = String(body.date || "");
+  const startsAt = String(body.starts_at || "");
+  const endsAt = String(body.ends_at || "");
+  const subject = String(body.subject || "").trim().slice(0, 160);
+  const reportType = String(body.report_type || "");
+  const details = String(body.details || "").trim().slice(0, 300);
+  if (!groupCode || groupCode.length > 80 || !validDateString(dateString)) {
+    return res.status(400).json({ error: "Group and valid date are required" });
+  }
+  if (!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(startsAt) ||
+      (endsAt && !/^([01]\\d|2[0-3]):[0-5]\\d$/.test(endsAt))) {
+    return res.status(400).json({ error: "Invalid lesson time" });
+  }
+  if (!SCHEDULE_REPORT_TYPES.has(reportType)) {
+    return res.status(400).json({ error: "Invalid report type" });
+  }
+
+  const { data: group, error: groupError } = await supabase
+    .from("student_groups").select("id").eq("group_code", groupCode).maybeSingle();
+  if (groupError) return res.status(500).json({ error: "Unable to resolve group" });
+  if (!group) return res.status(404).json({ error: "Group not found" });
+
+  // Keyed hash avoids storing Telegram IDs while still preventing repeat votes per lesson.
+  const reporterHash = crypto.createHmac("sha256", TELEGRAM_BOT_TOKEN)
+    .update("schedule-report:" + user.id).digest("hex");
+  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const { count, error: limitError } = await supabaseRpc.from("schedule_change_reports")
+    .select("id", { count: "exact", head: true })
+    .eq("reporter_hash", reporterHash).gte("created_at", cutoff);
+  if (limitError) {
+    console.error("Schedule report rate limit failed:", limitError.message);
+    return res.status(503).json({ error: "Unable to submit report" });
+  }
+  if ((count || 0) >= 10) return res.status(429).json({ error: "Daily report limit reached" });
+
+  const { error } = await supabaseRpc.from("schedule_change_reports").upsert({
+    group_id: group.id,
+    schedule_date: dateString,
+    starts_at: startsAt,
+    ends_at: endsAt || null,
+    subject,
+    report_type: reportType,
+    details,
+    reporter_hash: reporterHash,
+    updated_at: new Date().toISOString()
+  }, { onConflict: "group_id,schedule_date,starts_at,reporter_hash" });
+  if (error) {
+    console.error("Schedule report submission failed:", error.message);
+    return res.status(503).json({ error: "Unable to submit report" });
+  }
+
+  const { data: rows, error: summaryError } = await supabaseRpc.from("schedule_change_reports")
+    .select("starts_at,report_type,updated_at")
+    .eq("group_id", group.id).eq("schedule_date", dateString).eq("starts_at", startsAt)
+    .limit(200);
+  if (summaryError) {
+    console.error("Schedule report summary after submit failed:", summaryError.message);
+    return res.json({ ok: true, report_count: 1, report_types: [reportType] });
+  }
+  const summary = summarizeScheduleReports(rows)[0] || { report_count: 1, report_types: [reportType] };
+  return res.json({ ok: true, ...summary });
+});
+
 app.get("/api/schedule-changes", async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
   if (!supabase) return res.status(503).json({ error: "Database is not configured" });
