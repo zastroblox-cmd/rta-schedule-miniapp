@@ -45,7 +45,8 @@ jobs:
             '/api/owner/verify',
             '/api/analytics/track',
             '/api/reminders/status',
-            '/api/reminders'
+            '/api/reminders',
+            '/api/schedule-reports'
           ]) {
             const response = await fetch(base + path, {
               method: 'POST',
@@ -66,6 +67,10 @@ jobs:
           assert.equal(representativeLogin.status, 400, 'representative login must require group and password');
           const representativeLoginBody = await representativeLogin.json();
           assert.ok(!JSON.stringify(representativeLoginBody).toLowerCase().includes('secret'), 'representative login must not reveal secrets');
+
+          const reports = await get('/api/schedule-reports?group_code=' + encodeURIComponent('Ю603/О-2503') + '&date=2026-11-09');
+          assert.ok(Array.isArray(reports.data), 'schedule report summary must return an array');
+          console.log('Schedule report endpoint: ok, rows=' + reports.data.length);
 
           const faculties = await get('/api/faculties');
           assert.ok(Array.isArray(faculties.data) && faculties.data.length > 0, 'faculties must be non-empty');
