@@ -115,6 +115,8 @@
     .lesson-meta .tag:first-child { background:rgba(115,159,225,.09); border-color:rgba(145,185,245,.14); }
     .lesson-report-row { display:flex; align-items:center; flex-wrap:wrap; gap:7px; margin-top:10px; }
     .lesson-report-select { min-width:0; max-width:190px; padding:7px 9px; border-radius:9px; color:rgba(230,238,250,.92); background:rgba(18,28,45,.72); border:1px solid rgba(160,190,235,.18); font:inherit; font-size:11px; }
+    .lesson-report-details { flex:1 1 150px; min-width:120px; max-width:100%; padding:7px 9px; border-radius:9px; color:rgba(230,238,250,.92); background:rgba(18,28,45,.72); border:1px solid rgba(160,190,235,.18); font:inherit; font-size:11px; }
+    .lesson-report-details[hidden] { display:none; }
     .lesson-report-select option { color:#111827; }
     .lesson-report-button { padding:7px 10px; border-radius:9px; color:#c7dcff; background:rgba(75,132,235,.12); border:1px solid rgba(100,155,255,.25); font:inherit; font-size:11px; font-weight:700; cursor:pointer; }
     .lesson-report-button:disabled { opacity:.6; cursor:default; }
@@ -1197,10 +1199,10 @@
         node.hidden = false;
         const count = Number(item.report_count) || 0;
         const types = (item.report_types || []).map(type => ({
-          cancelled:"отмену", moved:"перенос", room:"смену аудитории",
-          teacher:"смену преподавателя", other:"изменение"
+          cancelled:"отмена пары", moved:"перенос пары", room:"смена аудитории",
+          teacher:"смена преподавателя", other:"изменение"
         }[type] || "изменение"));
-        node.textContent = (count >= 3 ? "⚠️ " : "ℹ️ ") + count + " сообщ. · " + [...new Set(types)].join(", ");
+        node.textContent = (count >= 3 ? "⚠️ " : "ℹ️ ") + "Сообщений: " + count + " — " + [...new Set(types)].join(", ") + " (не подтверждено)";
       });
     }
     async function loadScheduleReports(group, date) {
@@ -1222,7 +1224,7 @@
         scheduleReportRequests.delete(key);
       }
     }
-    async function submitScheduleReport(button, select, lesson, group, date) {
+    async function submitScheduleReport(button, select, detailsInput, lesson, group, date) {
       const initData = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp.initData : "";
       if (!initData) { alert("Чтобы отправить сообщение, открой расписание через Telegram."); return; }
       button.disabled = true;
@@ -1234,7 +1236,7 @@
           body:JSON.stringify({
             initData, group_code:group, date, starts_at:String(lesson.start||"").slice(0,5),
             ends_at:String(lesson.end||"").slice(0,5), subject:String(lesson.title||"").slice(0,160),
-            report_type:select.value, details:""
+            report_type:select.value, details:String(detailsInput.value||"").trim().slice(0,300)
           }), cache:"no-store"
         });
         const result = await response.json().catch(()=>({}));
@@ -1372,16 +1374,27 @@
         [["cancelled","Пара отменяется"],["moved","Пара перенесена"],["room","Изменился кабинет"],["teacher","Изменился преподаватель"],["other","Другое изменение"]].forEach(([value,label])=>{
           const option=document.createElement("option"); option.value=value; option.textContent=label; reportSelect.appendChild(option);
         });
+        const reportDetails = document.createElement("input");
+        reportDetails.type = "text";
+        reportDetails.className = "lesson-report-details";
+        reportDetails.maxLength = 300;
+        reportDetails.placeholder = "Уточнение (необязательно)";
+        reportDetails.hidden = true;
+        reportSelect.addEventListener("change",()=>{
+          const placeholders={moved:"На какое время перенесли?",room:"Новый кабинет",teacher:"Новый преподаватель",other:"Что изменилось?"};
+          reportDetails.hidden = !placeholders[reportSelect.value];
+          reportDetails.placeholder = placeholders[reportSelect.value] || "Уточнение (необязательно)";
+        });
         const reportButton = document.createElement("button");
         reportButton.type = "button";
         reportButton.className = "lesson-report-button";
         reportButton.textContent = "Сообщить";
-        reportButton.addEventListener("click",()=>submitScheduleReport(reportButton,reportSelect,l,reportGroup,reportIsoDate));
+        reportButton.addEventListener("click",()=>submitScheduleReport(reportButton,reportSelect,reportDetails,l,reportGroup,reportIsoDate));
         const reportStatus = document.createElement("span");
         reportStatus.className = "lesson-report-status";
         reportStatus.dataset.reportStart = String(l.start||"").slice(0,5);
         reportStatus.hidden = true;
-        reportRow.append(reportSelect,reportButton,reportStatus);
+        reportRow.append(reportSelect,reportDetails,reportButton,reportStatus);
         card.appendChild(reportRow);
         list.appendChild(card);
         applyScheduleReportStatus(scheduleReportDateKey(reportGroup,reportIsoDate));
