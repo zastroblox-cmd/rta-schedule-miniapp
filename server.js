@@ -6,6 +6,7 @@ const { createClient } = require("@supabase/supabase-js");
 const { getWeekType, validDateString } = require("./lib/schedule-utils");
 const { dispatchReminders } = require("./lib/reminder-dispatch");
 const REMINDER_CRON_SECRET = String(process.env.REMINDER_CRON_SECRET || "");
+const REMINDER_SCHEDULER_ENABLED = process.env.REMINDER_SCHEDULER_ENABLED === "true";
 
 const app = express();
 app.disable("x-powered-by");
@@ -964,7 +965,7 @@ app.post("/api/reminders/dispatch", async (req, res) => {
 
 let reminderDispatchRunning = false;
 async function runReminderDispatch() {
-  if (reminderDispatchRunning || !supabaseRpc || !TELEGRAM_BOT_TOKEN) return;
+  if (!REMINDER_SCHEDULER_ENABLED || reminderDispatchRunning || !supabaseRpc || !TELEGRAM_BOT_TOKEN) return;
   reminderDispatchRunning = true;
   try {
     const result = await dispatchReminders({ supabaseRpc, botToken: TELEGRAM_BOT_TOKEN });
@@ -981,7 +982,12 @@ async function runReminderDispatch() {
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`RTA schedule API listening on port ${PORT}`);
   void configureTelegramWebhook();
-  void runReminderDispatch();
-  const reminderTimer = setInterval(() => { void runReminderDispatch(); }, 60_000);
-  if (typeof reminderTimer.unref === "function") reminderTimer.unref();
+  if (REMINDER_SCHEDULER_ENABLED) {
+    void runReminderDispatch();
+    const reminderTimer = setInterval(() => { void runReminderDispatch(); }, 60_000);
+    if (typeof reminderTimer.unref === "function") reminderTimer.unref();
+    console.log("Class reminder scheduler enabled (60-second interval).");
+  } else {
+    console.log("Class reminder scheduler disabled: set REMINDER_SCHEDULER_ENABLED=true to enable.");
+  }
 });
