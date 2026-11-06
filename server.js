@@ -224,21 +224,7 @@ app.get("/api/schedule", async (req, res) => {
 // from Supabase are reflected immediately in the regular schedule.
 // Student-submitted schedule change reports. Reports are aggregated publicly;
  // raw reporter identifiers never leave the server and are stored only as keyed hashes.
-const SCHEDULE_REPORT_TYPES = new Set(["cancelled", "moved", "room", "teacher", "other"]);
-
-function summarizeScheduleReports(rows) {
-  const grouped = new Map();
-  for (const row of rows || []) {
-    const key = String(row.starts_at || "").slice(0, 5);
-    if (!key) continue;
-    if (!grouped.has(key)) grouped.set(key, { starts_at: key, report_count: 0, report_types: [], latest_at: null });
-    const item = grouped.get(key);
-    item.report_count += 1;
-    if (!item.report_types.includes(row.report_type)) item.report_types.push(row.report_type);
-    if (!item.latest_at || String(row.updated_at || "") > item.latest_at) item.latest_at = row.updated_at;
-  }
-  return [...grouped.values()].sort((a, b) => a.starts_at.localeCompare(b.starts_at));
-}
+const { SCHEDULE_REPORT_TYPES, isValidLessonTime, summarizeScheduleReports } = require("./lib/schedule-reports");
 
 app.get("/api/schedule-reports", async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
@@ -282,8 +268,7 @@ app.post("/api/schedule-reports", async (req, res) => {
   if (!groupCode || groupCode.length > 80 || !validDateString(dateString)) {
     return res.status(400).json({ error: "Group and valid date are required" });
   }
-  if (!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(startsAt) ||
-      (endsAt && !/^([01]\\d|2[0-3]):[0-5]\\d$/.test(endsAt))) {
+  if (!isValidLessonTime(startsAt) || (endsAt && !isValidLessonTime(endsAt))) {
     return res.status(400).json({ error: "Invalid lesson time" });
   }
   if (!SCHEDULE_REPORT_TYPES.has(reportType)) {
