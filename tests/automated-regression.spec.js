@@ -31,6 +31,8 @@ test.describe("RTASchedule Mini App regression", () => {
     await page.goto(APP_URL, { waitUntil: "domcontentloaded" });
     await page.locator("#profileBtn").click();
     await expect(page.locator("#profilePanel")).toBeVisible();
+    await expect(page.locator("#reminderToggle")).toBeVisible();
+    await expect(page.locator("#reminderStatus")).toBeVisible();
     await page.locator("#profileChangeGroup").click();
     await expect(page.locator("#groupModal")).toHaveClass(/open/);
     await expect(page.locator("#groupModalTitle")).toBeVisible();
