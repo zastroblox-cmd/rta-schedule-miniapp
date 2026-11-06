@@ -3,6 +3,7 @@ const crypto = require("node:crypto");
 const { promisify } = require("node:util");
 const scryptAsync = promisify(crypto.scrypt);
 const { createClient } = require("@supabase/supabase-js");
+const { getWeekType, validDateString } = require("./lib/schedule-utils");
 
 const app = express();
 app.disable("x-powered-by");
@@ -142,23 +143,6 @@ app.get("/api/groups", async (_req, res) => {
   if (error) return res.status(500).json({ error: "Unable to load groups" });
   res.json({ data });
 });
-
-function getWeekType(dateString) {
-  // 12–18 Oct 2026 is week B (odd); 19–25 Oct is week A (even).
-  const date = new Date(dateString + "T12:00:00Z");
-  const monday = new Date(date);
-  const day = monday.getUTCDay() || 7;
-  monday.setUTCDate(monday.getUTCDate() - day + 1);
-  const anchor = new Date("2026-10-19T12:00:00Z");
-  const weeks = Math.round((monday - anchor) / (7 * 24 * 60 * 60 * 1000));
-  return ((weeks % 2) + 2) % 2 === 0 ? "A" : "B";
-}
-
-function validDateString(value) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-  const d = new Date(value + "T00:00:00Z");
-  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === value;
-}
 
 app.get("/api/schedule", async (req, res) => {
   if (!supabase) return res.status(503).json({ error: "Database is not configured" });
