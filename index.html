@@ -113,13 +113,31 @@
     .lesson-meta { display:flex; flex-wrap:wrap; gap:6px; }
     .lesson-meta .tag { background:rgba(154,180,220,.075); border:1px solid rgba(190,211,245,.11); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); color:rgba(222,231,246,.82); }
     .lesson-meta .tag:first-child { background:rgba(115,159,225,.09); border-color:rgba(145,185,245,.14); }
-    .lesson-report-row { display:flex; align-items:center; flex-wrap:wrap; gap:7px; margin-top:10px; }
-    .lesson-report-select { min-width:0; max-width:190px; padding:7px 9px; border-radius:9px; color:rgba(230,238,250,.92); background:rgba(18,28,45,.72); border:1px solid rgba(160,190,235,.18); font:inherit; font-size:11px; }
-    .lesson-report-details { flex:1 1 150px; min-width:120px; max-width:100%; padding:7px 9px; border-radius:9px; color:rgba(230,238,250,.92); background:rgba(18,28,45,.72); border:1px solid rgba(160,190,235,.18); font:inherit; font-size:11px; }
-    .lesson-report-details[hidden] { display:none; }
-    .lesson-report-select option { color:#111827; }
-    .lesson-report-button { padding:7px 10px; border-radius:9px; color:#c7dcff; background:rgba(75,132,235,.12); border:1px solid rgba(100,155,255,.25); font:inherit; font-size:11px; font-weight:700; cursor:pointer; }
+    .lesson-report-row { display:flex; align-items:center; gap:8px; margin-top:8px; min-width:0; }
+    .lesson-report-select { display:none !important; }
+    .lesson-report-button { display:inline-flex; align-items:center; justify-content:center; gap:6px; width:auto; max-width:100%; min-height:30px; padding:6px 10px; border-radius:9px; color:#c7dcff; background:rgba(75,132,235,.10); border:1px solid rgba(100,155,255,.22); font:inherit; font-size:11px; font-weight:650; cursor:pointer; }
     .lesson-report-button:disabled { opacity:.6; cursor:default; }
+    .lesson-report-status { min-width:0; font-size:10px; line-height:1.35; color:var(--muted); overflow-wrap:anywhere; }
+    .report-modal { position:fixed; inset:0; z-index:10000; display:flex; align-items:flex-end; justify-content:center; padding:12px; background:rgba(2,7,16,.72); backdrop-filter:blur(7px); -webkit-backdrop-filter:blur(7px); }
+    .report-modal[hidden] { display:none; }
+    .report-sheet { width:min(100%,440px); max-height:min(82dvh,640px); overflow:auto; padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px)); border:1px solid rgba(150,180,230,.2); border-radius:22px; background:#111a2a; box-shadow:0 18px 60px rgba(0,0,0,.45); color:#edf3ff; }
+    .report-sheet-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:6px; }
+    .report-sheet-title { margin:0; font-size:17px; line-height:1.3; font-weight:750; }
+    .report-sheet-subtitle { margin:0 0 14px; color:#9eacc3; font-size:12px; line-height:1.4; }
+    .report-close { flex:0 0 auto; width:32px; height:32px; border:1px solid rgba(160,190,235,.16); border-radius:10px; color:#dce8ff; background:rgba(255,255,255,.04); font-size:20px; line-height:1; }
+    .report-options { display:grid; grid-template-columns:minmax(0,1fr); gap:8px; }
+    .report-option { display:flex; align-items:center; gap:10px; width:100%; min-height:43px; padding:10px 12px; text-align:left; border:1px solid rgba(150,180,230,.15); border-radius:12px; color:#dce7f9; background:rgba(255,255,255,.035); font:inherit; font-size:13px; }
+    .report-option:before { content:""; flex:0 0 15px; width:15px; height:15px; border:1px solid #64748b; border-radius:50%; }
+    .report-option[aria-pressed="true"] { border-color:#4c8dff; background:rgba(64,128,255,.13); color:#fff; }
+    .report-option[aria-pressed="true"]:before { border:5px solid #65a0ff; }
+    .report-details-wrap { margin-top:12px; }
+    .report-details-wrap[hidden] { display:none; }
+    .report-details-input { box-sizing:border-box; width:100%; min-height:42px; padding:10px 11px; border:1px solid rgba(160,190,235,.2); border-radius:11px; outline:none; color:#edf3ff; background:#0b1220; font:inherit; font-size:13px; }
+    .report-sheet-actions { display:flex; gap:9px; margin-top:14px; }
+    .report-cancel, .report-send { flex:1; min-height:42px; padding:10px 12px; border-radius:12px; font:inherit; font-size:13px; font-weight:700; }
+    .report-cancel { color:#d1d9e8; border:1px solid rgba(160,190,235,.18); background:rgba(255,255,255,.04); }
+    .report-send { color:white; border:1px solid #4c83e8; background:linear-gradient(135deg,#3677ed,#255ac1); }
+    .report-send:disabled { opacity:.45; }
     .lesson-report-status { width:100%; color:rgba(255,204,130,.92); font-size:11px; line-height:1.35; }
     .lesson-report-status[hidden] { display:none; }
     .week-parity { display:block; margin-top:4px; font-size:11px; font-weight:600; color:rgba(178,199,230,.78); letter-spacing:.15px; }
@@ -1375,27 +1393,61 @@
         [["cancelled","Пара отменяется"],["moved","Пара перенесена"],["room","Изменился кабинет"],["teacher","Изменился преподаватель"],["other","Другое изменение"]].forEach(([value,label])=>{
           const option=document.createElement("option"); option.value=value; option.textContent=label; reportSelect.appendChild(option);
         });
-        const reportDetails = document.createElement("input");
-        reportDetails.type = "text";
-        reportDetails.className = "lesson-report-details";
-        reportDetails.maxLength = 300;
-        reportDetails.placeholder = "Уточнение (необязательно)";
-        reportDetails.hidden = true;
-        reportSelect.addEventListener("change",()=>{
-          const placeholders={moved:"На какое время перенесли?",room:"Новый кабинет",teacher:"Новый преподаватель",other:"Что изменилось?"};
-          reportDetails.hidden = !placeholders[reportSelect.value];
-          reportDetails.placeholder = placeholders[reportSelect.value] || "Уточнение (необязательно)";
-        });
         const reportButton = document.createElement("button");
         reportButton.type = "button";
         reportButton.className = "lesson-report-button";
-        reportButton.textContent = "Сообщить";
-        reportButton.addEventListener("click",()=>submitScheduleReport(reportButton,reportSelect,reportDetails,l,reportGroup,reportIsoDate));
+        reportButton.textContent = "↗ Сообщить об изменении";
+        reportButton.setAttribute("aria-label","Сообщить об изменении пары");
+        reportButton.addEventListener("click",()=>{
+          if (document.querySelector(".report-modal")) return;
+          const modal=document.createElement("div");
+          modal.className="report-modal";
+          modal.innerHTML=`<section class="report-sheet" role="dialog" aria-modal="true" aria-labelledby="reportSheetTitle">
+            <div class="report-sheet-head"><h2 class="report-sheet-title" id="reportSheetTitle">Что изменилось?</h2><button type="button" class="report-close" aria-label="Закрыть">×</button></div>
+            <p class="report-sheet-subtitle"></p><div class="report-options"></div>
+            <div class="report-details-wrap" hidden><input class="report-details-input" type="text" maxlength="300" placeholder="Уточнение (необязательно)" aria-label="Уточнение к изменению"></div>
+            <div class="report-sheet-actions"><button type="button" class="report-cancel">Отмена</button><button type="button" class="report-send" disabled>Отправить</button></div>
+          </section>`;
+          const sheet=modal.querySelector(".report-sheet");
+          const close=()=>modal.remove();
+          const subtitle=modal.querySelector(".report-sheet-subtitle");
+          subtitle.textContent=l.title+" · "+l.start+"–"+l.end;
+          const options=modal.querySelector(".report-options");
+          const detailsWrap=modal.querySelector(".report-details-wrap");
+          const detailsInput=modal.querySelector(".report-details-input");
+          const sendButton=modal.querySelector(".report-send");
+          const placeholders={moved:"На какое время перенесли?",room:"Новый кабинет",teacher:"Новый преподаватель",other:"Что именно изменилось?"};
+          [["cancelled","Пара отменяется"],["moved","Пару перенесли"],["room","Изменился кабинет"],["teacher","Изменился преподаватель"],["other","Другое изменение"]].forEach(([value,label])=>{
+            const choice=document.createElement("button");
+            choice.type="button"; choice.className="report-option"; choice.textContent=label;
+            choice.setAttribute("aria-pressed","false");
+            choice.addEventListener("click",()=>{
+              reportSelect.value=value;
+              options.querySelectorAll(".report-option").forEach(item=>item.setAttribute("aria-pressed",String(item===choice)));
+              detailsWrap.hidden=!placeholders[value];
+              detailsInput.placeholder=placeholders[value]||"Уточнение (необязательно)";
+              sendButton.disabled=false;
+            });
+            options.appendChild(choice);
+          });
+          modal.querySelector(".report-close").addEventListener("click",close);
+          modal.querySelector(".report-cancel").addEventListener("click",close);
+          modal.addEventListener("click",event=>{if(event.target===modal) close();});
+          modal.addEventListener("keydown",event=>{if(event.key==="Escape") close();});
+          sendButton.addEventListener("click",async()=>{
+            await submitScheduleReport(sendButton,reportSelect,detailsInput,l,reportGroup,reportIsoDate);
+            if(sendButton.textContent==="Отправлено ✓") close();
+          });
+          document.body.appendChild(modal);
+          sendButton.textContent="Отправить";
+          const closeButton=modal.querySelector(".report-close");
+          closeButton.focus();
+        });
         const reportStatus = document.createElement("span");
         reportStatus.className = "lesson-report-status";
         reportStatus.dataset.reportStart = String(l.start||"").slice(0,5);
         reportStatus.hidden = true;
-        reportRow.append(reportSelect,reportDetails,reportButton,reportStatus);
+        reportRow.append(reportSelect,reportButton,reportStatus);
         card.appendChild(reportRow);
         list.appendChild(card);
         applyScheduleReportStatus(scheduleReportDateKey(reportGroup,reportIsoDate));
