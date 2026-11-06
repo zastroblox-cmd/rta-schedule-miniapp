@@ -926,7 +926,7 @@ app.post("/api/reminders", async (req, res) => {
     .select("id", { count: "exact", head: true }).eq("group_id", group.id);
   if (countError) return res.status(503).json({ error: "Не удалось проверить полноту расписания." });
   if ((count || 0) < 25) {
-    return res.status(409).json({ error: "Напоминания для этой группы пока не включены: расписание ещё не полностью перенесено в базу." });
+    return res.status(409).json({ error: "Напоминания для этой группы пока не включены: в базе пока недостаточно записей расписания для надёжных напоминаний." });
   }
 
   const { error } = await supabaseRpc.from("reminder_subscriptions").upsert({
