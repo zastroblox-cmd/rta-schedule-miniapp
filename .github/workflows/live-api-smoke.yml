@@ -43,7 +43,9 @@ jobs:
           for (const path of [
             '/api/owner/analytics',
             '/api/owner/verify',
-            '/api/analytics/track'
+            '/api/analytics/track',
+            '/api/reminders/status',
+            '/api/reminders'
           ]) {
             const response = await fetch(base + path, {
               method: 'POST',
@@ -173,5 +175,5 @@ jobs:
             assert.equal(response.status, 400, path + ' must return HTTP 400');
           }
 
-          console.log('PASS: API health/security headers, unauthenticated protected-route denial, faculties, all course exports, customs faculty/groups, lesson schemas, week A/B anchor and dated overrides');
+          console.log('PASS: API health/security headers, unauthenticated protected-route denial including reminder endpoints, faculties, all course exports, customs faculty/groups, lesson schemas, week A/B anchor and dated overrides');
           NODE
