@@ -113,6 +113,15 @@
     .lesson-meta { display:flex; flex-wrap:wrap; gap:6px; }
     .lesson-meta .tag { background:rgba(154,180,220,.075); border:1px solid rgba(190,211,245,.11); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); color:rgba(222,231,246,.82); }
     .lesson-meta .tag:first-child { background:rgba(115,159,225,.09); border-color:rgba(145,185,245,.14); }
+    .lesson-report-row { display:flex; align-items:center; flex-wrap:wrap; gap:7px; margin-top:10px; }
+    .lesson-report-select { min-width:0; max-width:190px; padding:7px 9px; border-radius:9px; color:rgba(230,238,250,.92); background:rgba(18,28,45,.72); border:1px solid rgba(160,190,235,.18); font:inherit; font-size:11px; }
+    .lesson-report-details { flex:1 1 150px; min-width:120px; max-width:100%; padding:7px 9px; border-radius:9px; color:rgba(230,238,250,.92); background:rgba(18,28,45,.72); border:1px solid rgba(160,190,235,.18); font:inherit; font-size:11px; }
+    .lesson-report-details[hidden] { display:none; }
+    .lesson-report-select option { color:#111827; }
+    .lesson-report-button { padding:7px 10px; border-radius:9px; color:#c7dcff; background:rgba(75,132,235,.12); border:1px solid rgba(100,155,255,.25); font:inherit; font-size:11px; font-weight:700; cursor:pointer; }
+    .lesson-report-button:disabled { opacity:.6; cursor:default; }
+    .lesson-report-status { width:100%; color:rgba(255,204,130,.92); font-size:11px; line-height:1.35; }
+    .lesson-report-status[hidden] { display:none; }
     .week-parity { display:block; margin-top:4px; font-size:11px; font-weight:600; color:rgba(178,199,230,.78); letter-spacing:.15px; }
     .tag { display:inline-flex; align-items:center; gap:5px; padding:5px 7px; border-radius:8px; background:#ffffff08; color:#a7b3c5; font-size:10px; }
     .tag svg { width:12px; height:12px; }
@@ -1173,6 +1182,80 @@
       return lessons.sort((a,b)=>a.start.localeCompare(b.start));
     }
     // Подмешиваем серверные изменения старосты поверх проверенного основного расписания.
+    const scheduleReportCache = new Map();
+    const scheduleReportRequests = new Set();
+    function scheduleReportDateKey(group, date) { return group + "|" + date; }
+    function applyScheduleReportStatus(key) {
+      const cached = scheduleReportCache.get(key);
+      const items = cached && Array.isArray(cached.data) ? cached.data : [];
+      const byStart = new Map(items.map(item => [String(item.starts_at || "").slice(0,5), item]));
+      document.querySelectorAll("[data-report-start]").forEach(node => {
+        const item = byStart.get(node.dataset.reportStart);
+        if (!item || !item.report_count) {
+          node.hidden = true;
+          node.textContent = "";
+          return;
+        }
+        node.hidden = false;
+        const count = Number(item.report_count) || 0;
+        const types = (item.report_types || []).map(type => ({
+          cancelled:"отмена пары", moved:"перенос пары", room:"смена аудитории",
+          teacher:"смена преподавателя", other:"изменение"
+        }[type] || "изменение"));
+        node.textContent = (count >= 3 ? "⚠️ " : "ℹ️ ") + "Сообщений: " + count + " — " + [...new Set(types)].join(", ") + " (не подтверждено)";
+      });
+    }
+    async function loadScheduleReports(group, date) {
+      if (!group || !date) return;
+      const key = scheduleReportDateKey(group, date);
+      const cached = scheduleReportCache.get(key);
+      if (cached && Date.now() - cached.loadedAt < 30000) { applyScheduleReportStatus(key); return; }
+      if (scheduleReportRequests.has(key)) return;
+      scheduleReportRequests.add(key);
+      try {
+        const response = await fetch("https://rta-schedule-api.onrender.com/api/schedule-reports?group_code="+encodeURIComponent(group)+"&date="+encodeURIComponent(date), {cache:"no-store"});
+        const result = await response.json().catch(()=>({}));
+        if (!response.ok) throw new Error(result.error || "Reports unavailable");
+        scheduleReportCache.set(key, {data:Array.isArray(result.data)?result.data:[],loadedAt:Date.now()});
+        applyScheduleReportStatus(key);
+      } catch(error) {
+        console.warn("Не удалось загрузить сообщения об изменениях:", error);
+      } finally {
+        scheduleReportRequests.delete(key);
+      }
+    }
+    async function submitScheduleReport(button, select, detailsInput, lesson, group, date) {
+      const initData = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp.initData : "";
+      if (!initData) { alert("Чтобы отправить сообщение, открой расписание через Telegram."); return; }
+      button.disabled = true;
+      const oldText = button.textContent;
+      button.textContent = "Отправляем…";
+      try {
+        const response = await fetch("https://rta-schedule-api.onrender.com/api/schedule-reports", {
+          method:"POST", headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({
+            initData, group_code:group, date, starts_at:String(lesson.start||"").slice(0,5),
+            ends_at:String(lesson.end||"").slice(0,5), subject:String(lesson.title||"").slice(0,160),
+            report_type:select.value, details:String(detailsInput.value||"").trim().slice(0,300)
+          }), cache:"no-store"
+        });
+        const result = await response.json().catch(()=>({}));
+        if (!response.ok) throw new Error(result.error || "Не удалось отправить сообщение");
+        const key = scheduleReportDateKey(group,date);
+        const cached = scheduleReportCache.get(key) || {data:[],loadedAt:0};
+        const next = cached.data.filter(item => String(item.starts_at||"").slice(0,5)!==String(lesson.start||"").slice(0,5));
+        next.push({starts_at:String(lesson.start||"").slice(0,5),report_count:result.report_count||1,report_types:result.report_types||[select.value],latest_at:result.latest_at||new Date().toISOString()});
+        scheduleReportCache.set(key,{data:next,loadedAt:Date.now()});
+        applyScheduleReportStatus(key);
+        button.textContent = "Отправлено ✓";
+        select.disabled = true;
+      } catch(error) {
+        alert(error.message || "Не удалось отправить сообщение. Попробуй ещё раз.");
+        button.textContent = oldText;
+      } finally {
+        button.disabled = false;
+      }
+    }
     const representativeChangeCache = new Map();
     const representativeChangeRequests = new Set();
     function lessonsForSelectedDate() {
@@ -1233,6 +1316,10 @@
       document.getElementById("dateLabel").textContent = dateForDay(selectedDay).toLocaleDateString("ru-RU",{day:"numeric",month:"long"});
       document.getElementById("lessonCount").textContent = lessons.length ? `${lessons.length} ${lessons.length===1?"пара":lessons.length<5?"пары":"пар"}` : "Нет пар";
       const list = document.getElementById("lessonList"); list.innerHTML = "";
+      const reportDate = dateForDay(selectedDay);
+      const reportIsoDate = reportDate.getFullYear()+"-"+String(reportDate.getMonth()+1).padStart(2,"0")+"-"+String(reportDate.getDate()).padStart(2,"0");
+      const reportGroup = currentGroup;
+      void loadScheduleReports(reportGroup, reportIsoDate);
       if (!lessons.length) {
         let emptyTitle = "Можно выдохнуть ☕";
         let emptyText = "На выбранную дату пар не запланировано.";
@@ -1279,7 +1366,38 @@
         const card = document.createElement("article"); card.className="lesson";
         const badge=currentLesson===l?'<span class="status-badge">Сейчас</span>':(nextLesson===l?'<span class="status-badge next">Далее</span>':'');
         card.innerHTML = `<div class="time">${l.start}<small>до ${l.end}</small></div><div class="stripe ${l.color}"></div><div class="lesson-main">${badge}<div class="lesson-head"><div class="lesson-title">${l.title}</div></div><div class="lesson-meta"><span class="tag">▣ Ауд. ${l.room}</span><span class="tag">${l.type}</span>${l.teacher ? `<span class="tag">♙ ${l.teacher}</span>` : ``}</div></div>`;
+        const reportRow = document.createElement("div");
+        reportRow.className = "lesson-report-row";
+        const reportSelect = document.createElement("select");
+        reportSelect.className = "lesson-report-select";
+        reportSelect.setAttribute("aria-label", "Тип изменения расписания");
+        [["cancelled","Пара отменяется"],["moved","Пара перенесена"],["room","Изменился кабинет"],["teacher","Изменился преподаватель"],["other","Другое изменение"]].forEach(([value,label])=>{
+          const option=document.createElement("option"); option.value=value; option.textContent=label; reportSelect.appendChild(option);
+        });
+        const reportDetails = document.createElement("input");
+        reportDetails.type = "text";
+        reportDetails.className = "lesson-report-details";
+        reportDetails.maxLength = 300;
+        reportDetails.placeholder = "Уточнение (необязательно)";
+        reportDetails.hidden = true;
+        reportSelect.addEventListener("change",()=>{
+          const placeholders={moved:"На какое время перенесли?",room:"Новый кабинет",teacher:"Новый преподаватель",other:"Что изменилось?"};
+          reportDetails.hidden = !placeholders[reportSelect.value];
+          reportDetails.placeholder = placeholders[reportSelect.value] || "Уточнение (необязательно)";
+        });
+        const reportButton = document.createElement("button");
+        reportButton.type = "button";
+        reportButton.className = "lesson-report-button";
+        reportButton.textContent = "Сообщить";
+        reportButton.addEventListener("click",()=>submitScheduleReport(reportButton,reportSelect,reportDetails,l,reportGroup,reportIsoDate));
+        const reportStatus = document.createElement("span");
+        reportStatus.className = "lesson-report-status";
+        reportStatus.dataset.reportStart = String(l.start||"").slice(0,5);
+        reportStatus.hidden = true;
+        reportRow.append(reportSelect,reportDetails,reportButton,reportStatus);
+        card.appendChild(reportRow);
         list.appendChild(card);
+        applyScheduleReportStatus(scheduleReportDateKey(reportGroup,reportIsoDate));
       });
     }
     function renderNext() {
