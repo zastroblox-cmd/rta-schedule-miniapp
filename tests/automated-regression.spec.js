@@ -11,6 +11,10 @@ test.describe("RTASchedule Mini App regression", () => {
     page.on("pageerror", error => pageErrors.push(error.message));
 
     await page.goto(APP_URL, { waitUntil: "domcontentloaded" });
+    // First-run group selection is intentionally modal; close it before testing background controls.
+    if (await page.locator("#groupModal").evaluate(el => el.classList.contains("open"))) {
+      await page.locator("#closeGroupModal").click();
+    }
     await expect(page).toHaveTitle(/Расписание|RTASchedule/i);
     await expect(page.locator("#scheduleGroupCard")).toBeVisible();
     await expect(page.locator("#weekRange")).toBeVisible();
@@ -27,6 +31,10 @@ test.describe("RTASchedule Mini App regression", () => {
 
   test("profile and group selector open without breaking schedule", async ({ page }) => {
     await page.goto(APP_URL, { waitUntil: "domcontentloaded" });
+    // First-run group selection is intentionally modal; close it before testing background controls.
+    if (await page.locator("#groupModal").evaluate(el => el.classList.contains("open"))) {
+      await page.locator("#closeGroupModal").click();
+    }
     await page.locator("#profileBtn").click();
     await expect(page.locator("#profilePanel")).toBeVisible();
     await page.locator("#profileChangeGroup").click();
@@ -38,6 +46,10 @@ test.describe("RTASchedule Mini App regression", () => {
 
   test("representative entry point opens login inside profile", async ({ page }) => {
     await page.goto(APP_URL, { waitUntil: "domcontentloaded" });
+    // First-run group selection is intentionally modal; close it before testing background controls.
+    if (await page.locator("#groupModal").evaluate(el => el.classList.contains("open"))) {
+      await page.locator("#closeGroupModal").click();
+    }
     await page.locator("#profileBtn").click();
     await page.locator("#repOpen").click();
     await expect(page.locator("#repPanel")).toHaveClass(/open/);
