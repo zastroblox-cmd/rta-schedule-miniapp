@@ -27,6 +27,7 @@ test.describe("RTASchedule Mini App regression", () => {
   });
 
   test("profile and group selector open without breaking schedule", async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem("rta_schedule_group", "Ю603/О-2503"));
     await page.goto(APP_URL, { waitUntil: "domcontentloaded" });
     await page.locator("#profileBtn").click();
     await expect(page.locator("#profilePanel")).toBeVisible();
@@ -38,6 +39,7 @@ test.describe("RTASchedule Mini App regression", () => {
   });
 
   test("representative entry point opens login inside profile", async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem("rta_schedule_group", "Ю603/О-2503"));
     await page.goto(APP_URL, { waitUntil: "domcontentloaded" });
     await page.locator("#profileBtn").click();
     await page.locator("#repOpen").click();
