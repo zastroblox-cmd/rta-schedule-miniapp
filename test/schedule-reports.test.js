@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { SCHEDULE_REPORT_TYPES, isValidLessonTime, summarizeScheduleReports } = require("../lib/schedule-reports");
+const { SCHEDULE_REPORT_TYPES, isValidLessonTime, summarizeScheduleReports, isCancellationAlertThresholdReached } = require("../lib/schedule-reports");
 
 test("accepts only supported report categories", () => {
   assert.equal(SCHEDULE_REPORT_TYPES.has("cancelled"), true);
@@ -20,7 +20,12 @@ test("aggregates reports by lesson start without exposing reporter identifiers",
   ]);
   assert.equal(result.length, 2);
   assert.deepEqual(result[0], {
-    starts_at: "10:10", report_count: 2, report_types: ["cancelled"], latest_at: "2026-11-06T10:01:00Z"
+    starts_at: "10:10",
+    report_count: 2,
+    report_types: ["cancelled"],
+    report_type_counts: { cancelled: 2 },
+    cancelled_count: 2,
+    latest_at: "2026-11-06T10:01:00Z"
   });
   assert.equal("reporter_hash" in result[0], false);
 });
@@ -32,4 +37,11 @@ test("ignores malformed report rows and returns stable chronological order", () 
     { starts_at: "08:30:00", report_type: "moved", updated_at: "2026-11-06T10:00:00Z" }
   ]);
   assert.deepEqual(result.map(row => row.starts_at), ["08:30", "14:00"]);
+});
+
+test("only three cancellation reports trigger a possible-cancellation alert", () => {
+  assert.equal(isCancellationAlertThresholdReached({ cancelled_count: 2, report_count: 5 }), false);
+  assert.equal(isCancellationAlertThresholdReached({ cancelled_count: 3, report_count: 3 }), true);
+  assert.equal(isCancellationAlertThresholdReached({ cancelled_count: 1, report_count: 8 }), false);
+  assert.equal(isCancellationAlertThresholdReached(null), false);
 });
