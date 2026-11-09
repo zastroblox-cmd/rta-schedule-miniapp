@@ -15,18 +15,45 @@ button,.action{width:100%;display:flex;align-items:center;justify-content:center
 <label for="kind">Тип обращения</label><select id="kind" required><option value="Вопрос">Вопрос</option><option value="Ошибка в приложении">Ошибка в приложении</option><option value="Ошибка в расписании">Ошибка в расписании</option><option value="Предложение">Предложение</option><option value="Другое">Другое</option></select>
 <label for="group">Учебная группа (необязательно)</label><input id="group" maxlength="80" placeholder="Например, Ю603/О-2503">
 <label for="message">Сообщение</label><textarea id="message" required minlength="5" maxlength="2000" placeholder="Опиши, что случилось или что можно улучшить…"></textarea>
-<div class="hint">Важно: сейчас бот не пересылает обращения владельцу автоматически. После нажатия кнопки текст будет скопирован, а затем откроется чат бота — вставь текст и нажми «Отправить». Так обращение не потеряется из-за одного /start.</div>
-<button type="submit">Скопировать обращение и открыть бота ↗</button><div id="status" class="status" role="status"></div>
+<div class="hint">Отправка работает прямо из Mini App: обращение сохранится, а владельцу придёт сообщение в Telegram. Не отправляй пароли и платёжные данные.</div>
+<button type="submit" id="sendButton">Отправить обращение</button><div id="status" class="status" role="status"></div>
 </form><p class="small">Не отправляй пароли, платёжные данные или другую конфиденциальную информацию.</p>
 <script>
-const params=new URLSearchParams(location.search);document.getElementById("group").value=params.get("group")||"";
-document.getElementById("supportForm").addEventListener("submit",async event=>{
-event.preventDefault();const kind=document.getElementById("kind").value;const group=document.getElementById("group").value.trim();const message=document.getElementById("message").value.trim();
-const text="Обращение в поддержку РТА – Расписание\nТип: "+kind+"\nГруппа: "+(group||"не указана")+"\n\n"+message;
-let copied=false;try{if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(text);copied=true;}}catch(e){}
-if(!copied){const helper=document.createElement("textarea");helper.value=text;helper.style.position="fixed";helper.style.opacity="0";document.body.appendChild(helper);helper.select();try{copied=document.execCommand("copy");}catch(e){}helper.remove();}
-document.getElementById("status").textContent=copied?"Текст обращения скопирован. Вставь его в открывшемся чате и нажми «Отправить».":"Автоматическое копирование не сработало. Открой бота и отправь обращение вручную.";
-const url="https://t.me/RTAScheduleHelperBot?start=support";
-if(window.Telegram&&Telegram.WebApp&&typeof Telegram.WebApp.openTelegramLink==="function")Telegram.WebApp.openTelegramLink(url);else window.location.href=url;
+const params=new URLSearchParams(location.search);
+document.getElementById("group").value=params.get("group")||"";
+const categories={"Вопрос":"question","Ошибка в приложении":"app_bug","Ошибка в расписании":"schedule_bug","Предложение":"suggestion","Другое":"other"};
+const form=document.getElementById("supportForm");
+const sendButton=document.getElementById("sendButton");
+const statusEl=document.getElementById("status");
+form.addEventListener("submit",async event=>{
+  event.preventDefault();
+  const kind=document.getElementById("kind").value;
+  const group=document.getElementById("group").value.trim();
+  const message=document.getElementById("message").value.trim();
+  const tg=window.Telegram&&window.Telegram.WebApp?window.Telegram.WebApp:null;
+  if(!tg||!tg.initData){
+    statusEl.textContent="Открой Mini App через Telegram, чтобы отправить обращение напрямую. Можно также написать боту вручную.";
+    statusEl.style.color="#ffc57e";
+    return;
+  }
+  sendButton.disabled=true;sendButton.textContent="Отправляем…";statusEl.textContent="";
+  try{
+    const response=await fetch("https://rta-schedule-api.onrender.com/api/support",{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({initData:tg.initData,category:categories[kind]||"other",group_code:group,message}),
+      cache:"no-store"
+    });
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(result.error||"Не удалось отправить обращение.");
+    statusEl.textContent=result.message||"Обращение отправлено.";
+    statusEl.style.color=result.notified===false?"#ffc57e":"#9ee4c7";
+    if(result.saved){form.querySelector("textarea").value="";sendButton.textContent="Отправлено ✓";}
+    else sendButton.textContent="Отправить обращение";
+  }catch(error){
+    statusEl.textContent=(error.message||"Ошибка отправки.")+" Если проблема повторится, открой бота и напиши сообщение вручную.";
+    statusEl.style.color="#ffc57e";
+    sendButton.textContent="Попробовать ещё раз";
+  }finally{sendButton.disabled=false;}
 });
+if(window.Telegram&&window.Telegram.WebApp){try{window.Telegram.WebApp.ready();window.Telegram.WebApp.expand();}catch(e){}}
 </script></main></body></html>
