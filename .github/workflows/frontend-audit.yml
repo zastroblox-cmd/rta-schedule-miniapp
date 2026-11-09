@@ -7,6 +7,8 @@ on:
     paths:
       - "index.html"
       - "privacy.html"
+      - "faq.html"
+      - "support.html"
       - "data/*.js"
       - "data/*.json"
       - ".github/workflows/frontend-audit.yml"
@@ -32,9 +34,15 @@ jobs:
           const html = fs.readFileSync('index.html', 'utf8');
           const privacy = fs.readFileSync('privacy.html', 'utf8');
           if (!html.includes('href="./privacy.html"')) throw new Error('Privacy page link missing from app');
-          for (const text of ['Данные и конфиденциальность', 'Telegram ID', 'Режим старосты', 'пересылка обращений сейчас не настроена']) {
+          for (const text of ['Данные и конфиденциальность', 'Telegram ID', 'Режим старосты', 'направляется владельцу приложения в Telegram']) {
             if (!privacy.includes(text)) throw new Error('Privacy page is missing required disclosure: ' + text);
           }
+          const faq = fs.readFileSync('faq.html', 'utf8');
+          const support = fs.readFileSync('support.html', 'utf8');
+          if (!html.includes('href="./faq.html"')) throw new Error('Dedicated FAQ page link missing');
+          if (!html.includes('href="./support.html?group="')) throw new Error('Dedicated support page link missing');
+          if (!faq.includes('Частые вопросы') || !faq.includes('details')) throw new Error('FAQ page is incomplete');
+          if (!support.includes('/api/support') || !support.includes('initData')) throw new Error('Support form must submit directly to the API');
           const inlineScripts = [...html.matchAll(/<script\b(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)<\/script>/gi)]
             .map(match => match[1])
             .filter(script => script.trim());
