@@ -170,6 +170,7 @@
     .profile-feature-copy strong { display:block; font-size:14px; margin-bottom:4px; }
     .profile-feature-copy small { display:block; color:var(--muted); font-size:12px; line-height:1.4; }
     .profile-feature-row > button { border:0; background:transparent; color:var(--muted); padding:8px 0 8px 8px; font-size:22px; }
+    .profile-feature-link { flex:0 0 auto; display:grid; place-items:center; min-width:28px; min-height:40px; border:0; background:transparent; color:var(--muted); padding:8px 0 8px 8px; font-size:25px; text-decoration:none; }
     .faq-list { display:grid; gap:8px; margin-top:12px; }
     .faq-item { border:1px solid var(--line); border-radius:13px; background:rgba(255,255,255,.025); overflow:hidden; }
     .faq-item summary { padding:13px; cursor:pointer; font-size:13px; font-weight:700; list-style:none; display:flex; justify-content:space-between; gap:12px; }
@@ -539,18 +540,7 @@
       <div class="profile-feature-row">
         <span class="profile-feature-icon faq" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.6 9a2.5 2.5 0 1 1 4.2 1.8c-1.2 1-1.8 1.4-1.8 2.7M12 17h.01"/></svg></span>
         <div class="profile-feature-copy"><strong>Частые вопросы</strong><small>Ответы о расписании и функциях приложения</small></div>
-        <button type="button" id="faqToggle" aria-expanded="false" aria-controls="faqList" aria-label="Открыть частые вопросы">›</button>
-      </div>
-      <div id="faqList" class="faq-list" hidden>
-        <details class="faq-item"><summary>Как изменить свою группу?</summary><p>Открой профиль и нажми «Изменить» рядом с факультетом, курсом или учебной группой. После выбора расписание загрузится для новой группы.</p></details>
-        <details class="faq-item"><summary>Почему расписание не загружается?</summary><p>Проверь интернет-соединение и попробуй заново открыть мини-приложение через Telegram. Если проблема сохраняется, напиши в поддержку и укажи свою группу.</p></details>
-        <details class="faq-item"><summary>Как понять, какая сейчас неделя?</summary><p>Тип недели указан под диапазоном дат в разделе расписания. Ориентируйся на дату, выбранную в приложении.</p></details>
-        <details class="faq-item"><summary>В расписании ошибка. Что делать?</summary><p>Нажми «Сообщить об изменении» в карточке пары и выбери подходящий вариант. Сообщение помогает обратить внимание на проблему, но само по себе не меняет расписание.</p></details>
-        <details class="faq-item"><summary>Как сообщить об отмене пары?</summary><p>Открой карточку нужной пары и отправь сообщение об отмене. Несколько независимых сообщений могут сформировать предупреждение, но отмена должна быть подтверждена отдельно.</p></details>
-        <details class="faq-item"><summary>Как включить напоминания?</summary><p>В профиле найди «Напоминание о паре» и нажми «Включить». Для получения сообщений нужно запустить бота в Telegram и разрешить ему отправлять сообщения.</p></details>
-        <details class="faq-item"><summary>Как посмотреть расписание на другую дату?</summary><p>Используй стрелки рядом с датами, чтобы перейти к другой неделе, а затем выбери нужный день. Кнопка «Сегодня» возвращает к текущей дате.</p></details>
-        <details class="faq-item"><summary>Что означает предупреждение о возможной отмене?</summary><p>Это сигнал, что несколько пользователей сообщили о возможной отмене пары. Он не подтверждает отмену автоматически: перед тем как ориентироваться на предупреждение, уточни информацию у преподавателя или старосты.</p></details>
-        <details class="faq-item"><summary>Как отправить вопрос или предложение разработчику?</summary><p>Внизу профиля нажми «Поддержка», выбери тип обращения и напиши сообщение. Укажи группу и дату, если вопрос касается конкретной пары.</p></details>
+        <a class="profile-feature-link" id="faqToggle" href="./faq.html" aria-label="Открыть частые вопросы">›</a>
       </div>
       <div class="profile-feature-row">
         <span class="profile-feature-icon support" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 13v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="12" width="4" height="7" rx="2"/><rect x="17" y="12" width="4" height="7" rx="2"/><path d="M17 19a5 5 0 0 1-5 3h-1"/></svg></span>
@@ -1662,19 +1652,10 @@
     document.getElementById("profileChangeFaculty").onclick = () => openGroupModal("faculty");
     document.getElementById("profileChangeGroup").onclick = () => openGroupModal("group");
     document.getElementById("profileChangeCourse").onclick = () => openGroupModal("course");
-    const faqToggle = document.getElementById("faqToggle");
-    if (faqToggle) faqToggle.addEventListener("click", () => {
-      const list = document.getElementById("faqList");
-      const expanded = faqToggle.getAttribute("aria-expanded") === "true";
-      faqToggle.setAttribute("aria-expanded", String(!expanded));
-      list.hidden = expanded;
-      faqToggle.textContent = expanded ? "›" : "⌄";
-    });
     const supportButton = document.getElementById("openSupport");
     if (supportButton) supportButton.addEventListener("click", () => {
-      const supportUrl = "https://t.me/RTAScheduleHelperBot?start=support";
-      if (tg && typeof tg.openTelegramLink === "function") tg.openTelegramLink(supportUrl);
-      else window.open(supportUrl, "_blank", "noopener");
+      const supportUrl = "./support.html?group=" + encodeURIComponent(currentGroup || "");
+      window.location.href = supportUrl;
     });
     const launchButton = document.getElementById("openTelegramApp");
     if (launchButton) launchButton.onclick = () => {
