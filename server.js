@@ -707,7 +707,7 @@ app.post("/telegram/webhook", async (req, res) => {
       await telegramApi("sendMessage", {
         chat_id: chatId,
         text: "Напиши обращение одним сообщением. Можно указать группу, дату и пару, если это важно.",
-        reply_markup: { force_reply: false, remove_keyboard: true }
+        reply_markup: { remove_keyboard: true }
       });
       return;
     }
