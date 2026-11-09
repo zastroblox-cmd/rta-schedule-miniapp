@@ -622,6 +622,78 @@ async function telegramApi(method, payload) {
   return result;
 }
 
+app.post("/api/support", async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  const user = verifyTelegramInitData(req.body && req.body.initData, false);
+  if (!user) return res.status(403).json({ error: "Открой поддержку внутри Mini App Telegram и попробуй снова." });
+  if (!supabaseRpc || !TELEGRAM_BOT_TOKEN || !OWNER_TELEGRAM_ID) {
+    return res.status(503).json({ error: "Поддержка временно недоступна. Попробуй написать через чат бота." });
+  }
+
+  const body = req.body || {};
+  const allowedCategories = new Set(["question", "app_bug", "schedule_bug", "suggestion", "other"]);
+  const category = String(body.category || "other");
+  const messageText = String(body.message || "").trim();
+  const groupCode = String(body.group_code || "").trim().slice(0, 80);
+  if (!allowedCategories.has(category)) return res.status(400).json({ error: "Выбери тип обращения." });
+  if (messageText.length < 5 || messageText.length > 2000) {
+    return res.status(400).json({ error: "Сообщение должно содержать от 5 до 2000 символов." });
+  }
+
+  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const { count, error: countError } = await supabaseRpc.from("support_messages")
+    .select("id", { count: "exact", head: true })
+    .eq("telegram_user_id", user.id)
+    .gte("created_at", cutoff);
+  if (countError) {
+    console.error("Unable to check support rate limit:", countError.message);
+    return res.status(503).json({ error: "Не удалось проверить обращение. Попробуй позже." });
+  }
+  if ((count || 0) >= 10) return res.status(429).json({ error: "Слишком много обращений за сутки. Попробуй позже." });
+
+  const profile = (() => {
+    try { return JSON.parse(new URLSearchParams(body.initData).get("user") || "{}"); }
+    catch (_) { return {}; }
+  })();
+  const categoryLabels = {
+    question: "Вопрос",
+    app_bug: "Ошибка в приложении",
+    schedule_bug: "Ошибка в расписании",
+    suggestion: "Предложение",
+    other: "Другое"
+  };
+  const fullMessage = (groupCode ? "Группа: " + groupCode + "\\n\\n" : "") + messageText;
+  const { data: saved, error: insertError } = await supabaseRpc.from("support_messages").insert({
+    telegram_chat_id: user.id,
+    telegram_user_id: user.id,
+    first_name: String(profile.first_name || user.first_name || "Пользователь").slice(0, 120),
+    username: profile.username ? String(profile.username).slice(0, 120) : null,
+    category,
+    message: fullMessage.slice(0, 4000)
+  }).select("id").single();
+  if (insertError) {
+    console.error("Unable to save support message:", insertError.message);
+    return res.status(503).json({ error: "Не удалось сохранить обращение. Попробуй ещё раз." });
+  }
+
+  try {
+    await telegramApi("sendMessage", {
+      chat_id: OWNER_TELEGRAM_ID,
+      text: "📩 Новое обращение в поддержку\\nТип: " + categoryLabels[category] +
+        "\\nОт: " + String(profile.first_name || user.first_name || "Пользователь") +
+        (profile.username ? " (@" + String(profile.username).slice(0, 80) + ")" : "") +
+        "\\nTelegram ID: " + user.id +
+        "\\nНомер: #" + saved.id +
+        "\\n\\n" + fullMessage.slice(0, 3500),
+      disable_web_page_preview: true
+    });
+  } catch (error) {
+    console.error("Support message saved but owner notification failed:", error.message);
+    return res.status(202).json({ ok: true, saved: true, notified: false, message: "Обращение сохранено, но уведомление владельцу не удалось отправить. Повтори попытку позже или напиши боту." });
+  }
+  return res.json({ ok: true, saved: true, notified: true, message: "Обращение отправлено. Спасибо! Владелец получит сообщение в Telegram." });
+});
+
 app.post("/telegram/webhook", async (req, res) => {
   if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_WEBHOOK_SECRET) {
     return res.status(503).json({ error: "Telegram webhook is not configured" });
