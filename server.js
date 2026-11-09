@@ -1047,6 +1047,7 @@ async function runReminderDispatch() {
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`RTA schedule API listening on port ${PORT}`);
+  console.log("Schedule cancellation alerts:", TELEGRAM_BOT_TOKEN && OWNER_TELEGRAM_ID && supabaseRpc ? "configured" : "disabled: missing required configuration");
   void configureTelegramWebhook();
   if (REMINDER_SCHEDULER_ENABLED) {
     void runReminderDispatch();
