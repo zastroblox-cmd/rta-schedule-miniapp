@@ -1221,7 +1221,11 @@
           cancelled:"отмена пары", moved:"перенос пары", room:"смена аудитории",
           teacher:"смена преподавателя", other:"изменение"
         }[type] || "изменение"));
-        node.textContent = (count >= 3 ? "⚠️ " : "ℹ️ ") + "Сообщений: " + count + " — " + [...new Set(types)].join(", ") + " (не подтверждено)";
+        const cancelledCount = Number(item.cancelled_count) || 0;
+        node.textContent = cancelledCount >= 3
+          ? "⚠️ Сообщили об отмене: " + cancelledCount + " (не подтверждено)"
+          : "ℹ️ Сообщений: " + count + " — " + [...new Set(types)].join(", ") + " (не подтверждено)";
+        node.title = node.textContent;
       });
     }
     async function loadScheduleReports(group, date) {
