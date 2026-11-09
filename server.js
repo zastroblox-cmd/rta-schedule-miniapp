@@ -634,27 +634,128 @@ app.post("/telegram/webhook", async (req, res) => {
   res.sendStatus(200);
   const message = req.body && req.body.message;
   if (!message || !message.chat || typeof message.text !== "string") return;
-  const command = message.text.trim().split(/\s+/, 1)[0].split("@", 1)[0];
-  if (command !== "/start" && command !== "/help") return;
+  const chatId = String(message.chat.id);
+  const userId = String((message.from && message.from.id) || message.chat.id);
+  const firstName = String((message.from && message.from.first_name) || "").slice(0, 120);
+  const username = message.from && message.from.username ? String(message.from.username).slice(0, 120) : null;
+  const text = message.text.trim();
+  const command = text.split(/\s+/, 1)[0].split("@", 1)[0];
+  const startParam = command === "/start" ? text.split(/\s+/, 2)[1] || "" : "";
 
-  const greeting = command === "/start"
-    ? "🎓 Добро пожаловать! Это расписание РТА. Нажмите кнопку ниже, чтобы открыть расписание."
-    : "📅 Откройте расписание кнопкой ниже.";
+  if (command === "/start" && startParam === "support") {
+    try {
+      if (!supabaseRpc) throw new Error("Support inbox is not configured");
+      const { error } = await supabaseRpc.from("support_sessions").upsert({
+        telegram_chat_id: chatId, telegram_user_id: userId, first_name: firstName,
+        username, category: "other", created_at: new Date().toISOString()
+      });
+      if (error) throw error;
+      await telegramApi("sendMessage", {
+        chat_id: chatId,
+        text: "💬 Поддержка РТА — Расписание\n\nВыбери тип обращения:",
+        reply_markup: {
+          keyboard: [[{ text: "⚠️ Жалоба на расписание" }], [{ text: "❓ Вопрос" }, { text: "💡 Предложение" }]],
+          resize_keyboard: true, one_time_keyboard: true
+        }
+      });
+    } catch (error) {
+      console.error("Unable to start support session:", error.message);
+      await telegramApi("sendMessage", { chat_id: chatId, text: "Не удалось открыть поддержку. Попробуй ещё раз чуть позже." }).catch(() => {});
+    }
+    return;
+  }
+
+  if (command === "/start" || command === "/help") {
+    const greeting = command === "/start"
+      ? "🎓 Добро пожаловать в РТА – Расписание! Нажми кнопку ниже, чтобы открыть расписание."
+      : "📅 Открой расписание кнопкой ниже. Для обращения в поддержку используй раздел «Профиль» в мини-приложении.";
+    try {
+      await telegramApi("sendMessage", {
+        chat_id: message.chat.id,
+        text: greeting,
+        reply_markup: {
+          inline_keyboard: [[{
+            text: "📅 Открыть расписание",
+            web_app: { url: MINI_APP_URL }
+          }]]
+        }
+      });
+    } catch (error) {
+      console.error("Unable to answer Telegram update:", error.message);
+    }
+    return;
+  }
+
+  if (!supabaseRpc || text.startsWith("/")) return;
   try {
+    const { data: session, error: sessionError } = await supabaseRpc.from("support_sessions")
+      .select("telegram_chat_id,telegram_user_id,first_name,username,category")
+      .eq("telegram_chat_id", chatId).maybeSingle();
+    if (sessionError) throw sessionError;
+    if (!session) return;
+
+    const categoryMap = {
+      "⚠️ Жалоба на расписание": "complaint",
+      "❓ Вопрос": "question",
+      "💡 Предложение": "suggestion"
+    };
+    if (categoryMap[text]) {
+      const { error } = await supabaseRpc.from("support_sessions")
+        .update({ category: categoryMap[text], created_at: new Date().toISOString() })
+        .eq("telegram_chat_id", chatId);
+      if (error) throw error;
+      await telegramApi("sendMessage", {
+        chat_id: chatId,
+        text: "Напиши обращение одним сообщением. Можно указать группу, дату и пару, если это важно.",
+        reply_markup: { force_reply: false, remove_keyboard: true }
+      });
+      return;
+    }
+
+    const category = String(session.category || "other");
+    const { error: insertError } = await supabaseRpc.from("support_messages").insert({
+      telegram_chat_id: chatId, telegram_user_id: String(session.telegram_user_id),
+      first_name: String(session.first_name || firstName).slice(0,120),
+      username: session.username || username, category,
+      message: text.slice(0,4000)
+    });
+    if (insertError) throw insertError;
+
+    const categoryLabel = { complaint: "Жалоба на расписание", question: "Вопрос", suggestion: "Предложение", other: "Обращение" }[category] || "Обращение";
+    if (OWNER_TELEGRAM_ID) {
+      await telegramApi("sendMessage", {
+        chat_id: OWNER_TELEGRAM_ID,
+        text: "📩 Новое обращение в поддержку\nТип: " + categoryLabel +
+          "\nОт: " + (session.first_name || "Пользователь") +
+          (session.username ? " (@" + session.username + ")" : "") +
+          "\nTelegram ID: " + session.telegram_user_id +
+          "\n\n" + text.slice(0,4000) +
+          "\n\nОтветить можно в Telegram, открыв диалог с пользователем по ID: " + session.telegram_user_id
+      });
+    } else {
+      console.error("Support message saved but OWNER_TELEGRAM_ID is not configured");
+    }
+    await supabaseRpc.from("support_sessions").delete().eq("telegram_chat_id", chatId);
     await telegramApi("sendMessage", {
-      chat_id: message.chat.id,
-      text: greeting,
-      reply_markup: {
-        inline_keyboard: [[{
-          text: "📅 Открыть расписание",
-          web_app: { url: MINI_APP_URL }
-        }]]
-      }
+      chat_id: chatId,
+      text: "✅ Обращение отправлено. Спасибо! Если понадобится ещё помощь, снова нажми «Поддержка» в приложении.",
+      reply_markup: { remove_keyboard: true }
     });
   } catch (error) {
-    console.error("Unable to answer Telegram update:", error.message);
+    console.error("Unable to process support message:", error.message);
+    await telegramApi("sendMessage", { chat_id: chatId, text: "Не удалось отправить обращение. Попробуй ещё раз позже." }).catch(() => {});
   }
 });
+
+async function configureTelegramProfile() {
+  if (!TELEGRAM_BOT_TOKEN) return;
+  try {
+    await telegramApi("setMyName", { name: "РТА – Расписание" });
+    console.log("Telegram bot display name configured");
+  } catch (error) {
+    console.error("Telegram bot display name setup failed:", error.message);
+  }
+}
 
 async function configureTelegramWebhook() {
   if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_WEBHOOK_SECRET) {
@@ -1048,6 +1149,7 @@ async function runReminderDispatch() {
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`RTA schedule API listening on port ${PORT}`);
   console.log("Schedule cancellation alerts:", TELEGRAM_BOT_TOKEN && OWNER_TELEGRAM_ID && supabaseRpc ? "configured" : "disabled: missing required configuration");
+  void configureTelegramProfile();
   void configureTelegramWebhook();
   if (REMINDER_SCHEDULER_ENABLED) {
     void runReminderDispatch();
