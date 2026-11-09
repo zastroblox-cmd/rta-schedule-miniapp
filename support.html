@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ru">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b1019"><title>Поддержка — РТА – Расписание</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1019;--panel:#111a28;--line:rgba(148,176,220,.16);--text:#edf3ff;--muted:#a6b4ca;--blue:#83adff}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#15233a 0%,var(--bg) 52%);color:var(--text);font:15px/1.6 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+main{width:min(560px,100%);margin:0 auto;padding:26px 16px 42px}.back{display:inline-block;margin-bottom:22px;color:var(--blue);text-decoration:none;font-size:13px;font-weight:700}.kicker{color:var(--blue);font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}h1{font-size:32px;letter-spacing:-.04em;line-height:1.15;margin:8px 0}.intro{color:var(--muted);font-size:13px;margin:0 0 20px}
+.card{padding:17px;border:1px solid var(--line);border-radius:18px;background:rgba(17,26,40,.9)}label{display:block;margin:13px 0 6px;font-size:12px;font-weight:700;color:#cbd8ec}select,textarea,input{width:100%;border:1px solid rgba(148,176,220,.2);border-radius:11px;background:#0a111d;color:var(--text);padding:12px;font:inherit;font-size:13px;outline:none}textarea{min-height:130px;resize:vertical}select:focus,textarea:focus,input:focus{border-color:#4f8cff}
+.hint{margin:12px 0;padding:11px 12px;border:1px solid rgba(255,184,107,.2);border-radius:11px;background:rgba(255,184,107,.06);color:#e5c99f;font-size:11px;line-height:1.55}
+button,.action{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;padding:12px 14px;border:1px solid #4f8cff70;border-radius:11px;background:linear-gradient(135deg,#397be9,#2458bb);color:white;font:inherit;font-size:13px;font-weight:750;text-decoration:none;cursor:pointer}
+.status{margin-top:12px;font-size:12px;color:#9ee4c7;line-height:1.5}.status:empty{display:none}.small{color:var(--muted);font-size:11px;margin-top:12px}
+</style></head><body><main>
+<a class="back" href="./index.html">← Назад в приложение</a><div class="kicker">РТА – Расписание</div><h1>Поддержка</h1><p class="intro">Сообщи об ошибке, задай вопрос или предложи улучшение.</p>
+<form class="card" id="supportForm">
+<label for="kind">Тип обращения</label><select id="kind" required><option value="Вопрос">Вопрос</option><option value="Ошибка в приложении">Ошибка в приложении</option><option value="Ошибка в расписании">Ошибка в расписании</option><option value="Предложение">Предложение</option><option value="Другое">Другое</option></select>
+<label for="group">Учебная группа (необязательно)</label><input id="group" maxlength="80" placeholder="Например, Ю603/О-2503">
+<label for="message">Сообщение</label><textarea id="message" required minlength="5" maxlength="2000" placeholder="Опиши, что случилось или что можно улучшить…"></textarea>
+<div class="hint">Важно: сейчас бот не пересылает обращения владельцу автоматически. После нажатия кнопки текст будет скопирован, а затем откроется чат бота — вставь текст и нажми «Отправить». Так обращение не потеряется из-за одного /start.</div>
+<button type="submit">Скопировать обращение и открыть бота ↗</button><div id="status" class="status" role="status"></div>
+</form><p class="small">Не отправляй пароли, платёжные данные или другую конфиденциальную информацию.</p>
+<script>
+const params=new URLSearchParams(location.search);document.getElementById("group").value=params.get("group")||"";
+document.getElementById("supportForm").addEventListener("submit",async event=>{
+event.preventDefault();const kind=document.getElementById("kind").value;const group=document.getElementById("group").value.trim();const message=document.getElementById("message").value.trim();
+const text="Обращение в поддержку РТА – Расписание\nТип: "+kind+"\nГруппа: "+(group||"не указана")+"\n\n"+message;
+let copied=false;try{if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(text);copied=true;}}catch(e){}
+if(!copied){const helper=document.createElement("textarea");helper.value=text;helper.style.position="fixed";helper.style.opacity="0";document.body.appendChild(helper);helper.select();try{copied=document.execCommand("copy");}catch(e){}helper.remove();}
+document.getElementById("status").textContent=copied?"Текст обращения скопирован. Вставь его в открывшемся чате и нажми «Отправить».":"Автоматическое копирование не сработало. Открой бота и отправь обращение вручную.";
+const url="https://t.me/RTAScheduleHelperBot?start=support";
+if(window.Telegram&&Telegram.WebApp&&typeof Telegram.WebApp.openTelegramLink==="function")Telegram.WebApp.openTelegramLink(url);else window.location.href=url;
+});
+</script></main></body></html>
