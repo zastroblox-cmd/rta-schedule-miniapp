@@ -227,7 +227,7 @@ app.get("/api/schedule", async (req, res) => {
 // from Supabase are reflected immediately in the regular schedule.
 // Student-submitted schedule change reports. Reports are aggregated publicly;
  // raw reporter identifiers never leave the server and are stored only as keyed hashes.
-const { SCHEDULE_REPORT_TYPES, isValidLessonTime, summarizeScheduleReports } = require("./lib/schedule-reports");
+const { SCHEDULE_REPORT_TYPES, isValidLessonTime, summarizeScheduleReports, isCancellationAlertThresholdReached } = require("./lib/schedule-reports");
 
 app.get("/api/schedule-reports", async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
@@ -251,6 +251,58 @@ app.get("/api/schedule-reports", async (req, res) => {
   }
   return res.json({ date: dateString, data: summarizeScheduleReports(data) });
 });
+
+async function maybeSendScheduleCancellationAlert({ groupId, groupCode, dateString, startsAt, subject, summary }) {
+  if (!isCancellationAlertThresholdReached(summary)) return;
+  if (!TELEGRAM_BOT_TOKEN || !OWNER_TELEGRAM_ID || !supabaseRpc) {
+    console.error("Schedule cancellation alert not sent: Telegram owner notification is not configured");
+    return;
+  }
+
+  // The unique lesson key claims the alert before sending, preventing duplicate
+  // notifications when several students submit reports at nearly the same time.
+  const claim = await supabaseRpc.from("schedule_report_alerts").insert({
+    group_id: groupId,
+    schedule_date: dateString,
+    starts_at: startsAt,
+    cancelled_count: summary.cancelled_count
+  }).select("id").maybeSingle();
+
+  if (claim.error) {
+    if (claim.error.code === "23505") return; // Already alerted for this lesson.
+    console.error("Schedule cancellation alert claim failed:", claim.error.message);
+    return;
+  }
+  if (!claim.data) return;
+
+  const message = [
+    "⚠️ Возможно, пара отменена",
+    "Группа: " + groupCode,
+    "Дата: " + dateString,
+    "Время: " + startsAt,
+    "Предмет: " + (String(subject || "").trim().slice(0, 160) || "не указан"),
+    "Сообщений об отмене от разных пользователей: " + summary.cancelled_count,
+    "",
+    "Это неподтверждённый сигнал. Проверь информацию перед изменением расписания."
+  ].join("\n");
+
+  try {
+    await telegramApi("sendMessage", {
+      chat_id: OWNER_TELEGRAM_ID,
+      text: message,
+      disable_web_page_preview: true
+    });
+    const { error: markError } = await supabaseRpc.from("schedule_report_alerts")
+      .update({ sent_at: new Date().toISOString(), cancelled_count: summary.cancelled_count })
+      .eq("group_id", groupId).eq("schedule_date", dateString).eq("starts_at", startsAt);
+    if (markError) console.error("Schedule cancellation alert sent but status update failed:", markError.message);
+  } catch (error) {
+    console.error("Schedule cancellation alert delivery failed:", error.message);
+    const { error: cleanupError } = await supabaseRpc.from("schedule_report_alerts")
+      .delete().eq("group_id", groupId).eq("schedule_date", dateString).eq("starts_at", startsAt);
+    if (cleanupError) console.error("Schedule cancellation alert claim cleanup failed:", cleanupError.message);
+  }
+}
 
 app.post("/api/schedule-reports", async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
@@ -320,7 +372,21 @@ app.post("/api/schedule-reports", async (req, res) => {
     console.error("Schedule report summary after submit failed:", summaryError.message);
     return res.json({ ok: true, report_count: 1, report_types: [reportType] });
   }
-  const summary = summarizeScheduleReports(rows)[0] || { report_count: 1, report_types: [reportType] };
+  const summary = summarizeScheduleReports(rows)[0] || {
+    starts_at: startsAt.slice(0, 5),
+    report_count: 1,
+    report_types: [reportType],
+    report_type_counts: { [reportType]: 1 },
+    cancelled_count: reportType === "cancelled" ? 1 : 0
+  };
+  await maybeSendScheduleCancellationAlert({
+    groupId: group.id,
+    groupCode,
+    dateString,
+    startsAt,
+    subject,
+    summary
+  });
   return res.json({ ok: true, ...summary });
 });
 
