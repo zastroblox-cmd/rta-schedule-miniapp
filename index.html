@@ -162,6 +162,9 @@
     .profile-row small { color:var(--muted); font-size:12px; }
     .profile-action { border:1px solid #ffffff20; border-radius:12px; background:#ffffff09; color:#e5edff; padding:10px 12px; font-size:12px; white-space:nowrap; }
     .profile-feature-row { display:flex; align-items:center; gap:12px; padding:13px 0; border-top:1px solid var(--line); }
+    .profile-feature-row-link { width:100%; color:inherit; text-align:left; font:inherit; text-decoration:none; cursor:pointer; }
+    .profile-feature-row-link:focus-visible { outline:2px solid #4f8cff; outline-offset:3px; border-radius:10px; }
+    .profile-feature-row-link:active { background:rgba(255,255,255,.035); }
     .profile-feature-icon { flex:0 0 42px; width:42px; height:42px; display:grid; place-items:center; border-radius:13px; box-shadow:inset 0 1px 0 #ffffff20; }
     .profile-feature-icon svg { width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
     .profile-feature-icon.faq { color:#76b7ff; background:linear-gradient(145deg,#174c8c,#152c53); }
@@ -537,16 +540,16 @@
     
       <div class="profile-row"><div><strong>Быстрый запуск</strong><small>Переход к боту расписания в Telegram</small></div><button class="profile-action" id="openTelegramApp">Открыть бота ↗</button></div>
       <div class="profile-section-label">ПОМОЩЬ</div>
-      <div class="profile-feature-row">
+      <a class="profile-feature-row profile-feature-row-link" id="faqToggle" href="./faq.html" aria-label="Открыть частые вопросы">
         <span class="profile-feature-icon faq" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.6 9a2.5 2.5 0 1 1 4.2 1.8c-1.2 1-1.8 1.4-1.8 2.7M12 17h.01"/></svg></span>
-        <div class="profile-feature-copy"><strong>Частые вопросы</strong><small>Ответы о расписании и функциях приложения</small></div>
-        <a class="profile-feature-link" id="faqToggle" href="./faq.html" aria-label="Открыть частые вопросы">›</a>
-      </div>
-      <div class="profile-feature-row">
+        <span class="profile-feature-copy"><strong>Частые вопросы</strong><small>Ответы о расписании и функциях приложения</small></span>
+        <span class="profile-feature-link" aria-hidden="true">›</span>
+      </a>
+      <button type="button" class="profile-feature-row profile-feature-row-link" id="openSupport" aria-label="Написать в поддержку">
         <span class="profile-feature-icon support" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 13v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="12" width="4" height="7" rx="2"/><rect x="17" y="12" width="4" height="7" rx="2"/><path d="M17 19a5 5 0 0 1-5 3h-1"/></svg></span>
-        <div class="profile-feature-copy"><strong>Поддержка</strong><small>Жалобы, вопросы и предложения</small></div>
-        <button type="button" id="openSupport" aria-label="Написать в поддержку">›</button>
-      </div>
+        <span class="profile-feature-copy"><strong>Поддержка</strong><small>Жалобы, вопросы и предложения</small></span>
+        <span class="profile-feature-link" aria-hidden="true">›</span>
+      </button>
 </section>
 
     <div id="scheduleContent">
