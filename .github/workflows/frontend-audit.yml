@@ -40,7 +40,7 @@ jobs:
           const faq = fs.readFileSync('faq.html', 'utf8');
           const support = fs.readFileSync('support.html', 'utf8');
           if (!html.includes('href="./faq.html"')) throw new Error('Dedicated FAQ page link missing');
-          if (!html.includes('href="./support.html?group="')) throw new Error('Dedicated support page link missing');
+          if (!html.includes('id="openSupport"') || !html.includes('"./support.html?group="')) throw new Error('Dedicated support button or destination missing');
           if (!faq.includes('Частые вопросы') || !faq.includes('details')) throw new Error('FAQ page is incomplete');
           if (!support.includes('/api/support') || !support.includes('initData')) throw new Error('Support form must submit directly to the API');
           const inlineScripts = [...html.matchAll(/<script\b(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)<\/script>/gi)]
