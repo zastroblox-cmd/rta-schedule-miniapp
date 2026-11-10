@@ -18,6 +18,7 @@ button,.action{width:100%;display:flex;align-items:center;justify-content:center
 <div class="hint">Отправка работает прямо из Mini App: обращение сохранится, а владельцу придёт сообщение в Telegram. Не отправляй пароли и платёжные данные.</div>
 <button type="submit" id="sendButton">Отправить обращение</button><div id="status" class="status" role="status"></div>
 </form><p class="small">Не отправляй пароли, платёжные данные или другую конфиденциальную информацию.</p>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script>
 const params=new URLSearchParams(location.search);
 document.getElementById("group").value=params.get("group")||"";
