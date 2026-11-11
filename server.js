@@ -1137,7 +1137,7 @@ app.post("/api/representative/change", async (req, res) => {
     dateString: String(body.entry.schedule_date || ""),
     subject: String(body.entry.subject || ""),
     excludeTelegramUserId: actorUser && actorUser.id
-  });
+  }).catch(error => console.error("Schedule change notification failed:", error.message));
   return res.json({ ok: true, result: data });
 });
 
@@ -1177,7 +1177,8 @@ app.post("/api/representative/restore", async (req, res) => {
     return res.status(400).json({ error: "Не удалось отменить изменение. Возможно, запись уже изменена." });
   }
   const actorUser = verifyTelegramInitData(body.initData, false);
-  void notifyGroupScheduleChange({ groupId, event: "restore", scope: "date", excludeTelegramUserId: actorUser && actorUser.id });
+  void notifyGroupScheduleChange({ groupId, event: "restore", scope: "date", excludeTelegramUserId: actorUser && actorUser.id })
+    .catch(error => console.error("Schedule restore notification failed:", error.message));
   return res.json({ ok: true, result: data });
 });
 
