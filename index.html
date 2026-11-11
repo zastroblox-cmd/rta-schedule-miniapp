@@ -498,6 +498,7 @@
         <div class="profile-row"><div><strong>Курс</strong><small id="profileCourse">2 курс</small></div><button class="profile-action" id="profileChangeCourse">Изменить ↗</button></div>
         <div class="profile-row"><div><strong>Учебная группа</strong><small id="profileGroupName">Ю603/О-2503</small></div><button class="profile-action" id="profileChangeGroup">Изменить ↗</button></div>
         <div class="profile-row"><div><strong>Напоминание о паре</strong><small id="reminderStatus">Сообщение в Telegram за 30 минут до начала пары</small></div><button class="profile-action" id="reminderToggle">Включить</button></div>
+        <div class="profile-row"><div><strong>Изменения расписания</strong><small id="scheduleChangeNotificationStatus">Сообщение в Telegram, если староста изменит расписание группы</small></div><button class="profile-action" id="scheduleChangeNotificationToggle">Включить</button></div>
         <div class="profile-row"><div><strong>Форма обучения</strong><small>Очная форма обучения</small></div></div>
 
       <div class="profile-row"><div><strong>Режим старосты</strong><small>Изменение расписания своей группы</small></div><button class="profile-action" id="repOpen">Открыть ↗</button></div>
@@ -1639,6 +1640,80 @@
       }
     }
     document.getElementById("reminderToggle").addEventListener("click", toggleClassReminder);
+
+    let scheduleChangeNotificationsEnabled = false;
+    let scheduleChangeNotificationsGroup = null;
+    let scheduleChangeNotificationsLoading = false;
+    function paintScheduleChangeNotificationStatus(message) {
+      const status = document.getElementById("scheduleChangeNotificationStatus");
+      const button = document.getElementById("scheduleChangeNotificationToggle");
+      if (!status || !button) return;
+      if (!tg || !tg.initData) {
+        status.textContent = "Открой приложение через Telegram. Бот должен быть запущен хотя бы один раз.";
+        button.textContent = "Включить";
+      } else if (message) {
+        status.textContent = message;
+      } else if (scheduleChangeNotificationsEnabled && scheduleChangeNotificationsGroup === currentGroup) {
+        status.textContent = "Сообщим в Telegram, если староста изменит расписание группы " + currentGroup + ".";
+        button.textContent = "Выключить";
+      } else if (scheduleChangeNotificationsEnabled && scheduleChangeNotificationsGroup) {
+        status.textContent = "Сейчас уведомления включены для " + scheduleChangeNotificationsGroup + ". Можно перенести на " + currentGroup + ".";
+        button.textContent = "Перенести сюда";
+      } else {
+        status.textContent = "Сообщения о добавлении, изменении и удалении пар. Нужно запустить бота хотя бы один раз.";
+        button.textContent = "Включить";
+      }
+    }
+    async function loadScheduleChangeNotificationStatus() {
+      if (scheduleChangeNotificationsLoading) return;
+      if (!tg || !tg.initData) { paintScheduleChangeNotificationStatus(); return; }
+      scheduleChangeNotificationsLoading = true;
+      const button = document.getElementById("scheduleChangeNotificationToggle");
+      if (button) button.disabled = true;
+      try {
+        const response = await fetch("https://rta-schedule-api.onrender.com/api/schedule-change-notifications/status", {
+          method:"POST", headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({initData:tg.initData}), cache:"no-store"
+        });
+        const result = await response.json().catch(()=>({}));
+        if (!response.ok) throw new Error(result.error || "Не удалось загрузить настройки уведомлений.");
+        scheduleChangeNotificationsEnabled = Boolean(result.enabled);
+        scheduleChangeNotificationsGroup = result.group_code || null;
+        paintScheduleChangeNotificationStatus();
+      } catch(error) {
+        paintScheduleChangeNotificationStatus(error.message || "Не удалось загрузить настройки уведомлений.");
+      } finally {
+        scheduleChangeNotificationsLoading = false;
+        if (button) button.disabled = false;
+      }
+    }
+    async function toggleScheduleChangeNotifications() {
+      if (!tg || !tg.initData) {
+        alert("Открой расписание через Telegram, чтобы включить уведомления.");
+        return;
+      }
+      const shouldEnable = !scheduleChangeNotificationsEnabled || scheduleChangeNotificationsGroup !== currentGroup;
+      const button = document.getElementById("scheduleChangeNotificationToggle");
+      if (button) { button.disabled = true; button.textContent = "Сохраняем…"; }
+      try {
+        const response = await fetch("https://rta-schedule-api.onrender.com/api/schedule-change-notifications", {
+          method:"POST", headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({initData:tg.initData,enabled:shouldEnable,group_code:currentGroup}),
+          cache:"no-store"
+        });
+        const result = await response.json().catch(()=>({}));
+        if (!response.ok) throw new Error(result.error || "Не удалось сохранить настройки уведомлений.");
+        scheduleChangeNotificationsEnabled = Boolean(result.enabled);
+        scheduleChangeNotificationsGroup = result.group_code || null;
+        paintScheduleChangeNotificationStatus();
+      } catch(error) {
+        paintScheduleChangeNotificationStatus(error.message || "Не удалось сохранить настройки уведомлений.");
+      } finally {
+        if (button) button.disabled = false;
+      }
+    }
+    document.getElementById("scheduleChangeNotificationToggle").addEventListener("click", toggleScheduleChangeNotifications);
+
     function showTab(tab) {
       selectedTab=tab;
       const profile=tab==="profile";
@@ -1656,6 +1731,7 @@
       if(ownerLabel) ownerLabel.classList.toggle("visible",tab==="schedule" && ownerAuthorized);
       if(week) renderWeekOverview();
       if(profile) void loadReminderStatus();
+      if(profile) void loadScheduleChangeNotificationStatus();
     }
     document.getElementById("profileBtn").onclick = () => showTab("profile");
     document.getElementById("profileChangeFaculty").onclick = () => openGroupModal("faculty");
@@ -2596,7 +2672,7 @@
     const entry={schedule_date:date,subject:$("repSubject").value.trim(),starts_at:$("repStart").value,ends_at:$("repEnd").value,teacher:$("repTeacher").value.trim(),room:$("repRoom").value.trim(),lesson_type:$("repType").value.trim()||"Занятие",notes:$("repNotes").value.trim()};
     if(!entry.subject||!entry.starts_at||!entry.ends_at||entry.starts_at>=entry.ends_at){$("repStatus").textContent="Проверь предмет и время пары.";return;}
     $("repStatus").textContent="Сохраняем…";
-    try{const gid=await groupId();await request("/api/representative/change",{method:"POST",body:JSON.stringify({group_id:gid,entry_id:editingId,action:"save_override",scope:editScope,entry})});$("repEditForm").style.display="none";editingId=null;await loadEntries();keepRepresentativeEditorVisible();$("repStatus").textContent=editScope==="all_weeks"?"Сохранено. Изменение применяется на все недели.":"Сохранено. Изменение применяется только на выбранную дату.";}
+    try{const gid=await groupId();await request("/api/representative/change",{method:"POST",body:JSON.stringify({group_id:gid,entry_id:editingId,action:"save_override",scope:editScope,entry,initData:tg&&tg.initData?tg.initData:""})});$("repEditForm").style.display="none";editingId=null;await loadEntries();keepRepresentativeEditorVisible();$("repStatus").textContent=editScope==="all_weeks"?"Сохранено. Изменение применяется на все недели.":"Сохранено. Изменение применяется только на выбранную дату.";}
     catch(err){$("repStatus").textContent=err.message||"Не удалось сохранить.";}
   }
   async function removeEntry(x){
@@ -2605,7 +2681,7 @@
     if(!confirm("Убрать «"+x.subject+"» "+target+"?"))return;
     try{
       const gid=await groupId();
-      await request("/api/representative/change",{method:"POST",body:JSON.stringify({group_id:gid,entry_id:x.id,action:"delete_for_date",scope:editScope,entry:{schedule_date:selectedDate()}})});
+      await request("/api/representative/change",{method:"POST",body:JSON.stringify({group_id:gid,entry_id:x.id,action:"delete_for_date",scope:editScope,entry:{schedule_date:selectedDate(),subject:x.subject,starts_at:x.starts_at,ends_at:x.ends_at},initData:tg&&tg.initData?tg.initData:""})});
       await loadEntries();
       keepRepresentativeEditorVisible();
       $("repStatus").textContent=allWeeks?"Повторяющаяся пара удалена из всех недель.":"Пара убрана только на выбранную дату.";
@@ -2613,7 +2689,7 @@
   }
   async function restoreHistory(historyId){
     if(!confirm("Отменить это изменение? Расписание будет восстановлено до предыдущего состояния."))return;
-    try{const gid=await groupId();await request("/api/representative/restore",{method:"POST",body:JSON.stringify({group_id:gid,history_id:historyId})});$("repStatus").textContent="Изменение отменено.";await loadEntries();keepRepresentativeEditorVisible();}
+    try{const gid=await groupId();await request("/api/representative/restore",{method:"POST",body:JSON.stringify({group_id:gid,history_id:historyId,initData:tg&&tg.initData?tg.initData:""})});$("repStatus").textContent="Изменение отменено.";await loadEntries();keepRepresentativeEditorVisible();}
     catch(e){$("repStatus").textContent=e.message||"Не удалось отменить изменение.";}
   }
   async function loadHistory(){
