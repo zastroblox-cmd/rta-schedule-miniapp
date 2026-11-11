@@ -622,6 +622,59 @@ async function telegramApi(method, payload) {
   return result;
 }
 
+
+// Sends change notifications only to students who explicitly enabled them.
+// Telegram can message a user only after they have opened the bot at least once.
+async function notifyGroupScheduleChange({ groupId, event, scope, dateString, subject, excludeTelegramUserId }) {
+  if (!supabaseRpc || !TELEGRAM_BOT_TOKEN) return { sent: 0, failed: 0 };
+  const [groupResult, subscriptionsResult] = await Promise.all([
+    supabaseRpc.from("student_groups").select("group_code").eq("id", groupId).maybeSingle(),
+    supabaseRpc.from("schedule_change_subscriptions").select("telegram_user_id")
+      .eq("group_id", groupId).eq("enabled", true).limit(500)
+  ]);
+  if (groupResult.error || subscriptionsResult.error || !groupResult.data) {
+    console.error("Schedule change notification lookup failed:", groupResult.error?.message || subscriptionsResult.error?.message || "Group not found");
+    return { sent: 0, failed: 0 };
+  }
+  const recipients = (subscriptionsResult.data || [])
+    .map(row => String(row.telegram_user_id))
+    .filter(id => id !== String(excludeTelegramUserId || ""));
+  if (!recipients.length) return { sent: 0, failed: 0 };
+  const eventText = event === "delete" ? "Староста убрал пару из расписания."
+    : event === "restore" ? "Староста отменил предыдущее изменение расписания."
+    : event === "add" ? "Староста добавил пару в расписание."
+    : "Староста изменил расписание.";
+  const scopeText = scope === "all_weeks" ? "Действует на все недели."
+    : dateString ? "Дата: " + dateString : "";
+  const message = [
+    "🔔 Обновление расписания",
+    "Группа: " + groupResult.data.group_code,
+    eventText,
+    subject ? "Пара: " + String(subject).slice(0, 160) : "",
+    scopeText,
+    "",
+    "Открой «РТА – Расписание», чтобы посмотреть изменения."
+  ].filter(Boolean).join("\n");
+  let sent = 0;
+  let failed = 0;
+  await Promise.allSettled(recipients.map(async telegramUserId => {
+    try {
+      await telegramApi("sendMessage", { chat_id: telegramUserId, text: message, disable_web_page_preview: true });
+      sent++;
+    } catch (error) {
+      failed++;
+      const detail = String(error.message || "");
+      if (/bot was blocked|chat not found|user is deactivated|can't initiate conversation/i.test(detail)) {
+        const { error: disableError } = await supabaseRpc.from("schedule_change_subscriptions")
+          .update({ enabled: false, updated_at: new Date().toISOString() }).eq("telegram_user_id", telegramUserId);
+        if (disableError) console.error("Could not disable unreachable schedule notification recipient:", disableError.message);
+      }
+      console.error("Schedule change notification delivery failed for a subscriber:", detail);
+    }
+  }));
+  return { sent, failed };
+}
+
 app.post("/api/support", async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
   const user = verifyTelegramInitData(req.body && req.body.initData, false);
@@ -1076,6 +1129,15 @@ app.post("/api/representative/change", async (req, res) => {
     }
     return res.status(400).json({ error: "Не удалось сохранить изменение. Проверь поля и попробуй ещё раз." });
   }
+  const actorUser = verifyTelegramInitData(body.initData, false);
+  const event = requestedAction === "delete_for_date" ? "delete"
+    : requestedAction === "save_override" && !body.entry_id ? "add" : "update";
+  void notifyGroupScheduleChange({
+    groupId, event, scope: recurringScope ? "all_weeks" : "date",
+    dateString: String(body.entry.schedule_date || ""),
+    subject: String(body.entry.subject || ""),
+    excludeTelegramUserId: actorUser && actorUser.id
+  });
   return res.json({ ok: true, result: data });
 });
 
@@ -1114,7 +1176,57 @@ app.post("/api/representative/restore", async (req, res) => {
     console.error("Representative restore failed:", error.message);
     return res.status(400).json({ error: "Не удалось отменить изменение. Возможно, запись уже изменена." });
   }
+  const actorUser = verifyTelegramInitData(body.initData, false);
+  void notifyGroupScheduleChange({ groupId, event: "restore", scope: "date", excludeTelegramUserId: actorUser && actorUser.id });
   return res.json({ ok: true, result: data });
+});
+
+
+app.post("/api/schedule-change-notifications/status", async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  const user = verifyTelegramInitData(req.body && req.body.initData, false);
+  if (!user) return res.status(403).json({ error: "Открой приложение через Telegram, чтобы настроить уведомления." });
+  if (!supabaseRpc) return res.status(503).json({ error: "Уведомления временно недоступны." });
+  const { data, error } = await supabaseRpc.from("schedule_change_subscriptions")
+    .select("enabled,student_groups(group_code)")
+    .eq("telegram_user_id", user.id).maybeSingle();
+  if (error) {
+    console.error("Schedule change notification status failed:", error.message);
+    return res.status(503).json({ error: "Не удалось загрузить настройки уведомлений." });
+  }
+  return res.json({ enabled: Boolean(data && data.enabled), group_code: data && data.student_groups ? data.student_groups.group_code : null });
+});
+
+app.post("/api/schedule-change-notifications", async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  const user = verifyTelegramInitData(req.body && req.body.initData, false);
+  if (!user) return res.status(403).json({ error: "Открой приложение через Telegram, чтобы настроить уведомления." });
+  if (!supabaseRpc || !TELEGRAM_BOT_TOKEN) return res.status(503).json({ error: "Уведомления временно недоступны." });
+  const body = req.body || {};
+  if (typeof body.enabled !== "boolean") return res.status(400).json({ error: "Не указано состояние уведомлений." });
+  if (!body.enabled) {
+    const { error } = await supabaseRpc.from("schedule_change_subscriptions")
+      .update({ enabled: false, updated_at: new Date().toISOString() }).eq("telegram_user_id", user.id);
+    if (error) {
+      console.error("Schedule change notification opt-out failed:", error.message);
+      return res.status(503).json({ error: "Не удалось отключить уведомления." });
+    }
+    return res.json({ ok: true, enabled: false, group_code: null });
+  }
+  const groupCode = String(body.group_code || "").trim();
+  if (!groupCode || groupCode.length > 80) return res.status(400).json({ error: "Выбери учебную группу." });
+  const { data: group, error: groupError } = await supabaseRpc.from("student_groups")
+    .select("id,group_code").eq("group_code", groupCode).maybeSingle();
+  if (groupError) return res.status(503).json({ error: "Не удалось проверить группу." });
+  if (!group) return res.status(404).json({ error: "Группа не найдена в базе расписания." });
+  const { error } = await supabaseRpc.from("schedule_change_subscriptions").upsert({
+    telegram_user_id: user.id, group_id: group.id, enabled: true, updated_at: new Date().toISOString()
+  }, { onConflict: "telegram_user_id" });
+  if (error) {
+    console.error("Schedule change notification opt-in failed:", error.message);
+    return res.status(503).json({ error: "Не удалось сохранить настройки уведомлений." });
+  }
+  return res.json({ ok: true, enabled: true, group_code: group.group_code });
 });
 
 
