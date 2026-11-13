@@ -5,6 +5,7 @@ const scryptAsync = promisify(crypto.scrypt);
 const { createClient } = require("@supabase/supabase-js");
 const { getWeekType, validDateString } = require("./lib/schedule-utils");
 const { dispatchReminders } = require("./lib/reminder-dispatch");
+const { hasScheduleData } = require("./lib/reminders");
 const REMINDER_CRON_SECRET = String(process.env.REMINDER_CRON_SECRET || "");
 const REMINDER_SCHEDULER_ENABLED = process.env.REMINDER_SCHEDULER_ENABLED === "true";
 
@@ -1278,8 +1279,8 @@ app.post("/api/reminders", async (req, res) => {
   const { count, error: countError } = await supabaseRpc.from("schedule_entries")
     .select("id", { count: "exact", head: true }).eq("group_id", group.id);
   if (countError) return res.status(503).json({ error: "Не удалось проверить полноту расписания." });
-  if ((count || 0) < 25) {
-    return res.status(409).json({ error: "Напоминания для этой группы пока не включены: в базе пока недостаточно записей расписания для надёжных напоминаний." });
+  if (!hasScheduleData(count || 0)) {
+    return res.status(409).json({ error: "Напоминания для этой группы пока не включены: в базе нет записей расписания." });
   }
 
   const { error } = await supabaseRpc.from("reminder_subscriptions").upsert({
