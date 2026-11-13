@@ -681,38 +681,38 @@
         </div>
         </section>
       <section class="owner-page" id="owner-page-users"><div class="owner-feature-intro"><span class="owner-feature-kicker">РТА · ЦЕНТР УПРАВЛЕНИЯ</span><h2>Пользователи</h2><p>Управление проектом в одном месте</p></div>
-        id="ownerUsersCard"><div class="owner-feature-heading"><span class="owner-feature-icon">♙</span><div><h3>Пользователи</h3></div></div><p class="owner-muted">Поиск по Telegram ID, дата первого и последнего посещения, статус подписки. Загружаются последние 500 аккаунтов; персональные данные не раскрываются.</p>
+        <div class="owner-card" id="ownerUsersCard"><div class="owner-feature-heading"><span class="owner-feature-icon">♙</span><div><h3>Пользователи</h3></div></div><p class="owner-muted">Поиск по Telegram ID, дата первого и последнего посещения, статус подписки. Загружаются последние 500 аккаунтов; персональные данные не раскрываются.</p>
           <div style="display:flex;gap:8px;margin-top:10px"><input id="ownerUserSearch" class="owner-access-input" inputmode="numeric" placeholder="Поиск по Telegram ID" style="min-width:0;flex:1"><button class="owner-action" id="ownerLoadUsers">Загрузить</button></div>
           <div class="owner-result" id="ownerUsersStatus" aria-live="polite">Нажми «Загрузить», чтобы получить список.</div><div id="ownerUsersList"></div>
-        </di
+        </div>
       </section>
       <section class="owner-page" id="owner-page-subscriptions"><div class="owner-feature-intro"><span class="owner-feature-kicker">РТА · ЦЕНТР УПРАВЛЕНИЯ</span><h2>Подписки и доступ</h2><p>Управление проектом в одном месте</p></div>
-        id="ownerSubscriptionsCard"><div class="owner-feature-heading"><span class="owner-feature-icon">◈</span><div><h3>Подписки и доступ</h3></div></div><p class="owner-muted">Ручная выдача доступа для тестов и поддержки. Это не подтверждает факт оплаты. Даты окончания можно оставить пустыми для бессрочного доступа.</p>
+        <div class="owner-card" id="ownerSubscriptionsCard"><div class="owner-feature-heading"><span class="owner-feature-icon">◈</span><div><h3>Подписки и доступ</h3></div></div><p class="owner-muted">Ручная выдача доступа для тестов и поддержки. Это не подтверждает факт оплаты. Даты окончания можно оставить пустыми для бессрочного доступа.</p>
           <label for="ownerSubUserId">Telegram ID</label><input id="ownerSubUserId" class="owner-access-input" inputmode="numeric" placeholder="Выбери пользователя выше или введи ID">
           <label for="ownerSubPlan">Тариф</label><select id="ownerSubPlan" class="owner-access-input"><option value="month_50">1 месяц — 50 ₽</option><option value="half_year_300">6 месяцев — 300 ₽</option><option value="year_600">12 месяцев — 600 ₽</option><option value="manual">Ручной доступ</option></select>
           <label for="ownerSubStatus">Статус</label><select id="ownerSubStatus" class="owner-access-input"><option value="active">Активна</option><option value="expired">Истекла</option><option value="cancelled">Отменена</option></select>
           <label for="ownerSubExpires">Действует до (необязательно)</label><input id="ownerSubExpires" class="owner-access-input" type="date">
           <label for="ownerSubNote">Заметка</label><input id="ownerSubNote" class="owner-access-input" maxlength="500" placeholder="Например: тестовый доступ">
           <button class="owner-action" id="ownerSaveSubscription" style="width:100%;margin-top:10px">Сохранить подписку</button><div class="owner-result" id="ownerSubscriptionStatus" aria-live="polite">Изменения применяются только после сохранения.</div>
-        </di
+        </div>
       </section>
       <section class="owner-page" id="owner-page-broadcast"><div class="owner-feature-intro"><span class="owner-feature-kicker">РТА · ЦЕНТР УПРАВЛЕНИЯ</span><h2>Рассылка сообщений</h2><p>Управление проектом в одном месте</p></div>
-        id="ownerBroadcastCard"><div class="owner-feature-heading"><span class="owner-feature-icon">➤</span><div><h3>Рассылка сообщений</h3></div></div><p class="owner-muted">Отправка через Telegram-бота. Перед отправкой будет подтверждение. Ограничение текущей версии — до 500 последних зарегистрированных аккаунтов.</p>
+        <div class="owner-card" id="ownerBroadcastCard"><div class="owner-feature-heading"><span class="owner-feature-icon">➤</span><div><h3>Рассылка сообщений</h3></div></div><p class="owner-muted">Отправка через Telegram-бота. Перед отправкой будет подтверждение. Ограничение текущей версии — до 500 последних зарегистрированных аккаунтов.</p>
           <label for="ownerBroadcastAudience">Кому отправить</label><select id="ownerBroadcastAudience" class="owner-access-input"><option value="all">Всем зарегистрированным</option><option value="active_30d">Активным за последние 30 дней</option></select>
           <label for="ownerBroadcastMessage">Текст сообщения</label><textarea id="ownerBroadcastMessage" class="owner-access-input" rows="4" maxlength="3500" placeholder="Текст сообщения пользователям"></textarea>
           <button class="owner-action" id="ownerSendBroadcast" style="width:100%;margin-top:10px">Отправить рассылку</button><div class="owner-result" id="ownerBroadcastStatus" aria-live="polite">Перед отправкой проверь аудиторию и текст.</div>
-        </di
+        </div>
       </section>
       <section class="owner-page" id="owner-page-features"><div class="owner-feature-intro"><span class="owner-feature-kicker">РТА · ЦЕНТР УПРАВЛЕНИЯ</span><h2>Функции и обслуживание</h2><p>Управление проектом в одном месте</p></div>
-        id="ownerFeaturesCard"><div class="owner-feature-heading"><span class="owner-feature-icon">⚙</span><div><h3>Функции и режим обслуживания</h3></div></div><p class="owner-muted">Переключатели сохраняются на сервере. Режим обслуживания пока хранится как настройка; чтобы он реально закрывал Mini App для пользователей, клиентский интерфейс должен отдельно начать учитывать этот флаг.</p>
+        <div class="owner-card" id="ownerFeaturesCard"><div class="owner-feature-heading"><span class="owner-feature-icon">⚙</span><div><h3>Функции и режим обслуживания</h3></div></div><p class="owner-muted">Переключатели сохраняются на сервере. Режим обслуживания пока хранится как настройка; чтобы он реально закрывал Mini App для пользователей, клиентский интерфейс должен отдельно начать учитывать этот флаг.</p>
           <div id="ownerFeatureFlags"><button class="owner-action" id="ownerLoadFeatures" style="width:100%">Загрузить переключатели</button></div><div class="owner-result" id="ownerFeaturesStatus" aria-live="polite">Функции не загружены.</div>
-        </di
+        </div>
       </section>
       <section class="owner-page" id="owner-page-finance"><div class="owner-feature-intro"><span class="owner-feature-kicker">РТА · ЦЕНТР УПРАВЛЕНИЯ</span><h2>Финансы</h2><p>Управление проектом в одном месте</p></div>
-        id="ownerFinanceCard"><div class="owner-feature-heading"><span class="owner-feature-icon">₽</span><div><h3>Финансы и подписки</h3></div></div><p class="owner-muted">Показываем только подтверждённые записи финансового журнала. Автоматическая интеграция с платёжной системой ещё не подключена, поэтому сумма может быть нулевой даже при ручных выдачах доступа.</p>
+        <div class="owner-card" id="ownerFinanceCard"><div class="owner-feature-heading"><span class="owner-feature-icon">₽</span><div><h3>Финансы и подписки</h3></div></div><p class="owner-muted">Показываем только подтверждённые записи финансового журнала. Автоматическая интеграция с платёжной системой ещё не подключена, поэтому сумма может быть нулевой даже при ручных выдачах доступа.</p>
           <div class="owner-admin-metrics"><div><strong id="ownerFinanceRevenue">—</strong><small>Подтверждённая выручка, ₽</small></div><div><strong id="ownerFinanceSubs">—</strong><small>Активные подписки</small></div><div><strong id="ownerFinancePayments">—</strong><small>Подтверждённые платежи</small></div></div>
           <button class="owner-action" id="ownerLoadFinance" style="width:100%;margin-top:10px">Обновить финансы</button><div class="owner-result" id="ownerFinanceStatus" aria-live="polite">Данные ещё не загружены.</div><div id="ownerFinanceLedger"></div>
-        </di
+        </div>
       </section>
       <section class="owner-page" id="owner-page-map">
         <div class="owner-card"><h3>Activity Universe</h3><p class="owner-muted">Карта разделов проекта и быстрые переходы к диагностике, статистике и общему журналу изменений.</p><div class="owner-map"><button class="owner-node" data-owner-node="app">✦ Приложение<small>Главная оболочка</small></button><button class="owner-node" data-owner-node="courses">▦ Курсы<small>Источники расписаний</small></button><button class="owner-node" data-owner-node="groups">♧ Группы<small>Выбранная группа</small></button><button class="owner-node" data-owner-node="updates">↻ Обновления<small>История версий</small></button><button class="owner-node" data-owner-node="checks">⌁ Диагностика<small>Результаты сканера</small></button><button class="owner-node" data-owner-node="effects">✧ Эффекты<small>Твои настройки</small></button></div><div class="owner-result" id="ownerMapResult">Нажми на узел карты.</div></div>
