@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { moscowMinuteWindow, isEntryActiveOnDate, lessonsForCandidate, sameStartMinute } = require("../lib/reminders");
+const { moscowMinuteWindow, isEntryActiveOnDate, lessonsForCandidate, sameStartMinute, hasScheduleData } = require("../lib/reminders");
 
 test("builds the reminder window in Moscow time across midnight", () => {
   const now = new Date("2026-11-07T20:30:00.000Z"); // 23:30 in Moscow
@@ -41,4 +41,15 @@ test("a recurring course hour reserves its slot unless a dated override replaces
     {id:2,entry_kind:"recurring",weekday:1,starts_at:"10:10:00",ends_at:"11:40:00",subject:"Обычная пара"}
   ];
   assert.deepEqual(lessonsForCandidate(entries, candidate).map(entry => entry.subject), ["Курсовой час"]);
+});
+
+
+test("reminders accept sparse but existing schedules and reject only empty or invalid counts", () => {
+  assert.equal(hasScheduleData(0), false);
+  assert.equal(hasScheduleData(1), true);
+  assert.equal(hasScheduleData(6), true);
+  assert.equal(hasScheduleData(24), true);
+  assert.equal(hasScheduleData(25), true);
+  assert.equal(hasScheduleData(null), false);
+  assert.equal(hasScheduleData(-1), false);
 });
