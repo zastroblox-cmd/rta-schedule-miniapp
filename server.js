@@ -1332,6 +1332,150 @@ async function runReminderDispatch() {
   }
 }
 
+
+// Owner control center: every endpoint validates Telegram initData on the server.
+function ownerControlActor(req) {
+  const owner = verifyTelegramInitData(req.body && req.body.initData);
+  return owner ? String(owner.id) : null;
+}
+async function loadTrackedUsers(limit = 500) {
+  if (!supabaseRpc || !ANALYTICS_SECRET) throw new Error("Analytics is not configured");
+  const { data, error } = await supabaseRpc.rpc("get_app_user_list", {
+    p_secret: ANALYTICS_SECRET, p_limit: Math.min(500, Math.max(1, Number(limit) || 200)), p_offset: 0
+  });
+  if (error) throw error;
+  return Array.isArray(data) ? data : [];
+}
+app.post("/api/owner/users", async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  if (!ownerControlActor(req)) return res.status(403).json({ authorized: false, error: "Owner access denied" });
+  try {
+    const [users, subsResult] = await Promise.all([
+      loadTrackedUsers(500),
+      supabaseRpc.from("app_subscriptions").select("telegram_user_id,plan_code,status,starts_at,expires_at,note,updated_at").limit(500)
+    ]);
+    if (subsResult.error) throw subsResult.error;
+    const subscriptions = new Map((subsResult.data || []).map(s => [s.telegram_user_id, s]));
+    const q = String(req.body.query || "").trim().replace(/[^0-9]/g, "");
+    const filtered = users.filter(u => !q || String(u.telegram_user_id).includes(q)).map(u => ({
+      ...u, subscription: subscriptions.get(String(u.telegram_user_id)) || null
+    }));
+    return res.json({ authorized: true, total: users.length, truncated: users.length >= 500, users: filtered.slice(0, 200) });
+  } catch (error) {
+    console.error("Owner users load failed:", error.message);
+    return res.status(503).json({ error: "Не удалось загрузить пользователей" });
+  }
+});
+app.post("/api/owner/subscriptions", async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  const actor = ownerControlActor(req);
+  if (!actor) return res.status(403).json({ authorized: false, error: "Owner access denied" });
+  const userId = String(req.body.telegram_user_id || "");
+  const plan = String(req.body.plan_code || "");
+  const status = String(req.body.status || "active");
+  const allowedPlans = ["month_50", "half_year_300", "year_600", "manual"];
+  if (!/^[0-9]{1,24}$/.test(userId) || !allowedPlans.includes(plan) || !["active", "expired", "cancelled"].includes(status)) {
+    return res.status(400).json({ error: "Проверь Telegram ID, тариф и статус" });
+  }
+  const startsAt = req.body.starts_at ? new Date(req.body.starts_at) : new Date();
+  const expiresAt = req.body.expires_at ? new Date(req.body.expires_at) : null;
+  if (!Number.isFinite(startsAt.getTime()) || (expiresAt && !Number.isFinite(expiresAt.getTime()))) {
+    return res.status(400).json({ error: "Некорректная дата подписки" });
+  }
+  const { data, error } = await supabaseRpc.from("app_subscriptions").upsert({
+    telegram_user_id: userId, plan_code: plan, status, starts_at: startsAt.toISOString(),
+    expires_at: expiresAt ? expiresAt.toISOString() : null, note: String(req.body.note || "").slice(0, 500) || null,
+    updated_at: new Date().toISOString(), updated_by: actor
+  }, { onConflict: "telegram_user_id" }).select().single();
+  if (error) {
+    console.error("Owner subscription update failed:", error.message);
+    return res.status(503).json({ error: "Не удалось сохранить подписку" });
+  }
+  return res.json({ ok: true, subscription: data });
+});
+app.post("/api/owner/features", async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  const actor = ownerControlActor(req);
+  if (!actor) return res.status(403).json({ authorized: false, error: "Owner access denied" });
+  if (!supabaseRpc) return res.status(503).json({ error: "Database is not configured" });
+  if (req.body.action === "list") {
+    const { data, error } = await supabaseRpc.from("app_feature_flags").select("flag_key,enabled,message,updated_at").order("flag_key");
+    if (error) return res.status(503).json({ error: "Не удалось загрузить настройки функций" });
+    return res.json({ ok: true, flags: data || [] });
+  }
+  const key = String(req.body.flag_key || "");
+  if (!/^[a-z][a-z0-9_]{1,63}$/.test(key) || typeof req.body.enabled !== "boolean") {
+    return res.status(400).json({ error: "Некорректный ключ или состояние функции" });
+  }
+  const { data, error } = await supabaseRpc.from("app_feature_flags").upsert({
+    flag_key: key, enabled: req.body.enabled, message: String(req.body.message || "").slice(0, 500) || null,
+    updated_at: new Date().toISOString(), updated_by: actor
+  }, { onConflict: "flag_key" }).select().single();
+  if (error) return res.status(503).json({ error: "Не удалось сохранить настройку" });
+  return res.json({ ok: true, flag: data });
+});
+app.post("/api/owner/broadcast", async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  const actor = ownerControlActor(req);
+  if (!actor) return res.status(403).json({ authorized: false, error: "Owner access denied" });
+  const message = String(req.body.message || "").trim();
+  const audience = String(req.body.audience || "all");
+  if (!message || message.length > 3500 || !["all", "active_30d"].includes(audience)) {
+    return res.status(400).json({ error: "Сообщение должно содержать 1–3500 символов; выбери допустимую аудиторию" });
+  }
+  if (!TELEGRAM_BOT_TOKEN) return res.status(503).json({ error: "Telegram-бот не настроен" });
+  try {
+    const users = await loadTrackedUsers(500);
+    const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    const recipients = users.filter(u => /^[0-9]{1,24}$/.test(String(u.telegram_user_id)) &&
+      (audience === "all" || new Date(u.last_seen_at).getTime() >= cutoff));
+    let sent = 0, failed = 0;
+    for (const user of recipients) {
+      try {
+        const response = await fetch("https://api.telegram.org/bot" + TELEGRAM_BOT_TOKEN + "/sendMessage", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ chat_id: user.telegram_user_id, text: message, disable_web_page_preview: true })
+        });
+        const result = await response.json();
+        if (response.ok && result.ok) sent++; else failed++;
+      } catch (_) { failed++; }
+      if (sent + failed < recipients.length) await new Promise(resolve => setTimeout(resolve, 45));
+    }
+    const status = failed === 0 ? "sent" : sent === 0 ? "failed" : "partial";
+    const { error: logError } = await supabaseRpc.from("app_broadcast_log").insert({
+      message, audience, recipient_count: recipients.length, sent_count: sent, failed_count: failed, status, created_by: actor
+    });
+    if (logError) console.error("Owner broadcast log failed:", logError.message);
+    return res.json({ ok: true, audience, recipient_count: recipients.length, sent_count: sent, failed_count: failed, status, truncated: users.length >= 500 });
+  } catch (error) {
+    console.error("Owner broadcast failed:", error.message);
+    return res.status(503).json({ error: "Не удалось выполнить рассылку" });
+  }
+});
+app.post("/api/owner/finance", async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  if (!ownerControlActor(req)) return res.status(403).json({ authorized: false, error: "Owner access denied" });
+  try {
+    const [ledger, subs, broadcasts] = await Promise.all([
+      supabaseRpc.from("app_payment_ledger").select("id,telegram_user_id,amount_rub,plan_code,status,provider,paid_at,created_at,note").order("created_at", { ascending: false }).limit(100),
+      supabaseRpc.from("app_subscriptions").select("telegram_user_id,status,expires_at").limit(1000),
+      supabaseRpc.from("app_broadcast_log").select("id,recipient_count,sent_count,failed_count,status,created_at").order("created_at", { ascending: false }).limit(10)
+    ]);
+    if (ledger.error || subs.error || broadcasts.error) throw ledger.error || subs.error || broadcasts.error;
+    const rows = ledger.data || [];
+    const confirmed = rows.filter(x => x.status === "confirmed");
+    return res.json({
+      ok: true, real_confirmed_revenue_rub: confirmed.reduce((sum, x) => sum + Number(x.amount_rub || 0), 0),
+      confirmed_payments: confirmed.length, active_subscriptions: (subs.data || []).filter(x => x.status === "active" && (!x.expires_at || new Date(x.expires_at).getTime() > Date.now())).length,
+      ledger: rows, broadcasts: broadcasts.data || [], payments_integrated: false
+    });
+  } catch (error) {
+    console.error("Owner finance load failed:", error.message);
+    return res.status(503).json({ error: "Не удалось загрузить финансовые показатели" });
+  }
+});
+
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`RTA schedule API listening on port ${PORT}`);
   console.log("Schedule cancellation alerts:", TELEGRAM_BOT_TOKEN && OWNER_TELEGRAM_ID && supabaseRpc ? "configured" : "disabled: missing required configuration");
