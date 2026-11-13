@@ -333,9 +333,23 @@
     .owner-head-copy { flex:1; } .owner-head h2 { margin:0 0 4px; font-size:20px; letter-spacing:-.04em; } .owner-sub { font-size:11px; color:var(--muted); }
     .owner-close { border:1px solid #ffffff20; background:#ffffff08; color:#dce6f7; border-radius:11px; padding:8px 11px; }
     .owner-warning { padding:10px 11px; border-radius:12px; background:#ffb86b0c; border:1px solid #ffb86b2a; color:#ffd1a0; font-size:11px; line-height:1.5; margin-bottom:12px; }
-    .owner-tabs { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; margin-bottom:12px; }
-    .owner-tab { border:1px solid #ffffff12; border-radius:11px; background:#ffffff05; color:#aebbd0; padding:10px 5px; font-size:11px; }
-    .owner-tab.active { background:#203657; border-color:#4f8cff65; color:#fff; }
+    .owner-tabs { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin:0 0 16px; }
+    .owner-tab { min-height:66px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; border:1px solid rgba(139,164,204,.16); border-radius:15px; background:linear-gradient(145deg,rgba(255,255,255,.055),rgba(255,255,255,.018)); color:#aebbd0; padding:10px 5px; font-size:11px; font-weight:700; letter-spacing:.01em; box-shadow:inset 0 1px 0 rgba(255,255,255,.045); transition:transform .18s,border-color .18s,background .18s,box-shadow .18s; }
+    .owner-tab:active { transform:scale(.97); }
+    .owner-tab-icon { display:grid; place-items:center; width:27px; height:27px; border-radius:9px; background:rgba(105,143,202,.12); color:#a9caff; font-size:17px; line-height:1; }
+    .owner-tab.active { background:linear-gradient(145deg,rgba(56,115,210,.3),rgba(32,54,87,.76)); border-color:#65a0ff85; color:#fff; box-shadow:0 7px 22px rgba(26,91,194,.16),inset 0 1px 0 rgba(255,255,255,.1); }
+    .owner-tab.active .owner-tab-icon { color:#fff; background:linear-gradient(145deg,#4f8cff,#2463e8); box-shadow:0 0 16px #4f8cff45; }
+    .owner-feature-intro { padding:5px 2px 13px; }
+    .owner-feature-kicker { font-size:9px; letter-spacing:.16em; font-weight:800; color:#76a9ff; }
+    .owner-feature-intro h2 { font-size:23px; letter-spacing:-.045em; margin:7px 0 4px; color:#f5f8ff; }
+    .owner-feature-intro p { font-size:12px; color:var(--muted); margin:0; }
+    .owner-feature-heading { display:flex; align-items:center; gap:11px; margin-bottom:12px; }
+    .owner-feature-heading h3 { margin:0; font-size:15px; }
+    .owner-feature-icon { flex:0 0 40px; width:40px; height:40px; display:grid; place-items:center; border-radius:13px; color:#c4dcff; font-size:20px; background:linear-gradient(145deg,rgba(79,140,255,.22),rgba(79,140,255,.06)); border:1px solid rgba(111,164,255,.22); box-shadow:inset 0 1px 0 rgba(255,255,255,.07); }
+    #owner-page-users .owner-card,#owner-page-subscriptions .owner-card,#owner-page-broadcast .owner-card,#owner-page-features .owner-card,#owner-page-finance .owner-card { padding:17px; border-radius:18px; border-color:rgba(116,153,209,.16); background:linear-gradient(145deg,rgba(28,39,57,.86),rgba(17,24,36,.94)); box-shadow:0 12px 30px rgba(0,0,0,.12),inset 0 1px 0 rgba(255,255,255,.045); }
+    #owner-page-users .owner-action,#owner-page-subscriptions .owner-action,#owner-page-broadcast .owner-action,#owner-page-features .owner-action,#owner-page-finance .owner-action { border-radius:12px; font-weight:700; transition:filter .18s,transform .18s; }
+    #owner-page-users .owner-action:active,#owner-page-subscriptions .owner-action:active,#owner-page-broadcast .owner-action:active,#owner-page-features .owner-action:active,#owner-page-finance .owner-action:active { transform:scale(.985); }
+    @media (max-width:390px) { .owner-tabs { gap:6px; } .owner-tab { min-height:61px; font-size:10px; border-radius:13px; } .owner-tab-icon { width:25px; height:25px; } }
     .owner-page { display:none; } .owner-page.active { display:block; }
     .owner-card { padding:14px; margin-bottom:9px; border:1px solid #ffffff10; border-radius:15px; background:rgba(255,255,255,.035); }
     .owner-card h3 { font-size:14px; margin:0 0 7px; }
@@ -622,7 +636,7 @@
       <header class="owner-head"><div class="owner-head-icon">♛</div><div class="owner-head-copy"><h2>Owner Lounge</h2><div class="owner-sub">Личная панель создателя · локальный режим</div></div><button class="owner-close" id="ownerClose">Закрыть</button></header>
       <div class="owner-warning">Закрытая консоль создателя · доступ подтверждается сервером через Telegram. Оформление и эффекты персональные для этого устройства; проверки не редактируют расписание без отдельной команды.</div>
       <nav class="owner-tabs" aria-label="Разделы панели">
-        <button class="owner-tab active" data-owner-tab="scanner">⌁ Сканер</button><button class="owner-tab" data-owner-tab="studio">◈ Студия</button><button class="owner-tab" data-owner-tab="stats">✧ Статистика</button><button class="owner-tab" data-owner-tab="admin">⚙ Управление</button><button class="owner-tab" data-owner-tab="controls">🛠 Админка</button><button class="owner-tab" data-owner-tab="map">⌘ Карта</button>
+        <button class="owner-tab active" data-owner-tab="scanner">⌁ Сканер</button><button class="owner-tab" data-owner-tab="studio">◈ Студия</button><button class="owner-tab" data-owner-tab="stats">✧ Статистика</button><button class="owner-tab" data-owner-tab="admin">⚙ Управление</button><button class="owner-tab" data-owner-tab="users"><span class="owner-tab-icon">♙</span><span>Пользователи</span></button><button class="owner-tab" data-owner-tab="subscriptions"><span class="owner-tab-icon">◈</span><span>Подписки</span></button><button class="owner-tab" data-owner-tab="broadcast"><span class="owner-tab-icon">➤</span><span>Рассылка</span></button><button class="owner-tab" data-owner-tab="features"><span class="owner-tab-icon">⚙</span><span>Функции</span></button><button class="owner-tab" data-owner-tab="finance"><span class="owner-tab-icon">₽</span><span>Финансы</span></button><button class="owner-tab" data-owner-tab="map">⌘ Карта</button>
       </nav>
       <section class="owner-page active" id="owner-page-scanner">
         <div class="owner-card"><h3>Сканер расписания</h3><p class="owner-muted">Комплексная диагностика: API, доступность базы через сервер, полнота курсов и групп, качество записей и выбранный день. Проверка ничего не меняет в расписании.</p><button class="owner-action" id="ownerRunScan" style="width:100%;margin-top:12px">⌁ Проверить всё</button><button class="owner-action" id="ownerScanPlan" style="width:100%;margin-top:8px" disabled>Подготовить план исправлений</button><div class="owner-result" id="ownerScanResult" aria-live="polite">Проверка ещё не запускалась. Полный проход проверяет доступные API и структуру расписаний. Изменения данных выполняются только отдельно и после подтверждения.</div><div class="owner-result" id="ownerScanPlanResult" aria-live="polite">План исправлений появится после диагностики. Автоматическая запись в базу отключена до появления проверенного серверного механизма с журналом изменений.</div></div>
@@ -666,31 +680,39 @@
           </div>
         </div>
         </section>
-      <section class="owner-page" id="owner-page-controls">
-        <div class="owner-card" id="ownerUsersCard"><h3>Пользователи</h3><p class="owner-muted">Поиск по Telegram ID, дата первого и последнего посещения, статус подписки. Загружаются последние 500 аккаунтов; персональные данные не раскрываются.</p>
+      <section class="owner-page" id="owner-page-users"><div class="owner-feature-intro"><span class="owner-feature-kicker">РТА · ЦЕНТР УПРАВЛЕНИЯ</span><h2>Пользователи</h2><p>Управление проектом в одном месте</p></div>
+        id="ownerUsersCard"><div class="owner-feature-heading"><span class="owner-feature-icon">♙</span><div><h3>Пользователи</h3></div></div><p class="owner-muted">Поиск по Telegram ID, дата первого и последнего посещения, статус подписки. Загружаются последние 500 аккаунтов; персональные данные не раскрываются.</p>
           <div style="display:flex;gap:8px;margin-top:10px"><input id="ownerUserSearch" class="owner-access-input" inputmode="numeric" placeholder="Поиск по Telegram ID" style="min-width:0;flex:1"><button class="owner-action" id="ownerLoadUsers">Загрузить</button></div>
           <div class="owner-result" id="ownerUsersStatus" aria-live="polite">Нажми «Загрузить», чтобы получить список.</div><div id="ownerUsersList"></div>
-        </div>
-        <div class="owner-card" id="ownerSubscriptionsCard"><h3>Подписки и доступ</h3><p class="owner-muted">Ручная выдача доступа для тестов и поддержки. Это не подтверждает факт оплаты. Даты окончания можно оставить пустыми для бессрочного доступа.</p>
+        </di
+      </section>
+      <section class="owner-page" id="owner-page-subscriptions"><div class="owner-feature-intro"><span class="owner-feature-kicker">РТА · ЦЕНТР УПРАВЛЕНИЯ</span><h2>Подписки и доступ</h2><p>Управление проектом в одном месте</p></div>
+        id="ownerSubscriptionsCard"><div class="owner-feature-heading"><span class="owner-feature-icon">◈</span><div><h3>Подписки и доступ</h3></div></div><p class="owner-muted">Ручная выдача доступа для тестов и поддержки. Это не подтверждает факт оплаты. Даты окончания можно оставить пустыми для бессрочного доступа.</p>
           <label for="ownerSubUserId">Telegram ID</label><input id="ownerSubUserId" class="owner-access-input" inputmode="numeric" placeholder="Выбери пользователя выше или введи ID">
           <label for="ownerSubPlan">Тариф</label><select id="ownerSubPlan" class="owner-access-input"><option value="month_50">1 месяц — 50 ₽</option><option value="half_year_300">6 месяцев — 300 ₽</option><option value="year_600">12 месяцев — 600 ₽</option><option value="manual">Ручной доступ</option></select>
           <label for="ownerSubStatus">Статус</label><select id="ownerSubStatus" class="owner-access-input"><option value="active">Активна</option><option value="expired">Истекла</option><option value="cancelled">Отменена</option></select>
           <label for="ownerSubExpires">Действует до (необязательно)</label><input id="ownerSubExpires" class="owner-access-input" type="date">
           <label for="ownerSubNote">Заметка</label><input id="ownerSubNote" class="owner-access-input" maxlength="500" placeholder="Например: тестовый доступ">
           <button class="owner-action" id="ownerSaveSubscription" style="width:100%;margin-top:10px">Сохранить подписку</button><div class="owner-result" id="ownerSubscriptionStatus" aria-live="polite">Изменения применяются только после сохранения.</div>
-        </div>
-        <div class="owner-card" id="ownerBroadcastCard"><h3>Рассылка сообщений</h3><p class="owner-muted">Отправка через Telegram-бота. Перед отправкой будет подтверждение. Ограничение текущей версии — до 500 последних зарегистрированных аккаунтов.</p>
+        </di
+      </section>
+      <section class="owner-page" id="owner-page-broadcast"><div class="owner-feature-intro"><span class="owner-feature-kicker">РТА · ЦЕНТР УПРАВЛЕНИЯ</span><h2>Рассылка сообщений</h2><p>Управление проектом в одном месте</p></div>
+        id="ownerBroadcastCard"><div class="owner-feature-heading"><span class="owner-feature-icon">➤</span><div><h3>Рассылка сообщений</h3></div></div><p class="owner-muted">Отправка через Telegram-бота. Перед отправкой будет подтверждение. Ограничение текущей версии — до 500 последних зарегистрированных аккаунтов.</p>
           <label for="ownerBroadcastAudience">Кому отправить</label><select id="ownerBroadcastAudience" class="owner-access-input"><option value="all">Всем зарегистрированным</option><option value="active_30d">Активным за последние 30 дней</option></select>
           <label for="ownerBroadcastMessage">Текст сообщения</label><textarea id="ownerBroadcastMessage" class="owner-access-input" rows="4" maxlength="3500" placeholder="Текст сообщения пользователям"></textarea>
           <button class="owner-action" id="ownerSendBroadcast" style="width:100%;margin-top:10px">Отправить рассылку</button><div class="owner-result" id="ownerBroadcastStatus" aria-live="polite">Перед отправкой проверь аудиторию и текст.</div>
-        </div>
-        <div class="owner-card" id="ownerFeaturesCard"><h3>Функции и режим обслуживания</h3><p class="owner-muted">Переключатели сохраняются на сервере. Режим обслуживания пока хранится как настройка; чтобы он реально закрывал Mini App для пользователей, клиентский интерфейс должен отдельно начать учитывать этот флаг.</p>
+        </di
+      </section>
+      <section class="owner-page" id="owner-page-features"><div class="owner-feature-intro"><span class="owner-feature-kicker">РТА · ЦЕНТР УПРАВЛЕНИЯ</span><h2>Функции и обслуживание</h2><p>Управление проектом в одном месте</p></div>
+        id="ownerFeaturesCard"><div class="owner-feature-heading"><span class="owner-feature-icon">⚙</span><div><h3>Функции и режим обслуживания</h3></div></div><p class="owner-muted">Переключатели сохраняются на сервере. Режим обслуживания пока хранится как настройка; чтобы он реально закрывал Mini App для пользователей, клиентский интерфейс должен отдельно начать учитывать этот флаг.</p>
           <div id="ownerFeatureFlags"><button class="owner-action" id="ownerLoadFeatures" style="width:100%">Загрузить переключатели</button></div><div class="owner-result" id="ownerFeaturesStatus" aria-live="polite">Функции не загружены.</div>
-        </div>
-        <div class="owner-card" id="ownerFinanceCard"><h3>Финансы и подписки</h3><p class="owner-muted">Показываем только подтверждённые записи финансового журнала. Автоматическая интеграция с платёжной системой ещё не подключена, поэтому сумма может быть нулевой даже при ручных выдачах доступа.</p>
+        </di
+      </section>
+      <section class="owner-page" id="owner-page-finance"><div class="owner-feature-intro"><span class="owner-feature-kicker">РТА · ЦЕНТР УПРАВЛЕНИЯ</span><h2>Финансы</h2><p>Управление проектом в одном месте</p></div>
+        id="ownerFinanceCard"><div class="owner-feature-heading"><span class="owner-feature-icon">₽</span><div><h3>Финансы и подписки</h3></div></div><p class="owner-muted">Показываем только подтверждённые записи финансового журнала. Автоматическая интеграция с платёжной системой ещё не подключена, поэтому сумма может быть нулевой даже при ручных выдачах доступа.</p>
           <div class="owner-admin-metrics"><div><strong id="ownerFinanceRevenue">—</strong><small>Подтверждённая выручка, ₽</small></div><div><strong id="ownerFinanceSubs">—</strong><small>Активные подписки</small></div><div><strong id="ownerFinancePayments">—</strong><small>Подтверждённые платежи</small></div></div>
           <button class="owner-action" id="ownerLoadFinance" style="width:100%;margin-top:10px">Обновить финансы</button><div class="owner-result" id="ownerFinanceStatus" aria-live="polite">Данные ещё не загружены.</div><div id="ownerFinanceLedger"></div>
-        </div>
+        </di
       </section>
       <section class="owner-page" id="owner-page-map">
         <div class="owner-card"><h3>Activity Universe</h3><p class="owner-muted">Карта разделов проекта и быстрые переходы к диагностике, статистике и общему журналу изменений.</p><div class="owner-map"><button class="owner-node" data-owner-node="app">✦ Приложение<small>Главная оболочка</small></button><button class="owner-node" data-owner-node="courses">▦ Курсы<small>Источники расписаний</small></button><button class="owner-node" data-owner-node="groups">♧ Группы<small>Выбранная группа</small></button><button class="owner-node" data-owner-node="updates">↻ Обновления<small>История версий</small></button><button class="owner-node" data-owner-node="checks">⌁ Диагностика<small>Результаты сканера</small></button><button class="owner-node" data-owner-node="effects">✧ Эффекты<small>Твои настройки</small></button></div><div class="owner-result" id="ownerMapResult">Нажми на узел карты.</div></div>
