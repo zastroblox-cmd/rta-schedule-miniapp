@@ -622,7 +622,7 @@
       <header class="owner-head"><div class="owner-head-icon">♛</div><div class="owner-head-copy"><h2>Owner Lounge</h2><div class="owner-sub">Личная панель создателя · локальный режим</div></div><button class="owner-close" id="ownerClose">Закрыть</button></header>
       <div class="owner-warning">Закрытая консоль создателя · доступ подтверждается сервером через Telegram. Оформление и эффекты персональные для этого устройства; проверки не редактируют расписание без отдельной команды.</div>
       <nav class="owner-tabs" aria-label="Разделы панели">
-        <button class="owner-tab active" data-owner-tab="scanner">⌁ Сканер</button><button class="owner-tab" data-owner-tab="studio">◈ Студия</button><button class="owner-tab" data-owner-tab="stats">✧ Статистика</button><button class="owner-tab" data-owner-tab="admin">⚙ Управление</button><button class="owner-tab" data-owner-tab="map">⌘ Карта</button>
+        <button class="owner-tab active" data-owner-tab="scanner">⌁ Сканер</button><button class="owner-tab" data-owner-tab="studio">◈ Студия</button><button class="owner-tab" data-owner-tab="stats">✧ Статистика</button><button class="owner-tab" data-owner-tab="admin">⚙ Управление</button><button class="owner-tab" data-owner-tab="controls">🛠 Админка</button><button class="owner-tab" data-owner-tab="map">⌘ Карта</button>
       </nav>
       <section class="owner-page active" id="owner-page-scanner">
         <div class="owner-card"><h3>Сканер расписания</h3><p class="owner-muted">Комплексная диагностика: API, доступность базы через сервер, полнота курсов и групп, качество записей и выбранный день. Проверка ничего не меняет в расписании.</p><button class="owner-action" id="ownerRunScan" style="width:100%;margin-top:12px">⌁ Проверить всё</button><button class="owner-action" id="ownerScanPlan" style="width:100%;margin-top:8px" disabled>Подготовить план исправлений</button><div class="owner-result" id="ownerScanResult" aria-live="polite">Проверка ещё не запускалась. Полный проход проверяет доступные API и структуру расписаний. Изменения данных выполняются только отдельно и после подтверждения.</div><div class="owner-result" id="ownerScanPlanResult" aria-live="polite">План исправлений появится после диагностики. Автоматическая запись в базу отключена до появления проверенного серверного механизма с журналом изменений.</div></div>
@@ -665,6 +665,8 @@
             <button class="owner-action" id="ownerSaveRepAccess" style="width:100%">Сохранить настройки группы</button>
           </div>
         </div>
+        </section>
+      <section class="owner-page" id="owner-page-controls">
         <div class="owner-card" id="ownerUsersCard"><h3>Пользователи</h3><p class="owner-muted">Поиск по Telegram ID, дата первого и последнего посещения, статус подписки. Загружаются последние 500 аккаунтов; персональные данные не раскрываются.</p>
           <div style="display:flex;gap:8px;margin-top:10px"><input id="ownerUserSearch" class="owner-access-input" inputmode="numeric" placeholder="Поиск по Telegram ID" style="min-width:0;flex:1"><button class="owner-action" id="ownerLoadUsers">Загрузить</button></div>
           <div class="owner-result" id="ownerUsersStatus" aria-live="polite">Нажми «Загрузить», чтобы получить список.</div><div id="ownerUsersList"></div>
