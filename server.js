@@ -132,20 +132,27 @@ app.get("/health", (_req, res) => {
 app.get("/api/status", async (_req, res) => {
   res.setHeader("Cache-Control", "no-store");
   if (!supabaseRpc) {
-    return res.status(503).json({ status: "unavailable", maintenance: false });
+    return res.status(503).json({ status: "unavailable", maintenance: false, features: {} });
   }
   try {
     const { data, error } = await supabaseRpc.from("app_feature_flags")
-      .select("enabled,message").eq("flag_key", "maintenance_mode").maybeSingle();
+      .select("flag_key,enabled,message,updated_at").order("flag_key");
     if (error) throw error;
+    const flags = Object.fromEntries((data || []).map(flag => [flag.flag_key, {
+      enabled: Boolean(flag.enabled),
+      message: flag.message ? String(flag.message).slice(0, 500) : null,
+      updated_at: flag.updated_at || null
+    }]));
+    const maintenance = flags.maintenance_mode || { enabled: false, message: null };
     return res.json({
       status: "ok",
-      maintenance: Boolean(data && data.enabled),
-      message: data && data.message ? String(data.message).slice(0, 500) : "Проводятся технические работы. Попробуй зайти немного позже."
+      maintenance: maintenance.enabled,
+      message: maintenance.message || "Проводятся технические работы. Попробуй зайти немного позже.",
+      features: Object.fromEntries(Object.entries(flags).map(([key, value]) => [key, value.enabled]))
     });
   } catch (error) {
     console.error("Public status check failed:", error.message);
-    return res.status(503).json({ status: "unavailable", maintenance: false });
+    return res.status(503).json({ status: "unavailable", maintenance: false, features: {} });
   }
 });
 
