@@ -2957,7 +2957,18 @@
   fetch(statusUrl, { cache: "no-store" })
     .then(response => response.ok ? response.json() : null)
     .then(status => {
-      if (!status || status.maintenance !== true) return;
+      if (!status) return;
+      const reminderToggle = document.getElementById("reminderToggle");
+      const reminderStatus = document.getElementById("reminderStatus");
+      if (reminderToggle && status.features && status.features.reminders_enabled === false) {
+        reminderToggle.disabled = true;
+        reminderToggle.textContent = "Недоступно";
+        reminderToggle.setAttribute("aria-disabled", "true");
+        reminderToggle.style.opacity = "0.55";
+        reminderToggle.style.pointerEvents = "none";
+        if (reminderStatus) reminderStatus.textContent = "Напоминания временно отключены владельцем приложения.";
+      }
+      if (status.maintenance !== true) return;
       const cover = document.createElement("div");
       cover.setAttribute("role", "alertdialog");
       cover.setAttribute("aria-modal", "true");
