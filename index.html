@@ -347,7 +347,10 @@
 
     .owner-tab-icon { display:grid; place-items:center; width:30px; height:30px; border-radius:10px; background:rgba(105,143,202,.18); color:#d7e8ff; font-size:19px; line-height:1; text-shadow:0 0 10px currentColor; border:1px solid rgba(130,177,255,.24); box-shadow:inset 0 1px 0 rgba(255,255,255,.12); }
     .owner-tab.active { background:linear-gradient(145deg,rgba(56,115,210,.3),rgba(32,54,87,.76)); border-color:#65a0ff85; color:#fff; box-shadow:0 7px 22px rgba(26,91,194,.16),inset 0 1px 0 rgba(255,255,255,.1); }
-    .owner-tab.active .owner-tab-icon { color:#fff; background:linear-gradient(145deg,#66a5ff,#2463e8); border-color:#9bc5ff; box-shadow:0 0 20px #4f8cff75, inset 0 1px 0 #ffffff55; }\n    .owner-tab[data-owner-tab="users"] .owner-tab-icon { color:#7df0c2; background:linear-gradient(145deg,#124c43aa,#0d302daa); border-color:#48d9b06b; }\n    .owner-tab[data-owner-tab="subscriptions"] .owner-tab-icon { color:#c7a5ff; background:linear-gradient(145deg,#42226aaa,#25173daa); border-color:#a879ff70; }\n    .owner-tab[data-owner-tab="broadcast"] .owner-tab-icon { color:#ffca83; background:linear-gradient(145deg,#70451aaa,#382714aa); border-color:#ffb65d70; }\n    .owner-tab[data-owner-tab="features"] .owner-tab-icon { color:#7ce7ff; background:linear-gradient(145deg,#14516aaa,#102d43aa); border-color:#58d9ff70; }\n    .owner-tab[data-owner-tab="finance"] .owner-tab-icon { color:#ffe17d; background:linear-gradient(145deg,#6a511aaa,#382d14aa); border-color:#f5d45f80; }\n    .owner-tab[data-owner-tab="users"].active .owner-tab-icon,.owner-tab[data-owner-tab="subscriptions"].active .owner-tab-icon,.owner-tab[data-owner-tab="broadcast"].active .owner-tab-icon,.owner-tab[data-owner-tab="features"].active .owner-tab-icon,.owner-tab[data-owner-tab="finance"].active .owner-tab-icon { color:#fff; background:linear-gradient(145deg,#579cff,#245fe0); border-color:#a8cbff; box-shadow:0 0 20px #4f8cff80; }
+    .owner-tab.active .owner-tab-icon { color:#fff; background:linear-gradient(145deg,#66a5ff,#2463e8); border-color:#9bc5ff; box-shadow:0 0 20px #4f8cff75, inset 0 1px 0 #ffffff55; }
+    .owner-tab[data-owner-tab="users"] .owner-tab-icon { color:#7df0c2; background:linear-gradient(145deg,#124c43aa,#0d302daa); border-color:#48d9b06b; }\n    .owner-tab[data-owner-tab="subscriptions"] .owner-tab-icon { color:#c7a5ff; background:linear-gradient(145deg,#42226aaa,#25173daa); border-color:#a879ff70; }\n    .owner-tab[data-owner-tab="broadcast"] .owner-tab-icon { color:#ffca83; background:linear-gradient(145deg,#70451aaa,#382714aa); border-color:#ffb65d70; }\n    .owner-tab[data-owner-tab="features"] .owner-tab-icon { color:#7ce7ff; background:linear-gradient(145deg,#14516aaa,#102d43aa); border-color:#58d9ff70; }\n    .owner-tab[data-owner-tab="finance"] .owner-tab-icon { color:#ffe17d; background:linear-gradient(145deg,#6a511aaa,#382d14aa); border-color:#f5d45f80; }\n    .owner-tab[data-owner-tab="users"].active .owner-tab-icon,.owner-tab[data-owner-tab="subscriptions"].active .owner-tab-icon,.owner-tab[data-owner-tab="broadcast"].active .owner-tab-icon,.owner-tab[data-owner-tab="features"].active .owner-tab-icon,.owner-tab[data-owner-tab="finance"].active .owner-tab-icon { color:#fff; background:linear-gradient(145deg,#579cff,#245fe0); border-color:#a8cbff; box-shadow:0 0 20px #4f8cff80; }
+
+    .owner-user-toolbar{display:flex;gap:8px;margin-top:12px;align-items:stretch}.owner-user-toolbar input{min-width:0;flex:1}.owner-user-filters,.owner-maintenance-presets{display:flex;flex-wrap:wrap;gap:7px;margin:11px 0}.owner-user-filter{border:1px solid rgba(130,160,205,.22);background:rgba(255,255,255,.035);color:#aebbd0;border-radius:10px;padding:8px 10px;font-size:11px;font-weight:700}.owner-user-filter.active{color:#eaf3ff;background:rgba(65,130,235,.22);border-color:#579cff88;box-shadow:0 0 14px #377be522}.owner-user-summary{display:flex;align-items:center;gap:11px;padding:12px;border:1px solid #6b9cff25;border-radius:13px;background:linear-gradient(110deg,#3169b41a,#ffffff03);margin:10px 0}.owner-user-summary>span{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:#3478db25;font-size:20px}.owner-user-summary strong,.owner-user-summary small{display:block}.owner-user-summary strong{font-size:13px}.owner-user-summary small{font-size:11px;color:var(--muted);margin-top:3px}.owner-maintenance-panel{border:1px solid #ffb86b30;border-radius:15px;padding:13px;background:linear-gradient(145deg,#7c4a191c,#ffffff02);margin:12px 0 17px}.owner-maintenance-title{display:flex;align-items:center;gap:10px;margin-bottom:12px}.owner-maintenance-icon{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:#ffb86b1c;font-size:20px}.owner-maintenance-title strong,.owner-maintenance-title small{display:block}.owner-maintenance-title strong{font-size:13px}.owner-maintenance-title small{font-size:11px;color:var(--muted);margin-top:4px}.owner-field-label{display:block;font-size:11px;color:#d8e4f7;font-weight:700;margin:10px 0 6px}.owner-maintenance-panel textarea{width:100%;resize:vertical;min-height:78px}.owner-maintenance-actions{display:flex;gap:8px;flex-wrap:wrap}.owner-maintenance-actions .owner-action{flex:1;min-width:125px}.owner-action-danger{border-color:#ff77774d!important;color:#ffaaaa!important;background:#ff5d5d12!important}.owner-feature-section-title{font-size:13px;font-weight:800;letter-spacing:.02em;margin:15px 0 7px;color:#dce8fb}.owner-user-card{padding:12px!important;border:1px solid #ffffff0d;border-radius:13px;background:rgba(255,255,255,.025);margin:8px 0}.owner-user-card strong{overflow-wrap:anywhere}.owner-user-card .owner-user-meta{display:block;color:var(--muted);font-size:11px;line-height:1.5;margin-top:5px}.owner-user-card .owner-user-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.owner-user-card .owner-user-actions button{flex:1;min-width:95px}.owner-status-pill{display:inline-block;border-radius:99px;padding:4px 7px;font-size:10px;font-weight:800;margin-top:7px;background:#ffffff0b;color:#b6c3d8}.owner-status-pill.good{background:#2fcf9418;color:#78e7bc}.owner-status-pill.warn{background:#ffb86b18;color:#ffd09b}@media(max-width:360px){.owner-user-toolbar{flex-wrap:wrap}.owner-user-toolbar input{flex-basis:100%}.owner-maintenance-actions{flex-direction:column}}
     .owner-feature-intro { padding:5px 2px 13px; }
     .owner-feature-kicker { font-size:9px; letter-spacing:.16em; font-weight:800; color:#76a9ff; }
     .owner-feature-intro h2 { font-size:23px; letter-spacing:-.045em; margin:7px 0 4px; color:#f5f8ff; }
@@ -691,8 +694,17 @@
         </section>
       <section class="owner-page" id="owner-page-users"><div class="owner-feature-intro"><span class="owner-feature-kicker">РТА · ЦЕНТР УПРАВЛЕНИЯ</span><h2>Пользователи</h2><p>Управление проектом в одном месте</p></div>
         <div class="owner-card" id="ownerUsersCard"><div class="owner-feature-heading"><span class="owner-feature-icon" aria-hidden="true">👥</span><div><h3>Пользователи</h3></div></div><p class="owner-muted">Поиск по Telegram ID, дата первого и последнего посещения, статус подписки. Загружаются последние 500 аккаунтов; персональные данные не раскрываются.</p>
-          <div style="display:flex;gap:8px;margin-top:10px"><input id="ownerUserSearch" class="owner-access-input" inputmode="numeric" placeholder="Поиск по Telegram ID" style="min-width:0;flex:1"><button class="owner-action" id="ownerLoadUsers">Загрузить</button></div>
-          <div class="owner-result" id="ownerUsersStatus" aria-live="polite">Нажми «Загрузить», чтобы получить список.</div><div id="ownerUsersList"></div>
+          <div class="owner-user-toolbar">
+            <input id="ownerUserSearch" class="owner-access-input" inputmode="numeric" placeholder="🔎 Введи Telegram ID" aria-label="Поиск пользователя по Telegram ID">
+            <button class="owner-action" id="ownerLoadUsers">Найти</button>
+          </div>
+          <div class="owner-user-filters" role="group" aria-label="Фильтр пользователей">
+            <button type="button" class="owner-user-filter active" data-user-filter="all">Все</button>
+            <button type="button" class="owner-user-filter" data-user-filter="subscribed">С подпиской</button>
+            <button type="button" class="owner-user-filter" data-user-filter="none">Без подписки</button>
+          </div>
+          <div class="owner-user-summary" id="ownerUsersSummary"><span>👥</span><div><strong id="ownerUsersCount">Список не загружен</strong><small>Можно найти пользователя и перейти к настройке доступа</small></div></div>
+          <div class="owner-result" id="ownerUsersStatus" aria-live="polite">Нажми «Найти», чтобы загрузить пользователей.</div><div id="ownerUsersList"></div>
         </div>
       </section>
       <section class="owner-page" id="owner-page-subscriptions"><div class="owner-feature-intro"><span class="owner-feature-kicker">РТА · ЦЕНТР УПРАВЛЕНИЯ</span><h2>Подписки и доступ</h2><p>Управление проектом в одном месте</p></div>
@@ -713,8 +725,20 @@
         </div>
       </section>
       <section class="owner-page" id="owner-page-features"><div class="owner-feature-intro"><span class="owner-feature-kicker">РТА · ЦЕНТР УПРАВЛЕНИЯ</span><h2>Функции и обслуживание</h2><p>Управление проектом в одном месте</p></div>
-        <div class="owner-card" id="ownerFeaturesCard"><div class="owner-feature-heading"><span class="owner-feature-icon" aria-hidden="true">🛠️</span><div><h3>Функции и режим обслуживания</h3></div></div><p class="owner-muted">Переключатели сохраняются на сервере. Режим обслуживания пока хранится как настройка; чтобы он реально закрывал Mini App для пользователей, клиентский интерфейс должен отдельно начать учитывать этот флаг.</p>
-          <div id="ownerFeatureFlags"><button class="owner-action" id="ownerLoadFeatures" style="width:100%">Загрузить переключатели</button></div><div class="owner-result" id="ownerFeaturesStatus" aria-live="polite">Функции не загружены.</div>
+        <div class="owner-card" id="ownerFeaturesCard"><div class="owner-feature-heading"><span class="owner-feature-icon" aria-hidden="true">🛠️</span><div><h3>Функции и режим обслуживания</h3></div></div><p class="owner-muted">Центр управления функциями. Настройки сохраняются на сервере. Важно: переключатель обслуживания сейчас сохраняет режим и сообщение, но сам по себе ещё не блокирует приложение у студентов.</p>
+          <div class="owner-maintenance-panel">
+            <div class="owner-maintenance-title"><span class="owner-maintenance-icon">🚧</span><div><strong>Режим обслуживания</strong><small>Подготовь объявление перед включением режима</small></div></div>
+            <label class="owner-field-label" for="ownerMaintenanceMessage">Сообщение пользователям</label>
+            <textarea id="ownerMaintenanceMessage" class="owner-access-input" rows="3" maxlength="500" placeholder="Например: Обновляем расписание. Скоро вернёмся!"></textarea>
+            <div class="owner-maintenance-presets">
+              <button type="button" class="owner-user-filter" data-maintenance-preset="Проводим технические работы. Пожалуйста, зайдите немного позже.">🔧 Технические работы</button>
+              <button type="button" class="owner-user-filter" data-maintenance-preset="Обновляем расписание. Скоро всё снова заработает!">📅 Обновление расписания</button>
+              <button type="button" class="owner-user-filter" data-maintenance-preset="Короткая профилактика сервиса. Спасибо за терпение!">⚡ Короткая профилактика</button>
+            </div>
+            <div class="owner-maintenance-actions"><button type="button" class="owner-action" id="ownerSaveMaintenanceMessage">Сохранить сообщение</button><button type="button" class="owner-action owner-action-danger" id="ownerMaintenanceOff">Выключить режим</button></div>
+          </div>
+          <div class="owner-feature-section-title">Переключатели функций</div>
+          <div id="ownerFeatureFlags"><button class="owner-action" id="ownerLoadFeatures" style="width:100%">Загрузить настройки</button></div><div class="owner-result" id="ownerFeaturesStatus" aria-live="polite">Настройки не загружены.</div>
         </div>
       </section>
       <section class="owner-page" id="owner-page-finance"><div class="owner-feature-intro"><span class="owner-feature-kicker">РТА · ЦЕНТР УПРАВЛЕНИЯ</span><h2>Финансы</h2><p>Управление проектом в одном месте</p></div>
@@ -2082,27 +2106,42 @@
         const date = new Date(value);
         return Number.isFinite(date.getTime()) ? date.toLocaleString("ru-RU", { timeZone: "Europe/Moscow", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
       }
+      let ownerUsersCache = [];
+      let ownerUsersFilter = "all";
+      function renderOwnerUsers() {
+        const host = ownerQuery("#ownerUsersList"); if (!host) return; host.replaceChildren();
+        const filtered = ownerUsersCache.filter(user => ownerUsersFilter === "all" || (ownerUsersFilter === "subscribed" ? !!user.subscription : !user.subscription));
+        const count = ownerQuery("#ownerUsersCount"); if (count) count.textContent = "Показано: " + filtered.length + " · Загружено: " + ownerUsersCache.length;
+        if (!filtered.length) { const empty = document.createElement("p"); empty.className = "owner-muted"; empty.textContent = ownerUsersCache.length ? "В этой категории пользователей нет." : "Пользователи не найдены. Попробуй ввести точный Telegram ID."; host.append(empty); return; }
+        for (const user of filtered) {
+          const card = document.createElement("div"); card.className = "owner-line owner-user-card"; card.style.alignItems = "flex-start";
+          const info = document.createElement("div"); info.style.minWidth = "0"; info.style.flex = "1";
+          const title = document.createElement("strong"); title.textContent = "👤 Telegram ID: " + user.telegram_user_id;
+          const meta = document.createElement("small"); meta.className = "owner-user-meta"; meta.textContent = "Первый вход: " + formatOwnerDate(user.first_seen_at) + "\nПоследний вход: " + formatOwnerDate(user.last_seen_at); meta.style.whiteSpace = "pre-line";
+          const sub = document.createElement("span"); sub.className = "owner-status-pill " + (user.subscription ? "good" : "warn"); sub.textContent = user.subscription ? "💎 " + user.subscription.plan_code + " · " + user.subscription.status : "○ Без подписки";
+          info.append(title, meta, sub);
+          const actions = document.createElement("div"); actions.className = "owner-user-actions";
+          const choose = document.createElement("button"); choose.type = "button"; choose.className = "owner-action"; choose.textContent = "⚙ Доступ";
+          choose.addEventListener("click", () => { ownerQuery("#ownerSubUserId").value = user.telegram_user_id; if (user.subscription) { ownerQuery("#ownerSubPlan").value = user.subscription.plan_code; ownerQuery("#ownerSubStatus").value = user.subscription.status; ownerQuery("#ownerSubNote").value = user.subscription.note || ""; ownerQuery("#ownerSubExpires").value = user.subscription.expires_at ? String(user.subscription.expires_at).slice(0,10) : ""; } else { ownerQuery("#ownerSubNote").value = ""; ownerQuery("#ownerSubExpires").value = ""; } document.querySelectorAll(".owner-tab").forEach(tab=>tab.classList.toggle("active",tab.dataset.ownerTab==="subscriptions")); document.querySelectorAll(".owner-page").forEach(page=>page.classList.toggle("active",page.id==="owner-page-subscriptions")); ownerQuery("#ownerSubscriptionsCard").scrollIntoView({behavior:"smooth",block:"start"}); });
+          const copy = document.createElement("button"); copy.type = "button"; copy.className = "owner-action"; copy.textContent = "⧉ Копировать ID";
+          copy.addEventListener("click", async () => { try { await navigator.clipboard.writeText(String(user.telegram_user_id)); copy.textContent = "✓ Скопировано"; } catch { ownerStatus("ownerUsersStatus","Не удалось скопировать автоматически. ID: "+user.telegram_user_id,true); } });
+          actions.append(choose,copy); info.append(actions); card.append(info); host.append(card);
+        }
+      }
       async function loadOwnerUsers() {
-        const host = ownerQuery("#ownerUsersList"), query = ownerQuery("#ownerUserSearch")?.value || "";
+        const query = ownerQuery("#ownerUserSearch")?.value.trim() || "";
         ownerStatus("ownerUsersStatus", "Загружаем пользователей…");
-        if (host) host.replaceChildren();
+        const host = ownerQuery("#ownerUsersList"); if (host) host.replaceChildren();
         try {
           const data = await ownerControlRequest("users", { query });
-          ownerStatus("ownerUsersStatus", "Найдено: " + data.users.length + " из " + data.total + (data.truncated ? ". Показаны последние 500 аккаунтов." : "."));
-          for (const user of data.users) {
-            const card = document.createElement("div"); card.className = "owner-line"; card.style.alignItems = "flex-start";
-            const info = document.createElement("div"); info.style.minWidth = "0"; info.style.flex = "1";
-            const title = document.createElement("strong"); title.textContent = "Telegram ID: " + user.telegram_user_id;
-            const meta = document.createElement("small"); meta.textContent = "Первый вход: " + formatOwnerDate(user.first_seen_at) + " · Последний: " + formatOwnerDate(user.last_seen_at);
-            const sub = document.createElement("small"); sub.textContent = user.subscription ? "Подписка: " + user.subscription.plan_code + " · " + user.subscription.status : "Подписки нет";
-            info.append(title, meta, sub);
-            const choose = document.createElement("button"); choose.type = "button"; choose.className = "owner-action"; choose.textContent = "Выбрать";
-            choose.addEventListener("click", () => { ownerQuery("#ownerSubUserId").value = user.telegram_user_id; if (user.subscription) { ownerQuery("#ownerSubPlan").value = user.subscription.plan_code; ownerQuery("#ownerSubStatus").value = user.subscription.status; ownerQuery("#ownerSubNote").value = user.subscription.note || ""; ownerQuery("#ownerSubExpires").value = user.subscription.expires_at ? String(user.subscription.expires_at).slice(0,10) : ""; } ownerQuery("#ownerSubscriptionsCard").scrollIntoView({ behavior: "smooth", block: "start" }); });
-            card.append(info, choose); host.append(card);
-          }
+          ownerUsersCache = data.users || [];
+          ownerStatus("ownerUsersStatus", "Список обновлён" + (data.truncated ? ". Показаны последние 500 аккаунтов." : "."));
+          renderOwnerUsers();
         } catch (error) { ownerStatus("ownerUsersStatus", error.message, true); }
       }
       ownerQuery("#ownerLoadUsers")?.addEventListener("click", () => void loadOwnerUsers());
+      document.querySelectorAll("[data-user-filter]").forEach(button=>button.addEventListener("click",()=>{ownerUsersFilter=button.dataset.userFilter;document.querySelectorAll("[data-user-filter]").forEach(item=>item.classList.toggle("active",item===button));renderOwnerUsers();}));
+
       ownerQuery("#ownerUserSearch")?.addEventListener("keydown", event => { if (event.key === "Enter") void loadOwnerUsers(); });
       ownerQuery("#ownerSaveSubscription")?.addEventListener("click", async () => {
         const userId = ownerQuery("#ownerSubUserId").value.trim();
@@ -2133,7 +2172,7 @@
             const line = document.createElement("div"); line.className = "owner-line";
             const copy = document.createElement("div"); copy.style.minWidth = "0"; copy.style.flex = "1";
             const label = document.createElement("strong"); label.textContent = ({maintenance_mode:"Режим обслуживания", reminders_enabled:"Напоминания", announcements_enabled:"Объявления", subscriptions_enabled:"Подписки"})[flag.flag_key] || flag.flag_key;
-            const note = document.createElement("small"); note.textContent = flag.message || (flag.flag_key === "maintenance_mode" ? "Сохранение флага пока не закрывает доступ само по себе" : "Переключатель серверной конфигурации");
+            const note = document.createElement("small"); note.textContent = flag.message || (flag.flag_key === "maintenance_mode" ? "Флаг сохраняется на сервере; блокировка интерфейса студентов ещё не подключена" : "Серверный переключатель; действие зависит от интеграции в приложении"); if(flag.flag_key==="maintenance_mode") { const field=ownerQuery("#ownerMaintenanceMessage"); if(field && !field.value) field.value=flag.message||""; }
             copy.append(label, note);
             const toggle = document.createElement("input"); toggle.type = "checkbox"; toggle.className = "owner-toggle"; toggle.checked = !!flag.enabled; toggle.setAttribute("aria-label", label.textContent);
             toggle.addEventListener("change", async () => { toggle.disabled = true; try { await ownerControlRequest("features", { flag_key: flag.flag_key, enabled: toggle.checked, message: flag.message || "" }); ownerStatus("ownerFeaturesStatus", "Сохранено: " + label.textContent); } catch (error) { toggle.checked = !toggle.checked; ownerStatus("ownerFeaturesStatus", error.message, true); } finally { toggle.disabled = false; } });
@@ -2144,6 +2183,18 @@
         } catch (error) { ownerStatus("ownerFeaturesStatus", error.message, true); const retry = document.createElement("button"); retry.className = "owner-action"; retry.textContent = "Повторить"; retry.addEventListener("click", () => void loadOwnerFeatures()); host.append(retry); }
       }
       ownerQuery("#ownerLoadFeatures")?.addEventListener("click", () => void loadOwnerFeatures());
+      document.querySelectorAll("[data-maintenance-preset]").forEach(button=>button.addEventListener("click",()=>{ownerQuery("#ownerMaintenanceMessage").value=button.dataset.maintenancePreset;}));
+      ownerQuery("#ownerSaveMaintenanceMessage")?.addEventListener("click",async()=>{
+        const message=ownerQuery("#ownerMaintenanceMessage").value.trim();
+        try { const data=await ownerControlRequest("features",{flag_key:"maintenance_mode",enabled:true,message}); ownerStatus("ownerFeaturesStatus","Сообщение сохранено. Флаг обслуживания включён, но блокировка приложения ещё не подключена."); void loadOwnerFeatures(); }
+        catch(error){ownerStatus("ownerFeaturesStatus",error.message,true);}
+      });
+      ownerQuery("#ownerMaintenanceOff")?.addEventListener("click",async()=>{
+        if(!confirm("Выключить флаг режима обслуживания?"))return;
+        try { await ownerControlRequest("features",{flag_key:"maintenance_mode",enabled:false,message:ownerQuery("#ownerMaintenanceMessage").value.trim()}); ownerStatus("ownerFeaturesStatus","Флаг обслуживания выключен."); void loadOwnerFeatures(); }
+        catch(error){ownerStatus("ownerFeaturesStatus",error.message,true);}
+      });
+
       async function loadOwnerFinance() {
         ownerStatus("ownerFinanceStatus", "Получаем финансовые данные…");
         try {
