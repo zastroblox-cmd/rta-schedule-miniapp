@@ -2951,5 +2951,41 @@
 })();
 </script>
 
+<script>
+(() => {
+  const statusUrl = "https://rta-schedule-api.onrender.com/api/status";
+  fetch(statusUrl, { cache: "no-store" })
+    .then(response => response.ok ? response.json() : null)
+    .then(status => {
+      if (!status || status.maintenance !== true) return;
+      const cover = document.createElement("div");
+      cover.setAttribute("role", "alertdialog");
+      cover.setAttribute("aria-modal", "true");
+      cover.style.cssText = "position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(7,10,16,.98);color:#f2f5fb;font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;text-align:center;";
+      const panel = document.createElement("div");
+      panel.style.cssText = "width:100%;max-width:420px;padding:28px 22px;border:1px solid rgba(79,140,255,.35);border-radius:24px;background:linear-gradient(145deg,#182131,#10151e);box-shadow:0 24px 80px rgba(0,0,0,.45);";
+      const icon = document.createElement("div");
+      icon.textContent = "🛠️";
+      icon.style.cssText = "font-size:42px;margin-bottom:12px;";
+      const title = document.createElement("h1");
+      title.textContent = "Технические работы";
+      title.style.cssText = "font-size:24px;line-height:1.2;margin:0 0 12px;";
+      const message = document.createElement("p");
+      message.textContent = status.message || "Проводятся технические работы. Попробуй зайти немного позже.";
+      message.style.cssText = "font-size:15px;line-height:1.55;color:#b9c4d5;margin:0 0 22px;white-space:pre-wrap;overflow-wrap:anywhere;";
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = "Проверить снова";
+      button.style.cssText = "width:100%;border:0;border-radius:14px;padding:13px 16px;background:linear-gradient(135deg,#4f8cff,#2463e8);color:white;font-size:15px;font-weight:700;";
+      button.addEventListener("click", () => window.location.reload());
+      panel.append(icon,title,message,button);
+      cover.append(panel);
+      document.body.append(cover);
+      document.body.style.overflow = "hidden";
+    })
+    .catch(() => {});
+})();
+</script>
+
 </body>
 </html>
