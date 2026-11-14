@@ -129,6 +129,26 @@ app.get("/health", (_req, res) => {
   });
 });
 
+app.get("/api/status", async (_req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  if (!supabaseRpc) {
+    return res.status(503).json({ status: "unavailable", maintenance: false });
+  }
+  try {
+    const { data, error } = await supabaseRpc.from("app_feature_flags")
+      .select("enabled,message").eq("flag_key", "maintenance_mode").maybeSingle();
+    if (error) throw error;
+    return res.json({
+      status: "ok",
+      maintenance: Boolean(data && data.enabled),
+      message: data && data.message ? String(data.message).slice(0, 500) : "Проводятся технические работы. Попробуй зайти немного позже."
+    });
+  } catch (error) {
+    console.error("Public status check failed:", error.message);
+    return res.status(503).json({ status: "unavailable", maintenance: false });
+  }
+});
+
 app.get("/api/faculties", async (_req, res) => {
   res.setHeader("Cache-Control", "public, max-age=60, stale-while-revalidate=120");
   if (!supabase) return res.status(503).json({ error: "Database is not configured" });
