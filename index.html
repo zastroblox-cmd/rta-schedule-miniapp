@@ -2164,18 +2164,20 @@
         catch (error) { ownerStatus("ownerBroadcastStatus", error.message, true); }
         finally { button.disabled = false; }
       });
+      let ownerMaintenanceEnabled = false;
       async function loadOwnerFeatures() {
         const host = ownerQuery("#ownerFeatureFlags"); host.replaceChildren(); ownerStatus("ownerFeaturesStatus", "Загружаем настройки…");
         try {
           const data = await ownerControlRequest("features", { action: "list" });
           for (const flag of data.flags) {
+            if (flag.flag_key === "maintenance_mode") ownerMaintenanceEnabled = !!flag.enabled;
             const line = document.createElement("div"); line.className = "owner-line";
             const copy = document.createElement("div"); copy.style.minWidth = "0"; copy.style.flex = "1";
             const label = document.createElement("strong"); label.textContent = ({maintenance_mode:"Режим обслуживания", reminders_enabled:"Напоминания", announcements_enabled:"Объявления", subscriptions_enabled:"Подписки"})[flag.flag_key] || flag.flag_key;
             const note = document.createElement("small"); note.textContent = flag.message || (flag.flag_key === "maintenance_mode" ? "Флаг сохраняется на сервере; блокировка интерфейса студентов ещё не подключена" : "Серверный переключатель; действие зависит от интеграции в приложении"); if(flag.flag_key==="maintenance_mode") { const field=ownerQuery("#ownerMaintenanceMessage"); if(field && !field.value) field.value=flag.message||""; }
             copy.append(label, note);
             const toggle = document.createElement("input"); toggle.type = "checkbox"; toggle.className = "owner-toggle"; toggle.checked = !!flag.enabled; toggle.setAttribute("aria-label", label.textContent);
-            toggle.addEventListener("change", async () => { toggle.disabled = true; try { await ownerControlRequest("features", { flag_key: flag.flag_key, enabled: toggle.checked, message: flag.message || "" }); ownerStatus("ownerFeaturesStatus", "Сохранено: " + label.textContent); } catch (error) { toggle.checked = !toggle.checked; ownerStatus("ownerFeaturesStatus", error.message, true); } finally { toggle.disabled = false; } });
+            toggle.addEventListener("change", async () => { toggle.disabled = true; try { await ownerControlRequest("features", { flag_key: flag.flag_key, enabled: toggle.checked, message: flag.flag_key === "maintenance_mode" ? (ownerQuery("#ownerMaintenanceMessage")?.value.trim() || flag.message || "") : (flag.message || "") }); if(flag.flag_key === "maintenance_mode") ownerMaintenanceEnabled = toggle.checked; ownerStatus("ownerFeaturesStatus", "Сохранено: " + label.textContent); } catch (error) { toggle.checked = !toggle.checked; ownerStatus("ownerFeaturesStatus", error.message, true); } finally { toggle.disabled = false; } });
             line.append(copy, toggle); host.append(line);
           }
           const reload = document.createElement("button"); reload.type = "button"; reload.className = "owner-action"; reload.style.width = "100%"; reload.style.marginTop = "10px"; reload.textContent = "Обновить переключатели"; reload.addEventListener("click", () => void loadOwnerFeatures()); host.append(reload);
@@ -2186,7 +2188,7 @@
       document.querySelectorAll("[data-maintenance-preset]").forEach(button=>button.addEventListener("click",()=>{ownerQuery("#ownerMaintenanceMessage").value=button.dataset.maintenancePreset;}));
       ownerQuery("#ownerSaveMaintenanceMessage")?.addEventListener("click",async()=>{
         const message=ownerQuery("#ownerMaintenanceMessage").value.trim();
-        try { const data=await ownerControlRequest("features",{flag_key:"maintenance_mode",enabled:true,message}); ownerStatus("ownerFeaturesStatus","Сообщение сохранено. Флаг обслуживания включён, но блокировка приложения ещё не подключена."); void loadOwnerFeatures(); }
+        try { const data=await ownerControlRequest("features",{flag_key:"maintenance_mode",enabled:ownerMaintenanceEnabled,message}); ownerStatus("ownerFeaturesStatus","Сообщение сохранено. Флаг обслуживания не менялся."); void loadOwnerFeatures(); }
         catch(error){ownerStatus("ownerFeaturesStatus",error.message,true);}
       });
       ownerQuery("#ownerMaintenanceOff")?.addEventListener("click",async()=>{
