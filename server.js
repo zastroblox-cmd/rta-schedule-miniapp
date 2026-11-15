@@ -1259,6 +1259,17 @@ app.post("/api/schedule-change-notifications", async (req, res) => {
 });
 
 
+async function areRemindersGloballyEnabled() {
+  if (!supabaseRpc) return false;
+  const { data, error } = await supabaseRpc.from("app_feature_flags")
+    .select("enabled").eq("flag_key", "reminders_enabled").maybeSingle();
+  if (error) {
+    console.error("Reminder feature flag lookup failed:", error.message);
+    return false; // Fail closed: do not send reminders if the global flag cannot be checked.
+  }
+  return Boolean(data && data.enabled);
+}
+
 app.post("/api/reminders/status", async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
   const user = verifyTelegramInitData(req.body && req.body.initData, false);
@@ -1296,6 +1307,9 @@ app.post("/api/reminders", async (req, res) => {
     return res.json({ ok: true, enabled: false, group_code: null });
   }
 
+  if (!(await areRemindersGloballyEnabled())) {
+    return res.status(409).json({ error: "Напоминания временно отключены владельцем приложения." });
+  }
   const groupCode = String(body.group_code || "").trim();
   if (!groupCode || groupCode.length > 80) return res.status(400).json({ error: "Выбери учебную группу." });
   const { data: group, error: groupError } = await supabaseRpc.from("student_groups")
@@ -1335,6 +1349,9 @@ app.post("/api/reminders/dispatch", async (req, res) => {
     return res.status(403).json({ error: "Forbidden" });
   }
   try {
+    if (!(await areRemindersGloballyEnabled())) {
+      return res.json({ ok: true, skipped: true, reason: "reminders_disabled", sent: 0, failed: 0 });
+    }
     const result = await dispatchReminders({ supabaseRpc, botToken: TELEGRAM_BOT_TOKEN });
     return res.json({ ok: true, ...result });
   } catch (error) {
@@ -1348,6 +1365,7 @@ async function runReminderDispatch() {
   if (!REMINDER_SCHEDULER_ENABLED || reminderDispatchRunning || !supabaseRpc || !TELEGRAM_BOT_TOKEN) return;
   reminderDispatchRunning = true;
   try {
+    if (!(await areRemindersGloballyEnabled())) return;
     const result = await dispatchReminders({ supabaseRpc, botToken: TELEGRAM_BOT_TOKEN });
     if (result.sent || result.failed) {
       console.log("Class reminder dispatch:", JSON.stringify(result));
