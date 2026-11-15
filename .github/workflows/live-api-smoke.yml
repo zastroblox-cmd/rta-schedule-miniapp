@@ -172,6 +172,29 @@ jobs:
           const weekB = await get('/api/schedule?group_id=13&date=2026-10-13');
           assert.equal(weekB.week_type, 'B', '12–18 Oct 2026 is week B');
 
+          // Regression: representative recurring edits must replace the global course-hour slot
+          // both in the student-facing schedule API and in the Mini App change overlay.
+          const law2504 = groups.data.find(g => g.group_code === 'Ю604/О-2504');
+          assert.ok(law2504, 'law group Ю604/О-2504 must be present');
+          const law2504Schedule = await get('/api/schedule?group_id=' + law2504.id + '&date=2026-11-23');
+          assert.ok(law2504Schedule.data.some(x => x.subject === 'Основы военной подготовки' && x.starts_at.startsWith('10:10')),
+            'representative recurring edit must be visible in the schedule');
+          assert.ok(!law2504Schedule.data.some(x => x.subject === 'Курсовой час' && x.starts_at.startsWith('10:10')),
+            'global course hour must yield to the representative recurring edit');
+          const law2504Changes = await get('/api/schedule-changes?group_code=' + encodeURIComponent('Ю604/О-2504') + '&date=2026-11-23');
+          assert.ok(law2504Changes.recurring_changes.some(x => x.subject === 'Основы военной подготовки'),
+            'representative recurring edit must be included in the Mini App overlay');
+
+          // Regression: the fifth-course Monday schedule uses the distinct 16.11 PDF override,
+          // not the obsolete recurring technical-controls row.
+          const customs2207 = groups.data.find(g => g.group_code === 'Тс02/О-2207');
+          assert.ok(customs2207, 'customs group Тс02/О-2207 must be present');
+          const customs2207Schedule = await get('/api/schedule?group_id=' + customs2207.id + '&date=2026-11-16');
+          assert.ok(customs2207Schedule.data.some(x => x.subject === 'Применение инспекционно-досмотровых комплексов' && x.starts_at.startsWith('08:30')),
+            '16.11 one-off lesson from the official PDF must be visible');
+          assert.ok(!customs2207Schedule.data.some(x => x.subject === 'Применение технических средств таможенного контроля при проведении таможенного контроля' && x.starts_at.startsWith('08:30')),
+            'obsolete recurring technical-controls row must not appear on 16.11');
+
           for (const path of [
             '/api/schedule?group_id=abc&date=2026-10-22',
             '/api/schedule?group_id=13&date=2026-02-30'
