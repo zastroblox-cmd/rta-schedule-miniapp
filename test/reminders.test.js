@@ -43,6 +43,15 @@ test("a recurring course hour reserves its slot unless a dated override replaces
   assert.deepEqual(lessonsForCandidate(entries, candidate).map(entry => entry.subject), ["Курсовой час"]);
 });
 
+test("a representative recurring edit replaces the global course hour in the same slot", () => {
+  const candidate = { date: "2026-11-23", weekday: 1, week_type: "B" };
+  const entries = [
+    {id:1,entry_kind:"recurring",weekday:1,week_type:"B",starts_at:"10:10:00",ends_at:"11:40:00",subject:"Курсовой час"},
+    {id:2,entry_kind:"recurring",weekday:1,week_type:"B",starts_at:"10:10:00",ends_at:"11:40:00",subject:"Основы военной подготовки",source_label:"Изменено старостой · повторять на неделях Б"}
+  ];
+  assert.deepEqual(lessonsForCandidate(entries, candidate).map(entry => entry.subject), ["Основы военной подготовки"]);
+});
+
 
 test("reminders accept sparse but existing schedules and reject only empty or invalid counts", () => {
   assert.equal(hasScheduleData(0), false);
