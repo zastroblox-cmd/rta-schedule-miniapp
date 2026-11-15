@@ -226,16 +226,29 @@ app.get("/api/schedule", async (req, res) => {
     ...datedOverrides
   ];
 
-  // A "Курсовой час" occupies its time slot unless an explicit dated override
-  // exists for that slot; dated overrides are authoritative for their date.
+  // "Курсовой час" reserves its slot by default, but an explicit recurring
+  // change from a representative must replace it just like a dated override.
+  const isRepresentativeRecurringChange = item => {
+    const source = String(item.source_label || "");
+    return source.startsWith("rep_all_weeks_new") ||
+      source.startsWith("rep_all_weeks_edit") ||
+      source.startsWith("Изменено старостой · повторять");
+  };
+  const slotKey = item => item.starts_at + "|" + item.ends_at;
   const courseHourSlots = new Set(data
     .filter(item => item.subject === "Курсовой час" && item.entry_kind !== "date_override")
-    .map(item => item.starts_at + "|" + item.ends_at));
-  data = data.filter(item =>
-    item.entry_kind === "date_override" ||
-    item.subject === "Курсовой час" ||
-    !courseHourSlots.has(item.starts_at + "|" + item.ends_at)
-  );
+    .map(slotKey));
+  const representativeOverrideSlots = new Set(data
+    .filter(item => item.entry_kind !== "date_override" &&
+      item.subject !== "Курсовой час" && isRepresentativeRecurringChange(item))
+    .map(slotKey));
+  data = data.filter(item => {
+    if (item.entry_kind === "date_override") return true;
+    const slot = slotKey(item);
+    if (representativeOverrideSlots.has(slot)) return isRepresentativeRecurringChange(item);
+    if (courseHourSlots.has(slot)) return item.subject === "Курсовой час";
+    return true;
+  });
 
   // Avoid duplicate display when source records are identical.
   const seen = new Set();
@@ -455,8 +468,10 @@ app.get("/api/schedule-changes", async (req, res) => {
   ).map(row => ({ starts_at: row.starts_at, ends_at: row.ends_at }));
   const recurringChanges = validRecurringRows.filter(row => {
     const marker = String(row.source_label || "");
+    const isRepresentativeRecurring = marker.startsWith("rep_all_weeks_") ||
+      marker.startsWith("Изменено старостой · повторять");
     return marker.startsWith("rep_all_weeks_delete|") ||
-      (marker.startsWith("rep_all_weeks_") && !(row.excluded_dates || []).includes(dateString));
+      (isRepresentativeRecurring && !(row.excluded_dates || []).includes(dateString));
   });
   return res.json({
     group_code: group.group_code,
