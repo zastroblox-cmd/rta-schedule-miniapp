@@ -39,6 +39,13 @@ jobs:
           assert.equal(health.status, 'ok', 'API health status');
           assert.equal(health.databaseConfigured, true, 'database configuration');
 
+          const appStatus = await get('/api/status');
+          assert.equal(appStatus.status, 'ok', 'feature flag status endpoint');
+          assert.equal(typeof appStatus.maintenance, 'boolean', 'maintenance flag must be available');
+          assert.equal(typeof appStatus.features?.reminders_enabled, 'boolean', 'reminder flag must be available');
+          assert.equal(typeof appStatus.features?.announcements_enabled, 'boolean', 'announcement flag must be available');
+          assert.equal(typeof appStatus.features?.subscriptions_enabled, 'boolean', 'subscription flag must be available');
+
           // Protected routes must reject requests without signed Telegram initData.
           for (const path of [
             '/api/owner/analytics',
