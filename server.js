@@ -916,13 +916,9 @@ app.post("/telegram/webhook", async (req, res) => {
 });
 
 async function configureTelegramProfile() {
-  if (!TELEGRAM_BOT_TOKEN) return;
-  try {
-    await telegramApi("setMyName", { name: "РТА – Расписание" });
-    console.log("Telegram bot display name configured");
-  } catch (error) {
-    console.error("Telegram bot display name setup failed:", error.message);
-  }
+  // Telegram rate-limits setMyName. The desired name has already been set;
+  // do not repeat this one-time profile change on every server restart/deploy.
+  if (TELEGRAM_BOT_TOKEN) console.log("Telegram bot display name left unchanged");
 }
 
 async function configureTelegramWebhook() {
