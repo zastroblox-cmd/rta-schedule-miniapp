@@ -156,6 +156,36 @@ app.get("/api/status", async (_req, res) => {
   }
 });
 
+app.post("/api/status", async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  const user = verifyTelegramInitData(req.body && req.body.initData, false);
+  const isOwner = Boolean(user && OWNER_TELEGRAM_ID && user.id === OWNER_TELEGRAM_ID);
+  if (!supabaseRpc) {
+    return res.status(503).json({ status: "unavailable", maintenance: false, isOwner, features: {} });
+  }
+  try {
+    const { data, error } = await supabaseRpc.from("app_feature_flags")
+      .select("flag_key,enabled,message,updated_at").order("flag_key");
+    if (error) throw error;
+    const flags = Object.fromEntries((data || []).map(flag => [flag.flag_key, {
+      enabled: Boolean(flag.enabled),
+      message: flag.message ? String(flag.message).slice(0, 500) : null,
+      updated_at: flag.updated_at || null
+    }]));
+    const maintenance = flags.maintenance_mode || { enabled: false, message: null };
+    return res.json({
+      status: "ok",
+      maintenance: maintenance.enabled,
+      isOwner,
+      message: maintenance.message || "Технический перерыв. Пожалуйста, зайди немного позже.",
+      features: Object.fromEntries(Object.entries(flags).map(([key, value]) => [key, value.enabled]))
+    });
+  } catch (error) {
+    console.error("Authenticated status check failed:", error.message);
+    return res.status(503).json({ status: "unavailable", maintenance: false, isOwner, features: {} });
+  }
+});
+
 app.get("/api/faculties", async (_req, res) => {
   res.setHeader("Cache-Control", "public, max-age=60, stale-while-revalidate=120");
   if (!supabase) return res.status(503).json({ error: "Database is not configured" });
