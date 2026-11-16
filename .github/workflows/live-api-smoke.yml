@@ -46,6 +46,17 @@ jobs:
           assert.equal(typeof appStatus.features?.announcements_enabled, 'boolean', 'announcement flag must be available');
           assert.equal(typeof appStatus.features?.subscriptions_enabled, 'boolean', 'subscription flag must be available');
 
+          const statusResponse = await fetch(base + '/api/status', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ initData: '' }),
+            signal: AbortSignal.timeout(25000)
+          });
+          assert.equal(statusResponse.status, 200, 'signed-identity status endpoint remains available to regular users');
+          const personalizedStatus = await statusResponse.json();
+          assert.equal(personalizedStatus.isOwner, false, 'an unsigned request must never receive owner bypass');
+          assert.equal(typeof personalizedStatus.maintenance, 'boolean', 'personalized maintenance status must be returned');
+
           // Protected routes must reject requests without signed Telegram initData.
           for (const path of [
             '/api/owner/analytics',
