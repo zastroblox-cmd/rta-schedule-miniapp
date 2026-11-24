@@ -1893,13 +1893,32 @@
         applyPrefs();
       }
       async function verifyOwner(){
-        const initData=window.Telegram&&window.Telegram.WebApp?window.Telegram.WebApp.initData:"";
+        const webApp=window.Telegram&&window.Telegram.WebApp?window.Telegram.WebApp:null;
+        const initData=webApp&&typeof webApp.initData==="string"?webApp.initData:"";
+        const telegramUserId=webApp&&webApp.initDataUnsafe&&webApp.initDataUnsafe.user
+          ?String(webApp.initDataUnsafe.user.id||""):"";
+        const ownerCacheKey="rta_verified_owner_telegram_id";
+        let cachedOwnerId="";
+        try{cachedOwnerId=localStorage.getItem(ownerCacheKey)||"";}catch(error){}
+        // Fast path: reuse only a previously server-verified owner hint for the same Telegram account.
+        // All privileged API routes still validate the signed Telegram data on the server.
+        if(telegramUserId&&cachedOwnerId===telegramUserId)enableOwnerEntrance();
         if(!initData)return;
         try{
           const response=await fetch("https://rta-schedule-api.onrender.com/api/owner/verify",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({initData}),cache:"no-store"});
-          if(!response.ok)return;
+          if(!response.ok){
+            if(response.status===403&&cachedOwnerId===telegramUserId){
+              try{localStorage.removeItem(ownerCacheKey);}catch(error){}
+            }
+            return;
+          }
           const result=await response.json();
-          if(result.authorized===true)enableOwnerEntrance();
+          if(result.authorized===true){
+            if(telegramUserId){try{localStorage.setItem(ownerCacheKey,telegramUserId);}catch(error){}}
+            enableOwnerEntrance();
+          }else if(cachedOwnerId===telegramUserId){
+            try{localStorage.removeItem(ownerCacheKey);}catch(error){}
+          }
         }catch(error){console.warn("Проверка владельца временно недоступна.",error);}
       }
       function openOwner(){if(!entry.classList.contains("visible"))return;modal.classList.add("open");document.body.style.overflow="hidden";applyPrefs();refreshStatuses();}
