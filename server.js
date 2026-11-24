@@ -549,49 +549,98 @@ function toMiniAppLesson(row) {
 }
 
 
+// Reference data (faculty/course/group structure) changes rarely. Cache it briefly and
+// coalesce concurrent requests so opening several course adapters doesn't repeat the
+// same metadata queries. Schedule entries themselves are deliberately never cached here.
+const COURSE_STRUCTURE_CACHE_TTL_MS = 60 * 1000;
+const courseStructureCache = new Map();
+
+async function getCourseStructure(facultySlug) {
+  const now = Date.now();
+  const existing = courseStructureCache.get(facultySlug);
+  if (existing && (existing.pending || existing.expiresAt > now)) {
+    return existing.promise;
+  }
+
+  const entry = { pending: true, expiresAt: 0, promise: null };
+  entry.promise = (async () => {
+    const { data: faculty, error: facultyError } = await supabase
+      .from("faculties")
+      .select("id,slug")
+      .eq("slug", facultySlug)
+      .maybeSingle();
+    if (facultyError) return { stage: "faculty", error: facultyError };
+    if (!faculty) return { faculty: null, courses: [], groups: [] };
+
+    const { data: courses, error: coursesError } = await supabase
+      .from("courses")
+      .select("id,course_number,faculty_id,direction")
+      .eq("faculty_id", faculty.id);
+    if (coursesError) return { stage: "course", error: coursesError };
+
+    const courseIds = (courses || []).map(course => course.id);
+    if (!courseIds.length) return { faculty, courses: [], groups: [] };
+
+    const { data: groups, error: groupsError } = await supabase
+      .from("student_groups")
+      .select("id,group_code,display_name,course_id")
+      .in("course_id", courseIds)
+      .order("group_code");
+    if (groupsError) return { stage: "groups", error: groupsError };
+
+    return { faculty, courses: courses || [], groups: groups || [] };
+  })();
+
+  courseStructureCache.set(facultySlug, entry);
+  entry.promise = entry.promise.then(result => {
+    if (result.error) {
+      if (courseStructureCache.get(facultySlug) === entry) courseStructureCache.delete(facultySlug);
+    } else {
+      entry.pending = false;
+      entry.expiresAt = Date.now() + COURSE_STRUCTURE_CACHE_TTL_MS;
+    }
+    return result;
+  }).catch(error => {
+    if (courseStructureCache.get(facultySlug) === entry) courseStructureCache.delete(facultySlug);
+    throw error;
+  });
+  return entry.promise;
+}
+
 async function exportCourseSchedule(courseNumber, res, facultySlug = "law", direction = null) {
   if (!supabase) return res.status(503).json({ error: "Database is not configured" });
 
-  // Resolve faculty -> course -> groups in separate queries. Nested PostgREST
-  // filters on courses.faculties.slug can silently yield no groups in some schemas.
-  const { data: faculty, error: facultyError } = await supabase
-    .from("faculties")
-    .select("id,slug")
-    .eq("slug", facultySlug)
-    .maybeSingle();
-  if (facultyError) {
-    console.error("Schedule API faculty lookup failed:", facultyError.message);
-    return res.status(500).json({ error: "Unable to load faculty", detail: facultyError.message });
+  let structure;
+  try {
+    structure = await getCourseStructure(facultySlug);
+  } catch (error) {
+    console.error("Schedule API reference-data lookup failed:", error.message);
+    return res.status(500).json({ error: "Unable to load course structure" });
   }
+  if (structure.error) {
+    console.error("Schedule API " + structure.stage + " lookup failed:", structure.error.message);
+    const messages = {
+      faculty: "Unable to load faculty",
+      course: "Unable to load course",
+      groups: "Unable to load course groups"
+    };
+    return res.status(500).json({ error: messages[structure.stage] || "Unable to load course structure" });
+  }
+
+  const faculty = structure.faculty;
   if (!faculty) return res.status(404).json({ error: "Faculty not found: " + facultySlug });
 
-  let coursesQuery = supabase
-    .from("courses")
-    .select("id,course_number,faculty_id,direction")
-    .eq("faculty_id", faculty.id);
-  if (courseNumber != null) coursesQuery = coursesQuery.eq("course_number", courseNumber);
-  if (Array.isArray(direction)) coursesQuery = coursesQuery.in("direction", direction);
-  else if (direction) coursesQuery = coursesQuery.eq("direction", direction);
-  const { data: courses, error: coursesError } = await coursesQuery;
-  if (coursesError) {
-    console.error("Schedule API course lookup failed:", coursesError.message);
-    return res.status(500).json({ error: "Unable to load course", detail: coursesError.message });
-  }
-  if (!courses || courses.length === 0) {
+  let courses = structure.courses;
+  if (courseNumber != null) courses = courses.filter(course => course.course_number === courseNumber);
+  if (Array.isArray(direction)) courses = courses.filter(course => direction.includes(course.direction));
+  else if (direction) courses = courses.filter(course => course.direction === direction);
+  if (!courses.length) {
     return res.status(404).json({ error: "No course found for faculty " + facultySlug + (courseNumber == null ? "" : ", course " + courseNumber) });
   }
 
-  const courseIds = courses.map(course => course.id);
-  const { data: groups, error: groupsError } = await supabase
-    .from("student_groups")
-    .select("id,group_code,display_name,course_id")
-    .in("course_id", courseIds)
-    .order("group_code");
-  if (groupsError) {
-    console.error("Schedule API group lookup failed:", groupsError.message);
-    return res.status(500).json({ error: "Unable to load course groups", detail: groupsError.message });
-  }
-  if (!groups || groups.length === 0) {
+  const courseIds = new Set(courses.map(course => course.id));
+  const groups = structure.groups.filter(group => courseIds.has(group.course_id));
+  if (!groups.length) {
     return res.status(404).json({ error: "No groups found for faculty " + facultySlug + ", course " + courseNumber });
   }
 
@@ -601,7 +650,10 @@ async function exportCourseSchedule(courseNumber, res, facultySlug = "law", dire
     .select("group_id,entry_kind,weekday,week_type,schedule_date,starts_at,ends_at,subject,teacher,room,lesson_type,notes,excluded_dates,valid_from,valid_to,source_label")
     .in("group_id", ids)
     .order("starts_at");
-  if (entriesError) return res.status(500).json({ error: "Unable to load course schedule" });
+  if (entriesError) {
+    console.error("Schedule API entries lookup failed:", entriesError.message);
+    return res.status(500).json({ error: "Unable to load course schedule" });
+  }
 
   const groupById = new Map(groups.map(group => [group.id, group]));
   let lessons = (entries || []).filter(row => !String(row.source_label || "").startsWith("rep_all_weeks_delete")).map(row => toMiniAppLesson({
@@ -620,8 +672,7 @@ async function exportCourseSchedule(courseNumber, res, facultySlug = "law", dire
     });
   }
 
-  // Расписание меняется редко; короткий HTTP-кэш снижает повторные запросы к Supabase.
-  // Обновления расписания появятся после истечения кэша максимум через минуту.
+  // Keep schedule data fresh; browser caching remains short and independent of metadata caching.
   res.setHeader("Cache-Control", "public, max-age=30, stale-while-revalidate=60");
   return res.json({
     _status: "CONNECTED_TO_SUPABASE",
