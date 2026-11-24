@@ -2546,7 +2546,7 @@
           window.Course1ScheduleSource = "api";
         } catch (apiError) {
           console.warn("API 1-го курса недоступен; включаю локальный резерв:", apiError);
-          const response = await fetch("./data/course1-schedule.json?v=20261023-api-all", {cache:"no-store"});
+          const response = await fetch("./data/course1-schedule.json?v=20261023-api-all", {cache:"force-cache"});
           if (!response.ok) throw new Error("Локальный JSON 1-го курса HTTP " + response.status);
           draft = await response.json();
           if (!draft || !Array.isArray(draft.lessons) || draft.lessons.length === 0) throw new Error("Локальное расписание 1-го курса пустое");
@@ -2594,7 +2594,7 @@
           window.Course3ScheduleSource = "api · OCR-предупреждения исходника сохранены в резервном JSON";
           // Подтягиваем только метаданные проверки источника; занятия берутся из API.
           try {
-            const sourceResponse = await fetch("./data/course3-review-draft.json?v=20261023-api-all", {cache:"no-store"});
+            const sourceResponse = await fetch("./data/course3-review-draft.json?v=20261023-api-all", {cache:"force-cache"});
             if (sourceResponse.ok) {
               const sourceDraft = await sourceResponse.json();
               draft._sourceReviewStatus = sourceDraft._status || "CONNECTED_WITH_REVIEW_WARNINGS";
@@ -2606,7 +2606,7 @@
           }
         } catch (apiError) {
           console.warn("API 3-го курса недоступен; включаю локальный резерв:", apiError);
-          const response = await fetch("./data/course3-review-draft.json?v=20261023-api-all", {cache:"no-store"});
+          const response = await fetch("./data/course3-review-draft.json?v=20261023-api-all", {cache:"force-cache"});
           if (!response.ok) throw new Error("Локальный JSON 3-го курса HTTP " + response.status);
           draft = await response.json();
           if (!draft || !Array.isArray(draft.lessons) || draft.lessons.length === 0) throw new Error("Локальное расписание 3-го курса пустое");
@@ -2654,7 +2654,7 @@
           window.Course4ScheduleSource = "api";
         } catch (apiError) {
           console.warn("API 4-го курса недоступен; включаю локальный резерв:", apiError);
-          const response = await fetch("./data/course4-schedule.json?v=20261023-api-all", {cache:"no-store"});
+          const response = await fetch("./data/course4-schedule.json?v=20261023-api-all", {cache:"force-cache"});
           if (!response.ok) throw new Error("Локальный JSON 4-го курса HTTP " + response.status);
           draft = await response.json();
           if (!draft || !Array.isArray(draft.lessons) || draft.lessons.length === 0) throw new Error("Локальное расписание 4-го курса пустое");
