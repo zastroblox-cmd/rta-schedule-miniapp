@@ -121,6 +121,10 @@
     .status-badge.next { color:#b8d1ff; background:rgba(79,140,255,.12); border-color:rgba(79,140,255,.22); }
     .lesson-meta { display:flex; flex-wrap:wrap; gap:6px; }
     .lesson-meta .tag { background:rgba(154,180,220,.075); border:1px solid rgba(190,211,245,.11); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); color:rgba(222,231,246,.82); }
+    /* Небольшие полупрозрачные метки не требуют отдельных blur-слоёв на мобильных GPU. */
+    @media (max-width: 520px) {
+      .lesson-meta .tag { backdrop-filter:none; -webkit-backdrop-filter:none; }
+    }
     .lesson-meta .tag:first-child { background:rgba(115,159,225,.09); border-color:rgba(145,185,245,.14); }
     .lesson-report-row { display:flex; flex-flow:row nowrap; align-items:center; gap:7px; margin-top:7px; min-width:0; max-width:100%; overflow:hidden; }
     .lesson-report-select { display:none !important; }
