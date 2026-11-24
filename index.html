@@ -2511,9 +2511,15 @@
         window.Course2ScheduleSource = "api";
         if (currentGroup.includes("/О-25")) render();
       } catch (error) {
-        window.Course2ScheduleReady = false;
-        window.Course2ScheduleSource = "legacy-fallback";
-        console.warn("API 2-го курса недоступен, используется прежнее расписание внутри index.html:", error);
+        // If a usable local snapshot was loaded before the request, keep it active.
+        // Only fall back to the legacy inline schedule when no snapshot is available.
+        if (window.Course2ScheduleReady && window.Course2Schedule) {
+          window.Course2ScheduleSource = "local-cache-api-unavailable";
+        } else {
+          window.Course2ScheduleReady = false;
+          window.Course2ScheduleSource = "legacy-fallback";
+        }
+        console.warn("API 2-го курса недоступен; сохранён доступный локальный резерв:", error);
         if (currentGroup.includes("/О-25")) render();
       }
     };
@@ -2818,8 +2824,10 @@
     };
     customsScript.onerror=()=>{window.CustomsScheduleSource="adapter-error";if(currentFaculty==="customs")render();};
     document.head.appendChild(customsScript);
-    // Обновляем статусы пар, пока Mini App открыт; при смене даты обновляем календарную основу.
-    setInterval(() => {
+    // Refresh live countdowns only while visible. Catch up immediately when Telegram
+    // brings the Mini App back, rather than doing repeated work in the background.
+    const refreshLiveSchedule = () => {
+      if (document.hidden) return;
       const updated = new Date();
       if (updated.toDateString() !== now.toDateString()) {
         window.location.reload();
@@ -2828,7 +2836,11 @@
       realNow = updated;
       renderLessons();
       renderNext();
-    }, 60_000);
+    };
+    setInterval(refreshLiveSchedule, 60_000);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) refreshLiveSchedule();
+    });
 
   </script>
 
