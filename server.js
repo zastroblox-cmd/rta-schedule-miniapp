@@ -555,6 +555,15 @@ function toMiniAppLesson(row) {
 const COURSE_STRUCTURE_CACHE_TTL_MS = 60 * 1000;
 const courseStructureCache = new Map();
 
+// Very short cache for public schedule exports. Representative edits invalidate it immediately;
+// the short TTL also bounds staleness if the database is changed outside this API.
+const SCHEDULE_RESPONSE_CACHE_TTL_MS = 10 * 1000;
+const scheduleResponseCache = new Map();
+function clearScheduleResponseCache() {
+  scheduleResponseCache.clear();
+}
+
+
 async function getCourseStructure(facultySlug) {
   const now = Date.now();
   const existing = courseStructureCache.get(facultySlug);
@@ -609,6 +618,14 @@ async function getCourseStructure(facultySlug) {
 
 async function exportCourseSchedule(courseNumber, res, facultySlug = "law", direction = null) {
   if (!supabase) return res.status(503).json({ error: "Database is not configured" });
+
+  const responseCacheKey = JSON.stringify([facultySlug, courseNumber, direction]);
+  const cachedResponse = scheduleResponseCache.get(responseCacheKey);
+  if (cachedResponse && cachedResponse.expiresAt > Date.now()) {
+    res.setHeader("Cache-Control", "public, max-age=10, stale-while-revalidate=20");
+    return res.json(cachedResponse.payload);
+  }
+  if (cachedResponse) scheduleResponseCache.delete(responseCacheKey);
 
   let structure;
   try {
@@ -672,9 +689,8 @@ async function exportCourseSchedule(courseNumber, res, facultySlug = "law", dire
     });
   }
 
-  // Keep schedule data fresh; browser caching remains short and independent of metadata caching.
-  res.setHeader("Cache-Control", "public, max-age=30, stale-while-revalidate=60");
-  return res.json({
+  // Keep schedule freshness strict: short in-memory TTL plus immediate invalidation on rep edits.
+  const payload = {
     _status: "CONNECTED_TO_SUPABASE",
     _source: "Supabase schedule_entries",
     _course: courseNumber == null ? "all" : courseNumber,
@@ -685,7 +701,10 @@ async function exportCourseSchedule(courseNumber, res, facultySlug = "law", dire
       anchor: "12–18.10.2026 — неделя Б; 19–25.10.2026 — неделя А"
     },
     lessons
-  });
+  };
+  scheduleResponseCache.set(responseCacheKey, { expiresAt: Date.now() + SCHEDULE_RESPONSE_CACHE_TTL_MS, payload });
+  res.setHeader("Cache-Control", "public, max-age=10, stale-while-revalidate=20");
+  return res.json(payload);
 }
 
 app.get("/api/course1-schedule", (_req, res) => exportCourseSchedule(1, res, "law"));
@@ -1249,6 +1268,7 @@ app.post("/api/representative/change", async (req, res) => {
     }
     return res.status(400).json({ error: "Не удалось сохранить изменение. Проверь поля и попробуй ещё раз." });
   }
+  clearScheduleResponseCache();
   const actorUser = verifyTelegramInitData(body.initData, false);
   const event = requestedAction === "delete_for_date" ? "delete"
     : requestedAction === "save_override" && !body.entry_id ? "add" : "update";
