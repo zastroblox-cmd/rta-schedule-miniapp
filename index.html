@@ -1640,17 +1640,19 @@
       }
       const id=++scheduleTransitionId;
       view.classList.add("is-changing");
+      // Анимируем только transform/opacity: blur на всём списке заставлял слабые телефоны
+      // перерисовывать карточки при каждом кадре.
       const out=view.animate(
-        [{transform:"translate3d(0,0,0)",opacity:1,filter:"blur(0)"},{transform:"translate3d("+(-direction*22)+"px,0,0)",opacity:.18,filter:"blur(1.5px)"}],
-        {duration:115,easing:"cubic-bezier(.4,0,1,1)",fill:"forwards"}
+        [{transform:"translate3d(0,0,0)",opacity:1},{transform:"translate3d("+(-direction*18)+"px,0,0)",opacity:.25}],
+        {duration:85,easing:"cubic-bezier(.4,0,1,1)",fill:"forwards"}
       );
       out.finished.catch(()=>{}).then(()=>{
         if(id!==scheduleTransitionId)return;
         out.cancel();
         change();
         const incoming=view.animate(
-          [{transform:"translate3d("+(direction*26)+"px,0,0)",opacity:.18,filter:"blur(1.5px)"},{transform:"translate3d(0,0,0)",opacity:1,filter:"blur(0)"}],
-          {duration:255,easing:"cubic-bezier(.16,1,.3,1)",fill:"none"}
+          [{transform:"translate3d("+(direction*20)+"px,0,0)",opacity:.25},{transform:"translate3d(0,0,0)",opacity:1}],
+          {duration:175,easing:"cubic-bezier(.16,1,.3,1)",fill:"none"}
         );
         incoming.finished.catch(()=>{}).then(()=>{if(id===scheduleTransitionId)view.classList.remove("is-changing");});
       });
