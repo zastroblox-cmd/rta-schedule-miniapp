@@ -1150,7 +1150,7 @@
         GROUPS.filter(g=>g.faculty===currentFaculty&&g.course===currentCourse&&((currentFaculty!=="economics"&&currentFaculty!=="customs")||(g.direction||(currentFaculty==="customs"?"customs":"economics"))===currentDirection)&&matchesCurrentStream(g)).forEach(g=>{
           const b=document.createElement("button"); b.className="group-option"+(g.id===currentGroup?" selected":"");
           b.innerHTML=g.id+"<small>"+(g.status==="available"?"Расписание "+g.course+" курса подключено":g.faculty==="customs"?"Расписание факультета таможенного дела загружается из PDF":"Экономика · расписание переносится из PDF")+"</small>";
-          b.onclick=()=>{const previousFaculty=currentFaculty;currentGroup=g.id;currentCourse=g.course;currentFaculty=g.faculty;currentDirection=g.direction||(g.faculty==="economics"?"economics":g.faculty==="customs"?"customs":"law");isInitialGroupSetup=false;if(g.faculty==="customs"){currentStream=Number(g.stream)||1;localStorage.setItem("rta_schedule_customs_stream",String(currentStream));}localStorage.setItem("rta_schedule_direction",currentDirection);localStorage.setItem("rta_schedule_faculty",currentFaculty);localStorage.setItem("rta_schedule_course",String(currentCourse));localStorage.setItem("rta_schedule_group",currentGroup);localStorage.setItem("rta_schedule_group_faculty_"+currentFaculty,currentGroup);localStorage.setItem("rta_schedule_group_course_"+currentFaculty+"_"+currentCourse,currentGroup);updateGroupLabel();document.getElementById("closeGroupModal").style.display="";document.getElementById("groupModal").classList.remove("open");render();};
+          b.onclick=()=>{const previousFaculty=currentFaculty;currentGroup=g.id;currentCourse=g.course;currentFaculty=g.faculty;if(currentFaculty==="economics")loadEconomicsSchedule();if(currentFaculty==="customs")loadCustomsSchedule();currentDirection=g.direction||(g.faculty==="economics"?"economics":g.faculty==="customs"?"customs":"law");isInitialGroupSetup=false;if(g.faculty==="customs"){currentStream=Number(g.stream)||1;localStorage.setItem("rta_schedule_customs_stream",String(currentStream));}localStorage.setItem("rta_schedule_direction",currentDirection);localStorage.setItem("rta_schedule_faculty",currentFaculty);localStorage.setItem("rta_schedule_course",String(currentCourse));localStorage.setItem("rta_schedule_group",currentGroup);localStorage.setItem("rta_schedule_group_faculty_"+currentFaculty,currentGroup);localStorage.setItem("rta_schedule_group_course_"+currentFaculty+"_"+currentCourse,currentGroup);updateGroupLabel();document.getElementById("closeGroupModal").style.display="";document.getElementById("groupModal").classList.remove("open");render();};
           groupWrap.appendChild(b);
         });
       }
@@ -2682,10 +2682,17 @@
       if (currentGroup.includes("/О-23")) document.getElementById("lessonList").innerHTML = '<div class="empty"><div class="emoji">⚠️</div><strong>Расписание временно недоступно</strong><span>Попробуй открыть приложение ещё раз чуть позже.</span></div>';
     };
     document.head.appendChild(course4Script);
-    // Экономический факультет: источник занятий — серверный API и Supabase.
-    // Пустой результат не активируется: сначала импортируем и сверяем занятия из PDF.
+    // Экономика и таможенное дело загружаются только по выбору пользователя.
+    // Это убирает лишние API-запросы и адаптеры при открытии юридического расписания.
     window.EconomicsScheduleReady = false;
-    window.EconomicsScheduleSource = "loading";
+    window.EconomicsScheduleSource = "not-loaded";
+    let economicsScheduleLoadStarted = false;
+    function loadEconomicsSchedule() {
+      if (economicsScheduleLoadStarted) return;
+      economicsScheduleLoadStarted = true;
+      window.EconomicsScheduleReady = false;
+      window.EconomicsScheduleSource = "loading";
+    // Пустой результат не активируется: сначала импортируем и сверяем занятия из PDF.
     const economicsScript = document.createElement("script");
     economicsScript.src = "./data/economics-adapter.js?v=20261025-live-normalize";
     economicsScript.onload = async () => {
@@ -2763,9 +2770,16 @@
       if (currentFaculty === "economics") render();
     };
     document.head.appendChild(economicsScript);
-    // Факультет таможенного дела: отдельные курсы и группы, данные из Supabase.
+
+    }
     window.CustomsScheduleReady = false;
-    window.CustomsScheduleSource = "loading";
+    window.CustomsScheduleSource = "not-loaded";
+    let customsScheduleLoadStarted = false;
+    function loadCustomsSchedule() {
+      if (customsScheduleLoadStarted) return;
+      customsScheduleLoadStarted = true;
+      window.CustomsScheduleReady = false;
+      window.CustomsScheduleSource = "loading";
     const customsScript = document.createElement("script");
     customsScript.src = "./data/customs-adapter.js?v=20261102-customs-pi-v2";
     customsScript.onload = async () => {
@@ -2824,6 +2838,10 @@
     };
     customsScript.onerror=()=>{window.CustomsScheduleSource="adapter-error";if(currentFaculty==="customs")render();};
     document.head.appendChild(customsScript);
+
+    }
+    if (currentFaculty === "economics") loadEconomicsSchedule();
+    if (currentFaculty === "customs") loadCustomsSchedule();
     // Refresh live countdowns only while visible. Catch up immediately when Telegram
     // brings the Mini App back, rather than doing repeated work in the background.
     const refreshLiveSchedule = () => {
