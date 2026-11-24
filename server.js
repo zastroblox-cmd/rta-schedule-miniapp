@@ -1297,6 +1297,34 @@ app.get("/api/representative/history", async (req, res) => {
 });
 
 
+
+app.get("/api/owner/history", async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  if (!ownerTokenFromRequest(req)) return res.status(403).json({ error: "Доступ только владельцу." });
+  if (!supabase || !supabaseRpc || !REPRESENTATIVE_API_SECRET) return res.status(503).json({ error: "История недоступна." });
+  try {
+    const { data: groups, error: groupsError } = await supabase.from("student_groups")
+      .select("id,group_code,display_name").order("display_name");
+    if (groupsError) throw groupsError;
+    const histories = await Promise.all((groups || []).map(async group => {
+      try {
+        const { data, error } = await supabaseRpc.rpc("representative_get_history", {
+          p_secret: REPRESENTATIVE_API_SECRET, p_group_id: group.id, p_limit: 30
+        });
+        if (error) throw error;
+        return (data || []).map(item => ({ ...item, adminGroup: group.display_name || group.group_code, adminGroupCode: group.group_code }));
+      } catch (_) {
+        return [{ adminGroup: group.display_name || group.group_code, adminGroupCode: group.group_code, adminError: "История недоступна" }];
+      }
+    }));
+    const items = histories.flat().sort((a, b) => String(b.created_at || "").localeCompare(String(a.created_at || "")));
+    return res.json({ groups_count: (groups || []).length, items: items.slice(0, 60), changes_count: items.filter(x => !x.adminError).length });
+  } catch (error) {
+    console.error("Owner history load failed:", error.message);
+    return res.status(503).json({ error: "Не удалось загрузить журнал изменений." });
+  }
+});
+
 app.post("/api/representative/restore", async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
   if (!supabase || !supabaseRpc || !REPRESENTATIVE_API_SECRET) return res.status(503).json({ error: "Восстановление недоступно." });
