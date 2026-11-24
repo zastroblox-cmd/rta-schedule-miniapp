@@ -1023,7 +1023,7 @@
       const rememberedGroup=GROUPS.find(g=>g.id===remembered&&g.faculty===facultyId);
       const next=rememberedGroup||GROUPS.find(g=>g.faculty===facultyId&&((facultyId!=="customs")||(Number(g.stream)||1)===currentStream));
       if(!next) return;
-      currentGroup=next.id; currentCourse=next.course; currentDirection=next.direction || (next.faculty==="economics"?"economics":"law"); localStorage.setItem("rta_schedule_direction",currentDirection);
+      currentGroup=next.id; currentCourse=next.course; currentDirection=next.direction || (next.faculty==="economics"?"economics":"law"); ensureSelectedScheduleLoaded(); localStorage.setItem("rta_schedule_direction",currentDirection);
       if(!isInitialGroupSetup) localStorage.setItem("rta_schedule_group",currentGroup);
       localStorage.setItem("rta_schedule_faculty",currentFaculty);
       localStorage.setItem("rta_schedule_course",String(currentCourse));
@@ -1150,7 +1150,7 @@
         GROUPS.filter(g=>g.faculty===currentFaculty&&g.course===currentCourse&&((currentFaculty!=="economics"&&currentFaculty!=="customs")||(g.direction||(currentFaculty==="customs"?"customs":"economics"))===currentDirection)&&matchesCurrentStream(g)).forEach(g=>{
           const b=document.createElement("button"); b.className="group-option"+(g.id===currentGroup?" selected":"");
           b.innerHTML=g.id+"<small>"+(g.status==="available"?"Расписание "+g.course+" курса подключено":g.faculty==="customs"?"Расписание факультета таможенного дела загружается из PDF":"Экономика · расписание переносится из PDF")+"</small>";
-          b.onclick=()=>{const previousFaculty=currentFaculty;currentGroup=g.id;currentCourse=g.course;currentFaculty=g.faculty;if(currentFaculty==="economics")loadEconomicsSchedule();if(currentFaculty==="customs")loadCustomsSchedule();currentDirection=g.direction||(g.faculty==="economics"?"economics":g.faculty==="customs"?"customs":"law");isInitialGroupSetup=false;if(g.faculty==="customs"){currentStream=Number(g.stream)||1;localStorage.setItem("rta_schedule_customs_stream",String(currentStream));}localStorage.setItem("rta_schedule_direction",currentDirection);localStorage.setItem("rta_schedule_faculty",currentFaculty);localStorage.setItem("rta_schedule_course",String(currentCourse));localStorage.setItem("rta_schedule_group",currentGroup);localStorage.setItem("rta_schedule_group_faculty_"+currentFaculty,currentGroup);localStorage.setItem("rta_schedule_group_course_"+currentFaculty+"_"+currentCourse,currentGroup);updateGroupLabel();document.getElementById("closeGroupModal").style.display="";document.getElementById("groupModal").classList.remove("open");render();};
+          b.onclick=()=>{const previousFaculty=currentFaculty;currentGroup=g.id;currentCourse=g.course;currentFaculty=g.faculty;ensureSelectedScheduleLoaded();currentDirection=g.direction||(g.faculty==="economics"?"economics":g.faculty==="customs"?"customs":"law");isInitialGroupSetup=false;if(g.faculty==="customs"){currentStream=Number(g.stream)||1;localStorage.setItem("rta_schedule_customs_stream",String(currentStream));}localStorage.setItem("rta_schedule_direction",currentDirection);localStorage.setItem("rta_schedule_faculty",currentFaculty);localStorage.setItem("rta_schedule_course",String(currentCourse));localStorage.setItem("rta_schedule_group",currentGroup);localStorage.setItem("rta_schedule_group_faculty_"+currentFaculty,currentGroup);localStorage.setItem("rta_schedule_group_course_"+currentFaculty+"_"+currentCourse,currentGroup);updateGroupLabel();document.getElementById("closeGroupModal").style.display="";document.getElementById("groupModal").classList.remove("open");render();};
           groupWrap.appendChild(b);
         });
       }
@@ -1934,7 +1934,7 @@
       ownerQuery("#ownerDensity").addEventListener("change",e=>{write("density",e.target.value);noteCustomization();});
       [["glass","ownerGlass"],["motion","ownerMotion"],["glow","ownerGlow"],["accentGlow","ownerAccentGlow"]].forEach(([key,id])=>ownerQuery("#"+id).addEventListener("change",e=>{write(key,e.target.checked);noteCustomization();}));
       ownerQuery("#ownerReset").addEventListener("click",()=>{["theme","accent","opacity","radius","density","glass","motion","glow","accentGlow"].forEach(k=>{try{localStorage.removeItem("rta_owner_"+k);}catch(e){}});write("customizations",read("customizations",0)+1);applyPrefs();toast("Настройки студии сброшены.");});
-      function refreshStatuses(){ownerQuery("#ownerC1").textContent=window.Course1ScheduleReady?"✓ Загружен":"… Загружается";ownerQuery("#ownerC2").textContent=window.Course2ScheduleReady?"✓ Загружен":"… Загружается";ownerQuery("#ownerC3").textContent=window.Course3ScheduleReady?"✓ Загружен":"… Загружается";ownerQuery("#ownerC4").textContent=window.Course4ScheduleReady?"✓ Загружен":"… Загружается";}
+      function refreshStatuses(){const status=(ready,source)=>ready?"✓ Загружен":source==="not-loaded"?"⏸ По запросу":"… Загружается";ownerQuery("#ownerC1").textContent=status(window.Course1ScheduleReady,window.Course1ScheduleSource);ownerQuery("#ownerC2").textContent=status(window.Course2ScheduleReady,window.Course2ScheduleSource);ownerQuery("#ownerC3").textContent=status(window.Course3ScheduleReady,window.Course3ScheduleSource);ownerQuery("#ownerC4").textContent=status(window.Course4ScheduleReady,window.Course4ScheduleSource);}
       let ownerLastScanFindings=[];
       const ownerScanEndpoints=[
         ...[1,2,3,4].map(course=>({label:"Юридический факультет · курс "+course,url:"https://rta-schedule-api.onrender.com/api/course"+course+"-schedule"})),
@@ -2007,7 +2007,7 @@
         refreshStatuses();
         lines.push("");
         lines.push("4. СТАТУСЫ АДАПТЕРОВ (это не замена сетевой проверке)");
-        [["Юридический курс 1",window.Course1ScheduleReady,window.Course1ScheduleSource],["Юридический курс 2",window.Course2ScheduleReady,window.Course2ScheduleSource],["Юридический курс 3",window.Course3ScheduleReady,window.Course3ScheduleSource],["Юридический курс 4",window.Course4ScheduleReady,window.Course4ScheduleSource],["Экономика",window.EconomicsScheduleReady,window.EconomicsScheduleSource],["Таможенное дело",window.CustomsScheduleReady,window.CustomsScheduleSource]].forEach(([name,ready,source])=>{lines.push((ready?"✓ ":"! ")+name+": "+(ready?"загружен":"не загружен")+" · "+(source||"источник не указан"));if(!ready)add("ПРЕДУПРЕЖДЕНИЕ","АДАПТЕР",name+" не отмечен как загруженный ("+(source||"источник не указан")+").","Проверить загрузку адаптера и консоль ошибок браузера.");});
+        [["Юридический курс 1",window.Course1ScheduleReady,window.Course1ScheduleSource],["Юридический курс 2",window.Course2ScheduleReady,window.Course2ScheduleSource],["Юридический курс 3",window.Course3ScheduleReady,window.Course3ScheduleSource],["Юридический курс 4",window.Course4ScheduleReady,window.Course4ScheduleSource],["Экономика",window.EconomicsScheduleReady,window.EconomicsScheduleSource],["Таможенное дело",window.CustomsScheduleReady,window.CustomsScheduleSource]].forEach(([name,ready,source])=>{if(!ready&&source==="not-loaded"){lines.push("↻ "+name+": отложенная загрузка до выбора группы.");return;}lines.push((ready?"✓ ":"! ")+name+": "+(ready?"загружен":"не загружен")+" · "+(source||"источник не указан"));if(!ready)add("ПРЕДУПРЕЖДЕНИЕ","АДАПТЕР",name+" не отмечен как загруженный ("+(source||"источник не указан")+").","Проверить загрузку адаптера и консоль ошибок браузера.");});
         lines.push("");
         lines.push("ИТОГ: "+errors+" ошибок · "+warnings+" предупреждений · "+passed+" успешных проверок.");
         lines.push("Ограничение: проверка подтверждает доступность API и базовую структуру, но не доказывает соответствие официальным PDF.");
@@ -2488,9 +2488,14 @@
         return false;
       }
     }
-    // Загружаем расписание 2-го курса с сервера. При ошибке остаётся прежняя логика index.html.
     window.Course2ScheduleReady = false;
-    window.Course2ScheduleSource = "loading";
+    window.Course2ScheduleSource = "not-loaded";
+    let course2ScheduleLoadStarted = false;
+    function loadCourse2Schedule() {
+      if (course2ScheduleLoadStarted) return;
+      course2ScheduleLoadStarted = true;
+      window.Course2ScheduleReady = false;
+      window.Course2ScheduleSource = "loading";
     const course2Script = document.createElement("script");
     course2Script.src = "./data/course2-adapter.js?v=20261022";
     course2Script.onload = async () => {
@@ -2530,9 +2535,16 @@
       if (currentGroup.includes("/О-25")) render();
     };
     document.head.appendChild(course2Script);
-    // Курс 1: API из Supabase — основной источник; локальный JSON остаётся резервом.
+
+    }
     window.Course1ScheduleReady = false;
-    window.Course1ScheduleSource = "loading";
+    window.Course1ScheduleSource = "not-loaded";
+    let course1ScheduleLoadStarted = false;
+    function loadCourse1Schedule() {
+      if (course1ScheduleLoadStarted) return;
+      course1ScheduleLoadStarted = true;
+      window.Course1ScheduleReady = false;
+      window.Course1ScheduleSource = "loading";
     const course1Script = document.createElement("script");
     course1Script.src = "./data/course1-adapter.js?v=20261023-api-all";
     course1Script.onload = async () => {
@@ -2578,9 +2590,16 @@
       }
     };
     document.head.appendChild(course1Script);
-    // Курс 3: API — основной источник. Локальный JSON остаётся резервом и хранит исходные OCR-предупреждения.
+
+    }
     window.Course3ScheduleReady = false;
-    window.Course3ScheduleSource = "loading";
+    window.Course3ScheduleSource = "not-loaded";
+    let course3ScheduleLoadStarted = false;
+    function loadCourse3Schedule() {
+      if (course3ScheduleLoadStarted) return;
+      course3ScheduleLoadStarted = true;
+      window.Course3ScheduleReady = false;
+      window.Course3ScheduleSource = "loading";
     const course3Script = document.createElement("script");
     course3Script.src = "./data/course3-adapter.js?v=20261023-api-all";
     course3Script.onload = async () => {
@@ -2638,9 +2657,16 @@
       }
     };
     document.head.appendChild(course3Script);
-    // Курс 4: API из Supabase — основной источник; прежний JSON сохранён как резерв.
+
+    }
     window.Course4ScheduleReady = false;
-    window.Course4ScheduleSource = "loading";
+    window.Course4ScheduleSource = "not-loaded";
+    let course4ScheduleLoadStarted = false;
+    function loadCourse4Schedule() {
+      if (course4ScheduleLoadStarted) return;
+      course4ScheduleLoadStarted = true;
+      window.Course4ScheduleReady = false;
+      window.Course4ScheduleSource = "loading";
     const course4Script = document.createElement("script");
     course4Script.src = "./data/course4-adapter.js?v=20261023-api-all";
     course4Script.onload = async () => {
@@ -2682,6 +2708,8 @@
       if (currentGroup.includes("/О-23")) document.getElementById("lessonList").innerHTML = '<div class="empty"><div class="emoji">⚠️</div><strong>Расписание временно недоступно</strong><span>Попробуй открыть приложение ещё раз чуть позже.</span></div>';
     };
     document.head.appendChild(course4Script);
+
+    }
     // Экономика и таможенное дело загружаются только по выбору пользователя.
     // Это убирает лишние API-запросы и адаптеры при открытии юридического расписания.
     window.EconomicsScheduleReady = false;
@@ -2840,8 +2868,18 @@
     document.head.appendChild(customsScript);
 
     }
-    if (currentFaculty === "economics") loadEconomicsSchedule();
-    if (currentFaculty === "customs") loadCustomsSchedule();
+    function ensureSelectedScheduleLoaded() {
+      if (currentFaculty === "economics") return loadEconomicsSchedule();
+      if (currentFaculty === "customs") return loadCustomsSchedule();
+      if (currentFaculty === "law") {
+        const course = Number(currentCourse);
+        if (course === 1) return loadCourse1Schedule();
+        if (course === 2) return loadCourse2Schedule();
+        if (course === 3) return loadCourse3Schedule();
+        if (course === 4) return loadCourse4Schedule();
+      }
+    }
+    ensureSelectedScheduleLoaded();
     // Refresh live countdowns only while visible. Catch up immediately when Telegram
     // brings the Mini App back, rather than doing repeated work in the background.
     const refreshLiveSchedule = () => {
