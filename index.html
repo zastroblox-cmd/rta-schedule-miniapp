@@ -2249,8 +2249,7 @@
       const nodeCopy={app:"Главная оболочка Mini App. Основной интерфейс расписания не изменяется.",courses:"Разные курсы загружаются из своих источников, когда для них настроены адаптеры.",groups:"Текущая группа: "+(typeof currentGroup!=="undefined"?currentGroup:"не определена")+".",updates:"Общий журнал последних изменений по группам находится в разделе «Управление».",checks:"Открой раздел «Сканер», чтобы проверить формат доступных пар выбранного дня.",effects:"Темы и визуальные настройки сохраняются только на этом устройстве."};
       ownerAll(".owner-node").forEach(b=>b.addEventListener("click",()=>ownerQuery("#ownerMapResult").textContent=nodeCopy[b.dataset.ownerNode]||"Узел карты"));
       // Owner preferences are applied only after server verification. Other Telegram accounts on the same device keep the default app theme.
-      async function trackAppUser(){const initData=window.Telegram&&window.Telegram.WebApp?window.Telegram.WebApp.initData:"";if(!initData)return;try{await fetch("https://rta-schedule-api.onrender.com/api/analytics/track",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({initData}),cache:"no-store"});}catch(error){console.warn("Не удалось записать активность пользователя.",error);}}
-      void trackAppUser();
+      // Активность записывает /api/status на сервере в фоне — отдельный запрос при старте больше не нужен.
       void verifyOwner();
     })();
 
