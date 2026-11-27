@@ -160,6 +160,18 @@ app.post("/api/status", async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
   const user = verifyTelegramInitData(req.body && req.body.initData, false);
   const isOwner = Boolean(user && OWNER_TELEGRAM_ID && user.id === OWNER_TELEGRAM_ID);
+  // Record activity asynchronously here so Mini App startup needs one fewer HTTP round trip.
+  // Status delivery must never wait for analytics or fail because analytics is unavailable.
+  if (user && supabaseRpc && ANALYTICS_SECRET) {
+    void supabaseRpc.rpc("track_app_user", {
+      p_user_id: user.id,
+      p_secret: ANALYTICS_SECRET
+    }).then(({ error }) => {
+      if (error) console.error("Background activity tracking failed:", error.message);
+    }).catch(error => {
+      console.error("Background activity tracking failed:", error.message || error);
+    });
+  }
   if (!supabaseRpc) {
     return res.status(503).json({ status: "unavailable", maintenance: false, isOwner, features: {} });
   }
