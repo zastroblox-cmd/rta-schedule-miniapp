@@ -1925,6 +1925,9 @@
           }
         }catch(error){console.warn("Проверка владельца временно недоступна.",error);}
       }
+      // Start owner recognition immediately after the verifier is defined. A previously verified
+      // account gets the owner UI before the rest of the owner panel wires its controls.
+      void verifyOwner();
       function openOwner(){if(!entry.classList.contains("visible"))return;modal.classList.add("open");document.body.style.overflow="hidden";applyPrefs();refreshStatuses();}
       function closeOwner(){modal.classList.remove("open");document.body.style.overflow="";}
       entry.addEventListener("click",openOwner);ownerQuery("#ownerClose").addEventListener("click",closeOwner);
@@ -2250,7 +2253,6 @@
       ownerAll(".owner-node").forEach(b=>b.addEventListener("click",()=>ownerQuery("#ownerMapResult").textContent=nodeCopy[b.dataset.ownerNode]||"Узел карты"));
       // Owner preferences are applied only after server verification. Other Telegram accounts on the same device keep the default app theme.
       // Активность записывает /api/status на сервере в фоне — отдельный запрос при старте больше не нужен.
-      void verifyOwner();
     })();
 
     document.getElementById("prevWeek").onclick=()=>animateScheduleChange(-1,()=>{weekOffset--;render();});
